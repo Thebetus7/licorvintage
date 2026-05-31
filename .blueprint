@@ -1,0 +1,93 @@
+created:
+    - app/Http/Controllers/AperturaCajaController.php
+    - app/Http/Controllers/MovimientoCajaController.php
+    - app/Http/Controllers/VentaController.php
+    - app/Http/Controllers/DetalleVentaController.php
+    - app/Http/Controllers/ProductoController.php
+    - app/Http/Controllers/StockController.php
+    - app/Http/Controllers/CompraController.php
+    - app/Http/Controllers/DetalleCompraController.php
+    - app/Http/Controllers/ProveedorController.php
+    - app/Http/Controllers/DetallePromoController.php
+    - app/Http/Controllers/PromocionController.php
+    - app/Http/Controllers/VentaCuotasController.php
+    - app/Http/Controllers/MetodoPagoController.php
+    - database/factories/AperturaCajaFactory.php
+    - database/factories/MovimientoCajaFactory.php
+    - database/factories/VentaFactory.php
+    - database/factories/DetalleVentaFactory.php
+    - database/factories/ProductoFactory.php
+    - database/factories/StockFactory.php
+    - database/factories/CompraFactory.php
+    - database/factories/DetalleCompraFactory.php
+    - database/factories/ProveedorFactory.php
+    - database/factories/DetallePromoFactory.php
+    - database/factories/PromocionFactory.php
+    - database/factories/VentaCuotasFactory.php
+    - database/factories/MetodoPagoFactory.php
+    - database/migrations/2026_05_02_045036_create_apertura_cajas_table.php
+    - database/migrations/2026_05_02_045037_create_movimiento_cajas_table.php
+    - database/migrations/2026_05_02_045038_create_ventas_table.php
+    - database/migrations/2026_05_02_045039_create_detalle_ventas_table.php
+    - database/migrations/2026_05_02_045040_create_productos_table.php
+    - database/migrations/2026_05_02_045041_create_stocks_table.php
+    - database/migrations/2026_05_02_045042_create_compras_table.php
+    - database/migrations/2026_05_02_045043_create_detalle_compras_table.php
+    - database/migrations/2026_05_02_045044_create_proveedors_table.php
+    - database/migrations/2026_05_02_045045_create_detalle_promos_table.php
+    - database/migrations/2026_05_02_045046_create_promocions_table.php
+    - database/migrations/2026_05_02_045047_create_venta_cuotas_table.php
+    - database/migrations/2026_05_02_045048_create_metodo_pagos_table.php
+    - app/Models/AperturaCaja.php
+    - app/Models/MovimientoCaja.php
+    - app/Models/Venta.php
+    - app/Models/DetalleVenta.php
+    - app/Models/Producto.php
+    - app/Models/Stock.php
+    - app/Models/Compra.php
+    - app/Models/DetalleCompra.php
+    - app/Models/Proveedor.php
+    - app/Models/DetallePromo.php
+    - app/Models/Promocion.php
+    - app/Models/VentaCuotas.php
+    - app/Models/MetodoPago.php
+    - database/seeders/AperturaCajaSeeder.php
+    - database/seeders/MovimientoCajaSeeder.php
+    - database/seeders/VentaSeeder.php
+    - database/seeders/DetalleVentaSeeder.php
+    - database/seeders/ProductoSeeder.php
+    - database/seeders/StockSeeder.php
+    - database/seeders/CompraSeeder.php
+    - database/seeders/DetalleCompraSeeder.php
+    - database/seeders/ProveedorSeeder.php
+    - database/seeders/DetallePromoSeeder.php
+    - database/seeders/PromocionSeeder.php
+    - tests/Feature/Http/Controllers/AperturaCajaControllerTest.php
+    - tests/Feature/Http/Controllers/MovimientoCajaControllerTest.php
+    - tests/Feature/Http/Controllers/VentaControllerTest.php
+    - tests/Feature/Http/Controllers/DetalleVentaControllerTest.php
+    - tests/Feature/Http/Controllers/ProductoControllerTest.php
+    - tests/Feature/Http/Controllers/StockControllerTest.php
+    - tests/Feature/Http/Controllers/CompraControllerTest.php
+    - tests/Feature/Http/Controllers/DetalleCompraControllerTest.php
+    - tests/Feature/Http/Controllers/ProveedorControllerTest.php
+    - tests/Feature/Http/Controllers/DetallePromoControllerTest.php
+    - tests/Feature/Http/Controllers/PromocionControllerTest.php
+    - tests/Feature/Http/Controllers/VentaCuotasControllerTest.php
+    - tests/Feature/Http/Controllers/MetodoPagoControllerTest.php
+updated:
+    - routes/web.php
+models:
+    AperturaCaja: { monto_inicial: double, monto_sistema: double, monto_real: double, diferencia: double, tiempo_apertura: timestamp, tiempo_cierre: timestamp, estado: string, softdeletes: softDeletes, timestamps: timestamps, relationships: { BelongsTo: User, HasMany: MovimientoCaja } }
+    MovimientoCaja: { monto: double, tipo: string, detalle: text, timestamps: timestamps, softdeletes: softDeletes, relationships: { BelongsTo: AperturaCaja } }
+    Venta: { monto_pagado: double, cod_descuento: 'string nullable', monto_original: double, monto_final: double, nro_cuotas: integer, tipo_pago: string, detalle_promo_id: 'id:detalle_promo nullable', timestamps: timestamps, softdeletes: softDeletes, relationships: { BelongsTo: User, HasMany: 'DetalleVenta, VentaCuotas, MetodoPago' } }
+    DetalleVenta: { cantidad: integer, precio_original: double, descuento: double, precio_u_final: double, subtotal: double, timestamps: timestamps, softdeletes: softDeletes, relationships: { BelongsTo: 'Venta, Producto' } }
+    Producto: { nombre: string, mililitros: integer, descripcion: 'text nullable', imagen: 'string nullable', codigo_barra: 'string unique', timestamps: timestamps, softdeletes: softDeletes, relationships: { HasMany: 'DetalleVenta, DetallePromo, Stock' } }
+    Stock: { stock: integer, min: integer, max: integer, timestamps: timestamps, softdeletes: softDeletes, relationships: { BelongsTo: Producto } }
+    Compra: { costo: double, timestamps: timestamps, softdeletes: softDeletes, relationships: { BelongsTo: 'Producto, User', HasMany: DetalleCompra } }
+    DetalleCompra: { cantidad: integer, sub_costo: double, timestamps: timestamps, softdeletes: softDeletes, relationships: { BelongsTo: 'Compra, Producto' } }
+    Proveedor: { nombre: string, telefono: string, descripcion: 'text nullable', timestamps: timestamps, softdeletes: softDeletes, relationships: { HasMany: Compra } }
+    DetallePromo: { timestamps: timestamps, relationships: { BelongsTo: 'Producto, Promocion' } }
+    Promocion: { nombre_promo: string, codigo_promo: 'string unique', descuento: double, tipo_descuento: string, fecha_inicio: date, fecha_fin: date, timestamps: timestamps, softdeletes: softDeletes, relationships: { HasMany: DetallePromo } }
+    VentaCuotas: { sub_monto: double, timestamps: timestamps, softdeletes: softDeletes, relationships: { BelongsTo: Venta } }
+    MetodoPago: { tipo_pago: string, timestamps: timestamps, softdeletes: softDeletes, relationships: { BelongsTo: Venta } }

@@ -1,0 +1,154 @@
+models:
+  AperturaCaja:
+    monto_inicial: double
+    monto_sistema: double
+    monto_real: double
+    diferencia: double
+    tiempo_apertura: timestamp
+    tiempo_cierre: timestamp
+    estado: string
+    softDeletes: true
+    timestamps: true
+    relationships:
+      BelongsTo: User
+      HasMany: MovimientoCaja
+
+  MovimientoCaja:
+    monto: double
+    tipo: string
+    detalle: text
+    timestamps: true
+    softDeletes: true
+    relationships:
+      BelongsTo: AperturaCaja
+
+  Venta:
+    monto_pagado: double
+    cod_descuento: string nullable
+    monto_original: double
+    monto_final: double
+    nro_cuotas: integer
+    tipo_pago: string
+    detalle_promo_id: id:detalle_promo nullable
+    timestamps: true
+    softDeletes: true
+    relationships:
+      BelongsTo: User
+      HasMany: DetalleVenta, VentaCuotas, MetodoPago
+
+  DetalleVenta:
+    cantidad: integer
+    precio_original: double
+    descuento: double
+    precio_u_final: double
+    subtotal: double
+    timestamps: true
+    softDeletes: true
+    relationships:
+      BelongsTo: Venta, Producto
+
+  Producto:
+    nombre: string
+    mililitros: integer
+    descripcion: text nullable
+    imagen: string nullable
+    codigo_barra: string unique
+    timestamps: true
+    softDeletes: true
+    relationships:
+      HasMany: DetalleVenta, DetallePromo, Stock
+
+  Stock:
+    stock: integer
+    min: integer
+    max: integer
+    timestamps: true
+    softDeletes: true
+    relationships:
+      BelongsTo: Producto
+
+  Compra:
+    costo: double
+    timestamps: true
+    softDeletes: true
+    relationships:
+      BelongsTo: Producto, User
+      HasMany: DetalleCompra
+
+  DetalleCompra:
+    cantidad: integer
+    sub_costo: double
+    timestamps: true
+    softDeletes: true
+    relationships:
+      BelongsTo: Compra, Producto
+
+  Proveedor:
+    nombre: string
+    telefono: string
+    descripcion: text nullable
+    timestamps: true
+    softDeletes: true
+    relationships:
+      HasMany: Compra
+
+  DetallePromo:
+    timestamps: true
+    relationships:
+      BelongsTo: Producto, Promocion
+
+  Promocion:
+    nombre_promo: string
+    codigo_promo: string unique
+    descuento: double
+    tipo_descuento: string
+    fecha_inicio: date
+    fecha_fin: date
+    timestamps: true
+    softDeletes: true
+    relationships:
+      HasMany: DetallePromo
+
+  VentaCuotas:
+    sub_monto: double
+    timestamps: true
+    softDeletes: true
+    relationships:
+      BelongsTo: Venta
+
+  MetodoPago:
+    tipo_pago: string
+    timestamps: true
+    softDeletes: true
+    relationships:
+      BelongsTo: Venta
+
+seeders: AperturaCaja, MovimientoCaja, Venta, DetalleVenta, Producto, Stock, Compra, DetalleCompra, Proveedor, DetallePromo, Promocion
+
+controllers:
+  AperturaCaja:
+    resource: true
+  MovimientoCaja:
+    resource: true
+  Venta:
+    resource: true
+  DetalleVenta:
+    resource: true
+  Producto:
+    resource: true
+  Stock:
+    resource: true
+  Compra:
+    resource: true
+  DetalleCompra:
+    resource: true
+  Proveedor:
+    resource: true
+  DetallePromo:
+    resource: true
+  Promocion:
+    resource: true
+  VentaCuotas:
+    resource: true
+  MetodoPago:
+    resource: true
