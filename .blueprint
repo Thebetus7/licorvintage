@@ -25,19 +25,19 @@ created:
     - database/factories/PromocionFactory.php
     - database/factories/VentaCuotasFactory.php
     - database/factories/MetodoPagoFactory.php
-    - database/migrations/2026_05_02_045036_create_apertura_cajas_table.php
-    - database/migrations/2026_05_02_045037_create_movimiento_cajas_table.php
-    - database/migrations/2026_05_02_045038_create_ventas_table.php
-    - database/migrations/2026_05_02_045039_create_detalle_ventas_table.php
-    - database/migrations/2026_05_02_045040_create_productos_table.php
-    - database/migrations/2026_05_02_045041_create_stocks_table.php
-    - database/migrations/2026_05_02_045042_create_compras_table.php
-    - database/migrations/2026_05_02_045043_create_detalle_compras_table.php
-    - database/migrations/2026_05_02_045044_create_proveedors_table.php
-    - database/migrations/2026_05_02_045045_create_detalle_promos_table.php
-    - database/migrations/2026_05_02_045046_create_promocions_table.php
-    - database/migrations/2026_05_02_045047_create_venta_cuotas_table.php
-    - database/migrations/2026_05_02_045048_create_metodo_pagos_table.php
+    - database/migrations/2026_06_24_165242_create_apertura_cajas_table.php
+    - database/migrations/2026_06_24_165243_create_movimiento_cajas_table.php
+    - database/migrations/2026_06_24_165244_create_ventas_table.php
+    - database/migrations/2026_06_24_165245_create_detalle_ventas_table.php
+    - database/migrations/2026_06_24_165246_create_productos_table.php
+    - database/migrations/2026_06_24_165247_create_stocks_table.php
+    - database/migrations/2026_06_24_165248_create_compras_table.php
+    - database/migrations/2026_06_24_165249_create_detalle_compras_table.php
+    - database/migrations/2026_06_24_165250_create_proveedors_table.php
+    - database/migrations/2026_06_24_165251_create_detalle_promos_table.php
+    - database/migrations/2026_06_24_165252_create_promocions_table.php
+    - database/migrations/2026_06_24_165253_create_venta_cuotas_table.php
+    - database/migrations/2026_06_24_165254_create_metodo_pagos_table.php
     - app/Models/AperturaCaja.php
     - app/Models/MovimientoCaja.php
     - app/Models/Venta.php

@@ -18,13 +18,13 @@ class ProductoController extends Controller
             'productos' => Producto::query()
                 ->with('stockActual')
                 ->latest()
-                ->paginate(10),
+                ->paginate(15),
         ]);
     }
 
     public function store(StoreProductoRequest $request, ProductoService $service): RedirectResponse
     {
-        $service->create($request->validated(), $request->user());
+        $service->create($request->validated(), auth()->user());
 
         return back()->with('success', 'Producto creado correctamente.');
     }

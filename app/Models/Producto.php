@@ -12,11 +12,6 @@ class Producto extends Model
 {
     use HasFactory, SoftDeletes;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
     protected $fillable = [
         'nombre',
         'mililitros',
@@ -31,18 +26,14 @@ class Producto extends Model
         'publicado',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
             'id' => 'integer',
-            'costo' => 'double',
-            'costo_promedio' => 'double',
-            'precio_venta' => 'double',
+            'mililitros' => 'integer',
+            'costo' => 'decimal:2',
+            'costo_promedio' => 'decimal:2',
+            'precio_venta' => 'decimal:2',
             'fotos' => 'array',
             'publicado' => 'boolean',
         ];
@@ -65,20 +56,6 @@ class Producto extends Model
 
     public function stockActual(): HasOne
     {
-        return $this->hasOne(Stock::class)->latestOfMany();
-    }
-
-    public function movimientos(): HasMany
-    {
-        return $this->hasMany(MovimientoInventario::class);
-    }
-
-    public function portada(): ?string
-    {
-        if (is_array($this->fotos) && count($this->fotos) > 0) {
-            return $this->fotos[0];
-        }
-
-        return $this->imagen;
+        return $this->hasOne(Stock::class);
     }
 }

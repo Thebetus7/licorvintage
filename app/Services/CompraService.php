@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Compra;
-use App\Models\DetalleCompra;
 use App\Models\Producto;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -91,6 +90,27 @@ class CompraService
             }
 
             return $compra->load(['proveedor', 'detalleCompras.producto.stockActual', 'user']);
+        });
+    }
+
+    public function delete(Compra $compra, User $user): void
+    {
+        DB::transaction(function () use ($compra, $user): void {
+            foreach ($compra->detalleCompras as $detalle) {
+                $producto = Producto::query()->findOrFail($detalle->producto_id);
+
+                $this->inventarioService->registrarSalida(
+                    $producto,
+                    (int) $detalle->cantidad,
+                    'salida_ajuste',
+                    $compra,
+                    $user,
+                    "Eliminación compra #{$compra->id}",
+                );
+            }
+
+            $compra->detalleCompras()->delete();
+            $compra->delete();
         });
     }
 }

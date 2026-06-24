@@ -13,16 +13,10 @@ class ProductoFactory extends Factory
     {
         return [
             'nombre' => fake()->word(),
-            'mililitros' => fake()->numberBetween(250, 1000),
-            'costo' => fake()->randomFloat(2, 10, 200),
-            'costo_promedio' => fake()->randomFloat(2, 10, 200),
-            'precio_venta' => fake()->randomFloat(2, 20, 300),
+            'mililitros' => fake()->numberBetween(-10000, 10000),
             'descripcion' => fake()->text(),
-            'imagen' => fake()->url(),
-            'fotos' => [fake()->url()],
-            'codigo_barra' => fake()->unique()->bothify('PRD-####'),
-            'codigo_qr' => fake()->bothify('QR-####'),
-            'publicado' => true,
+            'imagen' => fake()->word(),
+            'codigo_barra' => fake()->word(),
         ];
     }
 }

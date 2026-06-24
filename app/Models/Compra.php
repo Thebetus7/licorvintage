@@ -45,26 +45,18 @@ class Compra extends Model
         return $this->belongsTo(Producto::class);
     }
 
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
-    }
-
     public function proveedor(): BelongsTo
     {
         return $this->belongsTo(Proveedor::class);
     }
 
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
     public function detalleCompras(): HasMany
     {
         return $this->hasMany(DetalleCompra::class);
-    }
-
-    public static function allCompra(int $id)
-    {
-        return self::query()->where('user_id', $id)
-            ->with(['producto', 'proveedor', 'detalleCompras.producto'])
-            ->latest()
-            ->get();
     }
 }

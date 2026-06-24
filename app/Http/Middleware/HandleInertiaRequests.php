@@ -37,6 +37,7 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
+            'csrf_token' => fn () => csrf_token(),
             'auth' => [
                 'user' => $request->user()?->loadMissing('roles'),
                 'roles' => $request->user()?->getRoleNames()->values()->all() ?? [],

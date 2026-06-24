@@ -9,11 +9,6 @@ use Illuminate\Http\RedirectResponse;
 
 class ProveedorController extends Controller
 {
-    public function index(): RedirectResponse
-    {
-        return redirect()->route('compras.index');
-    }
-
     public function store(StoreProveedorRequest $request): RedirectResponse
     {
         Proveedor::create($request->validated());
@@ -21,16 +16,16 @@ class ProveedorController extends Controller
         return back()->with('success', 'Proveedor creado correctamente.');
     }
 
-    public function update(UpdateProveedorRequest $request, Proveedor $proveedore): RedirectResponse
+    public function update(UpdateProveedorRequest $request, Proveedor $proveedor): RedirectResponse
     {
-        $proveedore->update($request->validated());
+        $proveedor->update($request->validated());
 
         return back()->with('success', 'Proveedor actualizado correctamente.');
     }
 
-    public function destroy(Proveedor $proveedore): RedirectResponse
+    public function destroy(Proveedor $proveedor): RedirectResponse
     {
-        $proveedore->delete();
+        $proveedor->delete();
 
         return back()->with('success', 'Proveedor eliminado correctamente.');
     }

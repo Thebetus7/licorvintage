@@ -41,8 +41,8 @@ class AperturaCaja extends Model
             'monto_sistema' => 'double',
             'monto_real' => 'double',
             'diferencia' => 'double',
-            'tiempo_apertura' => 'datetime',
-            'tiempo_cierre' => 'datetime',
+            'tiempo_apertura' => 'timestamp',
+            'tiempo_cierre' => 'timestamp',
             'user_id' => 'integer',
         ];
     }

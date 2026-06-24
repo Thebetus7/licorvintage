@@ -1,5 +1,6 @@
 <script setup>
 import { onBeforeUnmount, ref } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
@@ -22,6 +23,7 @@ const props = defineProps({
 
 const emit = defineEmits(['update:fotos']);
 
+const page = usePage();
 const fileInput = ref(null);
 const uploading = ref(false);
 const uploadError = ref('');
@@ -66,7 +68,9 @@ const uploadBlob = async (blob) => {
     formData.append('imagen', blob, `producto-${Date.now()}.jpg`);
 
     const { data } = await window.axios.post(route('productos.imagen.store'), formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: {
+            'X-CSRF-TOKEN': page.props.csrf_token,
+        },
     });
 
     return data.url;
