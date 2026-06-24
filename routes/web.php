@@ -5,6 +5,7 @@ use App\Http\Controllers\ClienteProductoController;
 use App\Http\Controllers\CompraController;
 use App\Http\Controllers\InventarioController;
 use App\Http\Controllers\ProductoController;
+use App\Http\Controllers\ProductoImagenController;
 use App\Http\Controllers\ProveedorController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\VentaController;
@@ -36,6 +37,7 @@ Route::middleware([
 
     Route::middleware('role:propietario|vendedor')->group(function () {
         Route::resource('productos', ProductoController::class)->except(['create', 'show', 'edit']);
+        Route::post('/productos/imagen', [ProductoImagenController::class, 'store'])->name('productos.imagen.store');
         Route::resource('compras', CompraController::class)->except(['create', 'show', 'edit']);
         Route::resource('proveedores', ProveedorController::class)->except(['create', 'show', 'edit']);
         Route::get('/caja', [CajaController::class, 'index'])->name('caja.index');

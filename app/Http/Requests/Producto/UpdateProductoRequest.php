@@ -24,7 +24,7 @@ class UpdateProductoRequest extends FormRequest
             'descripcion' => ['nullable', 'string'],
             'imagen' => ['nullable', 'string', 'max:255'],
             'fotos' => ['nullable', 'array', 'max:6'],
-            'fotos.*' => ['string', 'max:255'],
+            'fotos.*' => ['string', 'max:512'],
             'codigo_barra' => ['required', 'string', 'max:255', Rule::unique('productos', 'codigo_barra')->ignore($producto?->id)],
             'publicado' => ['boolean'],
             'stock.min' => ['required', 'integer', 'min:0'],

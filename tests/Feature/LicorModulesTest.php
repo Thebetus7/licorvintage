@@ -6,6 +6,7 @@ use App\Models\AperturaCaja;
 use App\Models\MovimientoInventario;
 use App\Models\Producto;
 use App\Models\User;
+use App\Services\InventarioService;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
@@ -178,7 +179,7 @@ class LicorModulesTest extends TestCase
         $owner = $this->userWithRole('propietario');
         $producto = $this->createProductWithStock('KARDEX-001', 0, 10);
 
-        app(\App\Services\InventarioService::class)->registrarIngreso(
+        app(InventarioService::class)->registrarIngreso(
             $producto,
             10,
             10.0,
@@ -187,7 +188,7 @@ class LicorModulesTest extends TestCase
             $owner,
         );
 
-        app(\App\Services\InventarioService::class)->registrarSalida(
+        app(InventarioService::class)->registrarSalida(
             $producto,
             3,
             'salida_venta',
@@ -203,6 +204,16 @@ class LicorModulesTest extends TestCase
         $this->assertCount(2, $movimientos);
         $this->assertSame(10, $movimientos[0]->saldo_cantidad);
         $this->assertSame(7, $movimientos[1]->saldo_cantidad);
+    }
+
+    public function test_propietario_can_access_inventory_index(): void
+    {
+        $owner = $this->userWithRole('propietario');
+
+        $this->actingAs($owner)
+            ->get(route('inventario.index'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->component('Inventario/Index'));
     }
 
     public function test_vendedor_cannot_access_inventory_module(): void

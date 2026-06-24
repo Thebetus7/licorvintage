@@ -21,7 +21,7 @@ class StoreProductoRequest extends FormRequest
             'descripcion' => ['nullable', 'string'],
             'imagen' => ['nullable', 'string', 'max:255'],
             'fotos' => ['nullable', 'array', 'max:6'],
-            'fotos.*' => ['string', 'max:255'],
+            'fotos.*' => ['string', 'max:512'],
             'codigo_barra' => ['required', 'string', 'max:255', 'unique:productos,codigo_barra'],
             'publicado' => ['boolean'],
             'stock.stock' => ['required', 'integer', 'min:0'],

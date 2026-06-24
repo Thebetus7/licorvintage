@@ -31,5 +31,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $admin->syncRoles(['propietario']);
+
+        $this->call(ProductoSeeder::class);
     }
 }

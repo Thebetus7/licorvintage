@@ -11,9 +11,22 @@ defineProps({
 const page = usePage();
 const showingNavigationDropdown = ref(false);
 
-const roles = computed(() => page.props.auth.roles || []);
+const roles = computed(() => {
+    const value = page.props.auth.roles || [];
+
+    return Array.isArray(value) ? value : Object.values(value);
+});
+
 const hasRole = (role) => roles.value.includes(role);
 const canOperate = computed(() => hasRole('propietario') || hasRole('vendedor'));
+
+const isNavActive = (routeName) => {
+    if (routeName === 'inventario.index') {
+        return route().current('inventario.*');
+    }
+
+    return route().current(routeName);
+};
 
 const navigation = computed(() => [
     { label: 'Dashboard', routeName: 'dashboard', show: canOperate.value },
@@ -51,7 +64,7 @@ const logout = () => {
                                     :key="item.routeName"
                                     :href="route(item.routeName)"
                                     class="rounded-md px-3 py-2 text-sm font-medium text-stone-200 transition hover:bg-white/10 hover:text-white"
-                                    :class="{ 'bg-amber-500 text-stone-950 hover:bg-amber-400': route().current(item.routeName) }"
+                                    :class="{ 'bg-amber-500 text-stone-950 hover:bg-amber-400': isNavActive(item.routeName) }"
                                 >
                                     {{ item.label }}
                                 </Link>
