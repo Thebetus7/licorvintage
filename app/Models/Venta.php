@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -10,63 +9,51 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Venta extends Model
 {
-    use HasFactory, SoftDeletes;
+    use SoftDeletes;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
+    protected $table = 'venta';
+
     protected $fillable = [
-        'monto_pagado',
-        'cod_descuento',
-        'monto_original',
-        'monto_final',
-        'nro_cuotas',
-        'tipo_pago',
-        'detalle_promo_id',
         'user_id',
+        'fecha',
+        'descuento',
+        'totalOriginal',
+        'total',
+        'estado',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
-            'id' => 'integer',
-            'monto_pagado' => 'double',
-            'monto_original' => 'double',
-            'monto_final' => 'double',
-            'detalle_promo_id' => 'integer',
-            'user_id' => 'integer',
+            'fecha' => 'datetime',
+            'descuento' => 'decimal:2',
+            'totalOriginal' => 'decimal:2',
+            'total' => 'decimal:2',
         ];
     }
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
-    }
-
-    public function detallePromo(): BelongsTo
-    {
-        return $this->belongsTo(DetallePromo::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function detalleVentas(): HasMany
     {
-        return $this->hasMany(DetalleVenta::class);
+        return $this->hasMany(DetalleVenta::class, 'venta_id');
     }
 
-    public function ventaCuotas(): HasMany
+    public function ventaPromos(): HasMany
     {
-        return $this->hasMany(VentaCuotas::class);
+        return $this->hasMany(VentaPromo::class, 'venta_id');
     }
 
-    public function metodoPagos(): HasMany
+    public function detalleCuotas(): HasMany
     {
-        return $this->hasMany(MetodoPago::class);
+        return $this->hasMany(DetalleCuota::class, 'venta_id');
+    }
+
+    public function transacciones(): HasMany
+    {
+        return $this->hasMany(Transaccion::class, 'venta_id');
     }
 }

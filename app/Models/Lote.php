@@ -5,19 +5,23 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class DetallePromo extends Model
+class Lote extends Model
 {
-    protected $table = 'detallePromo';
+    protected $table = 'lote';
 
     protected $fillable = [
-        'promo_id',
         'producto_id',
         'cantidad',
+        'fechaExpiracion',
+        'estado',
     ];
 
-    public function promo(): BelongsTo
+    protected function casts(): array
     {
-        return $this->belongsTo(Promo::class, 'promo_id');
+        return [
+            'fechaExpiracion' => 'date',
+            'estado' => 'boolean',
+        ];
     }
 
     public function producto(): BelongsTo

@@ -6,18 +6,19 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class MetodoPago extends Model
+class Cuota extends Model
 {
     use SoftDeletes;
 
-    protected $table = 'metodoPago';
+    protected $table = 'cuotas';
 
     protected $fillable = [
-        'nombre',
+        'descripcion',
+        'cantidadesCuotas',
     ];
 
-    public function transacciones(): HasMany
+    public function detalleCuotas(): HasMany
     {
-        return $this->hasMany(Transaccion::class, 'metodoPago_id');
+        return $this->hasMany(DetalleCuota::class, 'cuotas_id');
     }
 }

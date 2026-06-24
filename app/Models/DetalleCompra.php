@@ -2,49 +2,36 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class DetalleCompra extends Model
 {
-    use HasFactory, SoftDeletes;
+    protected $table = 'detalleCompra';
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
     protected $fillable = [
-        'cantidad',
-        'sub_costo',
         'compra_id',
         'producto_id',
+        'cantidad',
+        'precioCompra',
+        'subtotal',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
-            'id' => 'integer',
-            'sub_costo' => 'double',
-            'compra_id' => 'integer',
-            'producto_id' => 'integer',
+            'precioCompra' => 'decimal:2',
+            'subtotal' => 'decimal:2',
         ];
     }
 
     public function compra(): BelongsTo
     {
-        return $this->belongsTo(Compra::class);
+        return $this->belongsTo(Compra::class, 'compra_id');
     }
 
     public function producto(): BelongsTo
     {
-        return $this->belongsTo(Producto::class);
+        return $this->belongsTo(Producto::class, 'producto_id');
     }
 }

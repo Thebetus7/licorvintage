@@ -8,6 +8,7 @@ use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\ProveedorController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\VentaController;
+use App\Models\Producto;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -16,8 +17,12 @@ Route::get('/', function () {
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
+        'productos' => Producto::query()
+            ->where('estado', true)
+            ->with('stock')
+            ->orderBy('nombre')
+            ->take(6)
+            ->get(),
     ]);
 });
 

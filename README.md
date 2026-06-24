@@ -1,59 +1,125 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Licor Vintage — Guía de Comandos y Uso
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Este es un sistema de gestión para licorerías que funciona como **tienda online** (ecommerce) y **punto de venta** (caja, inventario, compras, promociones y reportes). Desarrollado con Laravel 12, Jetstream 5.5, Inertia.js, Vue 3 y Tailwind CSS.
 
-## About Laravel
+A continuación se detallan todos los comandos del proyecto y su función:
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 🛠️ Configuración Inicial del Entorno
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Antes de iniciar el proyecto, se deben configurar las variables de entorno y los límites de tiempo.
 
-## Learning Laravel
+### Copiar archivo de configuración de entorno
+Crea el archivo `.env` a partir de la plantilla del proyecto para que puedas configurar tus credenciales de base de datos.
+```bash
+copy .env.example .env
+```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+### Incrementar el límite de tiempo de Composer
+Evita errores de interrupción (timeout) al instalar paquetes pesados en sistemas Windows.
+```bash
+composer config --global process-timeout 2000
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+---
 
-## Laravel Sponsors
+## 🚀 Inicialización del Proyecto
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Comandos para instalar dependencias y dejar la base de datos lista para su uso.
 
-### Premium Partners
+### Instalar dependencias de PHP
+Descarga e instala todas las librerías de backend necesarias para el proyecto.
+```bash
+composer install
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### Generar clave de encriptación de la aplicación
+Genera la clave única en el archivo `.env` necesaria para cifrar sesiones y cookies.
+```bash
+php artisan key:generate
+```
 
-## Contributing
+### Instalar dependencias de Javascript (Frontend)
+Descarga e instala todas las librerías de Node.js necesarias para el funcionamiento de Vue 3.
+```bash
+npm install
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Ejecutar migraciones y poblar la base de datos (Seeders)
+Limpia la base de datos, crea todas las tablas desde cero y genera los roles del sistema (`propietario`, `vendedor`, `cliente`) junto con el usuario administrador inicial (`admin@gmail.com` / `123456789`).
+```bash
+php artisan migrate:fresh --seed
+```
 
-## Code of Conduct
+### Compilar recursos para producción
+Compila y optimiza los archivos Javascript y CSS con Vite para el despliegue en producción.
+```bash
+npm run build
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### ⚡ Inicialización automática (Todo en uno)
+Ejecuta de forma secuencial la instalación de dependencias, copia de `.env`, generación de clave, migración de tablas, instalación de Node y compilación de Vite en un solo comando.
+```bash
+composer setup
+```
 
-## Security Vulnerabilities
+---
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## 💻 Ejecución en Desarrollo
 
-## License
+Comandos para poner en marcha el servidor de desarrollo local.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### Ejecutar el entorno completo en paralelo
+Inicia el servidor web, el procesador de colas (queue listener) y el servidor de desarrollo de Vite de forma simultánea.
+```bash
+composer dev
+```
+
+### Iniciar servidor web de Laravel (individual)
+Arranca únicamente el servidor de backend de PHP local.
+```bash
+php artisan serve
+```
+
+### Iniciar servidor de desarrollo de Vite (individual)
+Arranca el compilador en tiempo real del frontend para reflejar cambios en las vistas de Vue de forma instantánea.
+```bash
+npm run dev
+```
+
+---
+
+## 🧪 Calidad de Código y Pruebas
+
+Comandos para formatear y verificar la estabilidad de la aplicación.
+
+### Formatear estilo de código PHP
+Ejecuta Laravel Pint para formatear y corregir automáticamente el estilo de código siguiendo el estándar PSR-12.
+```bash
+vendor/bin/pint
+```
+
+### Ejecutar pruebas automatizadas
+Limpia la caché de configuración y ejecuta el conjunto de pruebas unitarias y de integración.
+```bash
+composer test
+```
+
+### Ejecutar pruebas directamente con PHPUnit
+Arranca la suite de pruebas configurada en el archivo `phpunit.xml`.
+```bash
+vendor/bin/phpunit
+```
+
+---
+
+## 💾 Base de Datos
+
+Comandos directos para gestionar las tablas y registros.
+
+### Poblar la base de datos con registros de prueba
+Ejecuta únicamente los sembradores (seeders) para insertar datos en las tablas.
+```bash
+php artisan db:seed
+```

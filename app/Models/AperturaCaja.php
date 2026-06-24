@@ -2,58 +2,56 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class AperturaCaja extends Model
 {
-    use HasFactory, SoftDeletes;
+    protected $table = 'aperturaCaja';
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
     protected $fillable = [
-        'monto_inicial',
-        'monto_sistema',
-        'monto_real',
-        'diferencia',
-        'tiempo_apertura',
-        'tiempo_cierre',
-        'estado',
         'user_id',
+        'fechaInicio',
+        'fechaCierre',
+        'totalEfectivo',
+        'totalQR',
+        'totalTarjeta',
+        'totalSistema',
+        'cajaChica',
+        'realEfectivo',
+        'realQR',
+        'realTarjeta',
+        'realTotal',
+        'diferencia',
+        'estado',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
-            'id' => 'integer',
-            'monto_inicial' => 'double',
-            'monto_sistema' => 'double',
-            'monto_real' => 'double',
-            'diferencia' => 'double',
-            'tiempo_apertura' => 'datetime',
-            'tiempo_cierre' => 'datetime',
-            'user_id' => 'integer',
+            'fechaInicio' => 'datetime',
+            'fechaCierre' => 'datetime',
+            'totalEfectivo' => 'decimal:2',
+            'totalQR' => 'decimal:2',
+            'totalTarjeta' => 'decimal:2',
+            'totalSistema' => 'decimal:2',
+            'cajaChica' => 'decimal:2',
+            'realEfectivo' => 'decimal:2',
+            'realQR' => 'decimal:2',
+            'realTarjeta' => 'decimal:2',
+            'realTotal' => 'decimal:2',
+            'diferencia' => 'decimal:2',
         ];
     }
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function movimientoCajas(): HasMany
+    public function transacciones(): HasMany
     {
-        return $this->hasMany(MovimientoCaja::class);
+        return $this->hasMany(Transaccion::class, 'aperturaCaja_id');
     }
 }

@@ -7,16 +7,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Compra extends Model
+class NotaSalida extends Model
 {
     use SoftDeletes;
 
-    protected $table = 'compra';
+    protected $table = 'notaSalida';
 
     protected $fillable = [
-        'proveedor_id',
+        'tiposSalida_id',
         'fecha',
-        'total',
         'estado',
     ];
 
@@ -24,17 +23,17 @@ class Compra extends Model
     {
         return [
             'fecha' => 'datetime',
-            'total' => 'decimal:2',
+            'estado' => 'boolean',
         ];
     }
 
-    public function proveedor(): BelongsTo
+    public function tipoSalida(): BelongsTo
     {
-        return $this->belongsTo(Proveedor::class, 'proveedor_id');
+        return $this->belongsTo(TipoSalida::class, 'tiposSalida_id');
     }
 
-    public function detalleCompras(): HasMany
+    public function salidaDetalles(): HasMany
     {
-        return $this->hasMany(DetalleCompra::class, 'compra_id');
+        return $this->hasMany(SalidaDetalle::class, 'notaSalida_id');
     }
 }

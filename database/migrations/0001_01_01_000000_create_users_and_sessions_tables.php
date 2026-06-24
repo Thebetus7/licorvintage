@@ -1,0 +1,71 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        // 1. Create 'rol' table first so 'user' can reference it
+        Schema::create('rol', function (Blueprint $table) {
+            $table->id();
+            $table->string('nombre', 50);
+            $table->timestamps();
+            $table->softDeletes();
+        });
+
+        // 2. Create 'user' table
+        Schema::create('user', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('rol_id')->nullable()->constrained('rol')->nullOnDelete();
+            $table->string('nombre', 100);
+            $table->string('email', 150)->unique();
+            $table->string('password', 255);
+            $table->boolean('estado')->default(true);
+            
+            // Jetstream & Fortify system columns
+            $table->rememberToken();
+            $table->timestamp('email_verified_at')->nullable();
+            $table->string('profile_photo_path', 2048)->nullable();
+            $table->text('two_factor_secret')->nullable();
+            $table->text('two_factor_recovery_codes')->nullable();
+            $table->timestamp('two_factor_confirmed_at')->nullable();
+            
+            $table->timestamps();
+            $table->softDeletes();
+        });
+
+        // 3. Create password reset tokens
+        Schema::create('password_reset_tokens', function (Blueprint $table) {
+            $table->string('email')->primary();
+            $table->string('token');
+            $table->timestamp('created_at')->nullable();
+        });
+
+        // 4. Create sessions table
+        Schema::create('sessions', function (Blueprint $table) {
+            $table->string('id')->primary();
+            $table->foreignId('user_id')->nullable()->index();
+            $table->string('ip_address', 45)->nullable();
+            $table->text('user_agent')->nullable();
+            $table->longText('payload');
+            $table->integer('last_activity')->index();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('sessions');
+        Schema::dropIfExists('password_reset_tokens');
+        Schema::dropIfExists('user');
+        Schema::dropIfExists('rol');
+    }
+};

@@ -5,3 +5,548 @@
 [x-cloak] {
     display: none;
 }
+
+/* =========================================================================
+   SISTEMA DE DISEÑO DE TEMAS COHERENTE (VARIABLES CSS)
+   ========================================================================= */
+
+:root {
+    /* Valores por defecto (Tema Adultos) */
+    --bg-main: #f1f5f9;
+    --bg-card: #ffffff;
+    --bg-header: #e2e8f0;
+    --bg-nav: #0f172a;
+    --bg-nav-hover: #1e293b;
+    --text-main: #0f172a;
+    --text-muted: #475569;
+    --text-nav: #ffffff;
+    --text-nav-muted: #94a3b8;
+    --text-nav-hover: #ffffff;
+    --accent: #d97706;
+    --accent-text: #ffffff;
+    --border: #cbd5e1;
+    --radius: 8px;
+}
+
+/* 1. TEMA ADULTOS: Gris/Blanco + Azul Marino (Clásico, elegante y formal) */
+.theme-adultos {
+    --bg-main: #f1f5f9;
+    --bg-card: #ffffff;
+    --bg-header: #e2e8f0;
+    --bg-nav: #0f172a;
+    --bg-nav-hover: #1e293b;
+    --text-main: #0f172a;
+    --text-muted: #475569;
+    --text-nav: #ffffff;
+    --text-nav-muted: #94a3b8;
+    --text-nav-hover: #ffffff;
+    --accent: #d97706;
+    --accent-text: #ffffff;
+    --border: #cbd5e1;
+    --radius: 8px;
+    font-family: 'Inter', sans-serif !important;
+}
+
+.dark.theme-adultos {
+    --bg-main: #0f172a;       /* fondo azul marino profundo */
+    --bg-card: #1e293b;       /* tarjetas pizarra oscura */
+    --bg-header: #334155;     /* cabecera gris pizarra medio para diferencia */
+    --bg-nav: #0b0f19;        /* sidebar negro marino */
+    --bg-nav-hover: #1a2333;
+    --text-main: #f8fafc;     /* texto claro */
+    --text-muted: #94a3b8;    /* texto secundario claro */
+    --text-nav: #ffffff;
+    --text-nav-muted: #64748b;
+    --text-nav-hover: #ffffff;
+    --accent: #f59e0b;        /* oro/ámbar vibrante */
+    --accent-text: #0f172a;
+    --border: #334155;
+    --radius: 8px;
+}
+
+/* 2. TEMA JÓVENES: Azul Marino + Celeste (Moderno, oscuro y tecnológico) */
+.theme-jovenes {
+    --bg-main: #0b0f19;       /* fondo azul marino oscuro/negro */
+    --bg-card: #111827;       /* tarjetas carbón */
+    --bg-header: #1f2937;     /* cabecera pizarra oscura */
+    --bg-nav: #070a13;        /* sidebar negro marino */
+    --bg-nav-hover: #1f2937;
+    --text-main: #f1f5f9;     /* texto claro */
+    --text-muted: #94a3b8;    /* texto secundario */
+    --text-nav: #38bdf8;      /* cian eléctrico */
+    --text-nav-muted: #94a3b8; /* texto secundario claro y legible */
+    --text-nav-hover: #38bdf8;
+    --accent: #06b6d4;        /* acento cian */
+    --accent-text: #070a13;
+    --border: #374151;
+    --radius: 4px;
+    font-family: 'Space Grotesk', sans-serif !important;
+}
+
+.night-active.theme-jovenes {
+    --bg-main: #05070c;       /* fondo negro marino absoluto */
+    --bg-card: #0b0f19;       /* tarjetas carbón oscuro */
+    --bg-header: #1a2333;     /* cabecera azulada oscura */
+    --bg-nav: #030407;        /* sidebar negro profundo */
+    --bg-nav-hover: #111827;
+    --text-main: #ffffff;     /* texto blanco puro */
+    --text-muted: #38bdf8;    /* texto secundario cian eléctrico */
+    --text-nav: #38bdf8;
+    --text-nav-muted: #a5f3fc; /* texto secundario celeste suave ultra-legible */
+    --text-nav-hover: #38bdf8;
+    --accent: #06b6d4;        /* acento cian eléctrico */
+    --accent-text: #05070c;
+    --border: #1e293b;
+    --radius: 4px;
+}
+
+/* 3. TEMA NIÑOS: Celeste Pastel + Blanco (Luz) y Celeste profundo + Celeste suave (Oscuro) */
+.theme-ninos {
+    --bg-main: #e0f2fe;       /* fondo celeste pastel suave */
+    --bg-card: #ffffff;
+    --bg-header: #bae6fd;     /* cabecera celeste medio */
+    --bg-nav: #bae6fd;
+    --bg-nav-hover: #e0f2fe;
+    --text-main: #0c4a6e;     /* texto azul oscuro */
+    --text-muted: #0284c7;    /* texto secundario azul cielo */
+    --text-nav: #0c4a6e;
+    --text-nav-muted: #0369a1;
+    --text-nav-hover: #0c4a6e;
+    --accent: #0284c7;
+    --accent-text: #ffffff;
+    --border: #bae6fd;
+    --radius: 18px;
+    font-family: 'Fredoka', sans-serif !important;
+}
+
+.dark.theme-ninos {
+    --bg-main: #075985;       /* fondo azul cielo profundo */
+    --bg-card: #0c4a6e;       /* tarjetas azul cielo oscuro */
+    --bg-header: #0369a1;     /* cabecera azul cielo medio */
+    --bg-nav: #0369a1;
+    --bg-nav-hover: #0284c7;
+    --text-main: #e0f2fe;     /* texto celeste suave */
+    --text-muted: #38bdf8;    /* texto secundario celeste claro */
+    --text-nav: #f0f9ff;
+    --text-nav-muted: #bae6fd;
+    --text-nav-hover: #ffffff;
+    --accent: #bae6fd;        /* acento celeste suave */
+    --accent-text: #0c4a6e;
+    --border: #0284c7;
+    --radius: 18px;
+}
+
+/* 4. MODO ALTO CONTRASTE (Accesibilidad: anula los temas y fuerza legibilidad pura) */
+.high-contrast {
+    --bg-main: #000000 !important;
+    --bg-card: #000000 !important;
+    --bg-header: #000000 !important;
+    --bg-nav: #000000 !important;
+    --bg-nav-hover: #ffffff !important;
+    --text-main: #ffffff !important;
+    --text-muted: #ffffff !important;
+    --text-nav: #ffffff !important;
+    --text-nav-muted: #ffffff !important;
+    --text-nav-hover: #000000 !important;
+    --accent: #ffff00 !important;
+    --accent-text: #000000 !important;
+    --border: #ffffff !important;
+    --radius: 0px !important;
+}
+
+/* Font Size styles */
+.font-size-pequeno { font-size: 13px !important; }
+.font-size-mediano { font-size: 15px !important; }
+.font-size-grande { font-size: 18px !important; }
+
+/* Font size overrides for headers, tables and buttons */
+.font-size-pequeno h1 { font-size: 1.25rem !important; }
+.font-size-pequeno h2 { font-size: 1.1rem !important; }
+.font-size-mediano h1 { font-size: 1.5rem !important; }
+.font-size-mediano h2 { font-size: 1.25rem !important; }
+.font-size-grande h1 { font-size: 1.85rem !important; }
+.font-size-grande h2 { font-size: 1.6rem !important; }
+
+/* =========================================================================
+   APLICACIÓN DEL SKIN DINÁMICO SOBRE CLASES DE TAILWIND Y ELEMENTOS HTML
+   ========================================================================= */
+
+/* Estructura general de página */
+body, html {
+    background-color: var(--bg-main) !important;
+    color: var(--text-main) !important;
+    transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+.bg-slate-50, .bg-stone-50, .bg-slate-100, .bg-stone-100,
+.bg-slate-950, .bg-stone-950, .bg-gray-950,
+.dark\:bg-slate-950, .dark\:bg-stone-950, .dark\:bg-gray-950, .dark\:bg-slate-900, .dark\:bg-gray-900 {
+    background-color: var(--bg-main) !important;
+}
+
+.bg-white, .bg-white\/10 {
+    background-color: var(--bg-card) !important;
+    color: var(--text-main) !important;
+}
+
+/* 1. SECCIONES DE NAVEGACIÓN Y LANDING PAGE (Header, Sidebar, Footer, Inicio, Nosotros) */
+header:not(.admin-header), aside, footer, #nosotros, #inicio {
+    background-color: var(--bg-nav) !important;
+    color: var(--text-nav) !important;
+    border-color: var(--border) !important;
+}
+
+/* Títulos y textos generales (Excluyendo enlaces, botones y badges redondos) */
+header:not(.admin-header) h1, header:not(.admin-header) h2, header:not(.admin-header) h3, header:not(.admin-header) h4, header:not(.admin-header) h5, header:not(.admin-header) h6,
+footer h1, footer h2, footer h3, footer h4, footer h5, footer h6,
+#nosotros h1, #nosotros h2, #nosotros h3, #nosotros h4, #nosotros h5, #nosotros h6,
+#inicio h1, #inicio h2, #inicio h3, #inicio h4, #inicio h5, #inicio h6,
+aside h1, aside h2, aside h3, aside h4, aside h5, aside h6,
+header:not(.admin-header) p, footer p, #nosotros p, #inicio p, aside p,
+header:not(.admin-header) li, footer li, #nosotros li, #inicio li, aside li,
+header:not(.admin-header) strong, footer strong, #nosotros strong, #inicio strong, aside strong,
+header:not(.admin-header) span:not(.rounded-full):not(.font-mono), 
+footer span:not(.rounded-full):not(.font-mono), 
+#nosotros span:not(.rounded-full):not(.font-mono), 
+#inicio span:not(.rounded-full):not(.font-mono), 
+aside span:not(.rounded-full):not(.font-mono) {
+    color: var(--text-nav) !important;
+}
+
+/* Enlaces de navegación explícitos (Excluyendo botones de acción y botones con borde) */
+header:not(.admin-header) nav a, 
+footer a:not(.bg-amber-500):not(.bg-white):not(.border),
+#inicio a:not(.bg-amber-500):not(.bg-white):not(.border),
+#nosotros a:not(.bg-amber-500):not(.bg-white):not(.border) {
+    color: var(--text-nav) !important;
+}
+
+header:not(.admin-header) nav a:hover, 
+footer a:not(.bg-amber-500):not(.bg-white):not(.border):hover,
+#inicio a:not(.bg-amber-500):not(.bg-white):not(.border):hover,
+#nosotros a:not(.bg-amber-500):not(.bg-white):not(.border):hover {
+    color: var(--text-nav-hover) !important;
+}
+
+/* Textos secundarios o apagados en secciones oscuras (ej. descripciones, subtítulos) */
+header:not(.admin-header) .text-slate-300, header:not(.admin-header) .text-slate-400,
+footer .text-slate-300, footer .text-slate-400, footer .text-slate-555, footer .text-slate-500,
+#nosotros .text-slate-350, #nosotros .text-slate-300, #nosotros .text-slate-400,
+#inicio .text-slate-300, #inicio .text-slate-400,
+aside .text-slate-300, aside .text-slate-400, aside .text-stone-500 {
+    color: var(--text-nav-muted) !important;
+}
+
+/* 2. CABECERA DEL PANEL ADMINISTRATIVO */
+header.admin-header, .flex-1 > header, main header {
+    background-color: var(--bg-header) !important;
+    color: var(--text-main) !important;
+    border-color: var(--border) !important;
+}
+
+header.admin-header h1, header.admin-header h2, header.admin-header h3, header.admin-header h4, header.admin-header h5, header.admin-header h6,
+header.admin-header span, header.admin-header p, header.admin-header a, header.admin-header button,
+.flex-1 > header h1, .flex-1 > header h2, .flex-1 > header h3, .flex-1 > header h4, .flex-1 > header h5, .flex-1 > header h6,
+.flex-1 > header span, .flex-1 > header p, .flex-1 > header a, .flex-1 > header button {
+    color: var(--text-main) !important;
+}
+
+header.admin-header .text-slate-400, header.admin-header .text-stone-500,
+.flex-1 > header .text-slate-400, .flex-1 > header .text-stone-500 {
+    color: var(--text-muted) !important;
+}
+
+/* Tarjetas y bloques especiales en secciones oscuras (Nosotros/Inicio) */
+#nosotros .bg-slate-800\/50, #nosotros .bg-slate-800\/30, #inicio .bg-gradient-to-tr {
+    background: var(--bg-nav-hover) !important;
+    background-color: var(--bg-nav-hover) !important;
+    border-color: var(--border) !important;
+}
+
+/* Enlaces y botones dentro del aside (Barra lateral) */
+aside a {
+    color: var(--text-nav-muted) !important;
+    background-color: transparent !important;
+    transition: all 0.2s ease;
+}
+
+aside a:hover {
+    background-color: var(--bg-nav-hover) !important;
+    color: var(--text-nav-hover) !important;
+}
+
+/* Active sidebar item override */
+aside a.bg-amber-500, aside a[href].bg-amber-500 {
+    background-color: var(--accent) !important;
+    color: var(--accent-text) !important;
+    font-weight: bold !important;
+}
+
+aside a.bg-amber-500 span, aside a[href].bg-amber-500 span,
+aside a.bg-amber-500 svg, aside a[href].bg-amber-500 svg {
+    color: var(--accent-text) !important;
+}
+
+/* Sub-paneles y botones en aside */
+aside button, aside .bg-slate-800 {
+    background-color: var(--bg-nav-hover) !important;
+    color: var(--text-nav) !important;
+    border: 1px solid var(--border) !important;
+}
+
+aside button:hover, aside .bg-slate-800:hover {
+    background-color: var(--accent) !important;
+    color: var(--accent-text) !important;
+}
+
+/* Ajustes del contador de visitas en el pie de página */
+footer .bg-slate-100, footer .bg-\[\#1e293b\], footer .bg-slate-850 {
+    background-color: var(--bg-nav-hover) !important;
+    color: var(--text-nav) !important;
+    border-color: var(--border) !important;
+}
+
+footer .font-mono {
+    background-color: var(--accent) !important;
+    color: var(--accent-text) !important;
+    border-color: var(--border) !important;
+}
+
+/* 3. CONTENIDO PRINCIPAL Y CATÁLOGO */
+main h1, main h2, main h3, main h4, main h5, main h6,
+main .text-slate-950, main .text-slate-900, main .text-slate-800, main .text-slate-700,
+main .text-gray-950, main .text-gray-900, main .text-gray-800, main .text-gray-700,
+main .text-zinc-950, main .text-zinc-900, main .text-zinc-800, main .text-zinc-700,
+main .text-neutral-950, main .text-neutral-900, main .text-neutral-800, main .text-neutral-700,
+main .text-stone-950, main .text-stone-900, main .text-stone-800, main .text-stone-700,
+main .text-\[\#0f172a\], main .text-\[\#2b1115\],
+#catalogo h1, #catalogo h2, #catalogo h3, #catalogo h4, #catalogo h5, #catalogo h6,
+#catalogo .text-slate-950, #catalogo .text-slate-900, #catalogo .text-slate-800, #catalogo .text-slate-700,
+#catalogo .text-gray-950, #catalogo .text-gray-900, #catalogo .text-gray-800, #catalogo .text-gray-700 {
+    color: var(--text-main) !important;
+}
+
+/* Muted classes */
+main p,
+main .text-slate-650, main .text-slate-600, main .text-slate-500, main .text-slate-400, main .text-slate-450,
+main .text-slate-300, main .text-slate-200,
+main .text-gray-600, main .text-gray-500, main .text-gray-400, main .text-gray-300,
+main .text-zinc-600, main .text-zinc-500, main .text-zinc-400,
+main .text-neutral-600, main .text-neutral-500, main .text-neutral-400,
+main .text-stone-600, main .text-stone-500, main .text-stone-400,
+#catalogo p,
+#catalogo .text-slate-600, #catalogo .text-slate-500, #catalogo .text-slate-400,
+#catalogo .text-slate-300, #catalogo .text-slate-200,
+#catalogo .text-gray-600, #catalogo .text-gray-500, #catalogo .text-gray-400 {
+    color: var(--text-muted) !important;
+}
+
+/* Botones activos y destacados */
+.bg-amber-500, button.bg-amber-500, a.bg-amber-500, .bg-amber-500\/20 {
+    background-color: var(--accent) !important;
+    color: var(--accent-text) !important;
+}
+
+/* Tarjetas y paneles */
+article, main .rounded-lg, main .rounded-xl, main .rounded-2xl,
+#catalogo article, #catalogo .rounded-lg, #catalogo .rounded-xl, #catalogo .rounded-2xl {
+    background-color: var(--bg-card) !important;
+    color: var(--text-main) !important;
+    border-color: var(--border) !important;
+    border-radius: var(--radius) !important;
+}
+
+/* Formularios */
+input, select, textarea {
+    border-color: var(--border) !important;
+    border-radius: var(--radius) !important;
+    background-color: var(--bg-card) !important;
+    color: var(--text-main) !important;
+}
+
+/* Bordes y divisores */
+.border, .border-b, .border-t, .border-l, .border-r,
+.border-slate-200, .border-slate-800, .border-stone-200, .border-slate-100 {
+    border-color: var(--border) !important;
+}
+
+.divide-y > :not([hidden]) ~ :not([hidden]), .divide-slate-200, .divide-stone-150, .divide-stone-100, .divide-slate-800 {
+    border-color: var(--border) !important;
+}
+
+/* Rounded corners for the Kids theme */
+.theme-ninos button, .theme-ninos a, .theme-ninos article, .theme-ninos aside, .theme-ninos input, .theme-ninos select, .theme-ninos textarea, .theme-ninos .rounded-xl, .theme-ninos .rounded-lg, .theme-ninos .rounded-2xl {
+    border-radius: 18px !important;
+}
+
+/* =========================================================================
+   ESTILOS PREMIUM PARA LAS PÁGINAS DE INVITADOS (LOGIN, REGISTER, ETC.)
+   ========================================================================= */
+
+/* Degradado de fondo radial adaptado al tema actual */
+.auth-container {
+    background: radial-gradient(circle at center, var(--bg-card) 0%, var(--bg-main) 100%) !important;
+    background-color: var(--bg-main) !important;
+    transition: background-color 0.3s ease, background 0.3s ease;
+}
+
+/* Tarjeta de Login/Registro adaptativa */
+.auth-card {
+    background-color: var(--bg-card) !important;
+    color: var(--text-main) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius) !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Diseños específicos por tema para la tarjeta de Auth */
+.theme-jovenes .auth-card {
+    box-shadow: 0 0 30px rgba(6, 182, 212, 0.15) !important;
+}
+.night-active.theme-jovenes .auth-card {
+    box-shadow: 0 0 40px rgba(6, 182, 212, 0.25) !important;
+}
+.theme-ninos .auth-card {
+    box-shadow: 0 15px 30px rgba(2, 132, 199, 0.15) !important;
+    border-radius: 18px !important;
+}
+
+/* Estilos de textos en la tarjeta de Auth */
+.auth-card label,
+.auth-card span:not(.text-red-600),
+.auth-card .text-gray-600,
+.auth-card .text-gray-900,
+.auth-card .text-slate-600 {
+    color: var(--text-main) !important;
+}
+
+.auth-card .text-muted,
+.auth-card .text-gray-500,
+.auth-card .text-slate-500 {
+    color: var(--text-muted) !important;
+}
+
+.auth-card .text-red-600 {
+    color: #ef4444 !important; /* Rojo de error de validación */
+}
+
+/* Enlaces adaptativos */
+.auth-card a,
+.auth-card Link,
+.auth-card a.text-gray-600,
+.auth-card Link.text-gray-600 {
+    color: var(--accent) !important;
+    font-weight: 600 !important;
+    text-decoration: none !important;
+    transition: all 0.2s ease !important;
+}
+
+.auth-card a:hover,
+.auth-card Link:hover,
+.auth-card a.text-gray-600:hover {
+    text-decoration: underline !important;
+    filter: brightness(1.2) !important;
+}
+
+/* Forzar estilos adaptativos sobre el botón principal bg-gray-800 en Login/Registro */
+.auth-card button.bg-gray-800,
+.auth-card .bg-gray-800 {
+    background-color: var(--accent) !important;
+    color: var(--accent-text) !important;
+    border: none !important;
+    border-radius: var(--radius) !important;
+    padding: 0.65rem 1.5rem !important;
+    font-weight: bold !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.075em !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.auth-card button.bg-gray-800:hover,
+.auth-card .bg-gray-800:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.2) !important;
+    filter: brightness(1.1) !important;
+}
+
+.auth-card button.bg-gray-800:active,
+.auth-card .bg-gray-800:active {
+    transform: translateY(1px) !important;
+}
+
+/* Inputs de Login/Registro */
+.auth-card input[type="email"],
+.auth-card input[type="password"],
+.auth-card input[type="text"] {
+    border: 1px solid var(--border) !important;
+    background-color: var(--bg-card) !important;
+    color: var(--text-main) !important;
+    border-radius: var(--radius) !important;
+    padding: 0.65rem 0.85rem !important;
+    transition: all 0.2s ease !important;
+}
+
+.auth-card input[type="email"]:focus,
+.auth-card input[type="password"]:focus,
+.auth-card input[type="text"]:focus {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 2px var(--accent) !important;
+    outline: none !important;
+}
+
+/* Checkbox adaptativo en Login/Registro */
+.auth-card input[type="checkbox"] {
+    border-color: var(--border) !important;
+    background-color: var(--bg-card) !important;
+    border-radius: 4px !important;
+    color: var(--accent) !important;
+    transition: all 0.2s ease !important;
+}
+
+.auth-card input[type="checkbox"]:focus {
+    box-shadow: 0 0 0 2px var(--accent) !important;
+    border-color: var(--accent) !important;
+}
+
+/* Botón premium de "Volver al Inicio" */
+.back-home-btn {
+    position: absolute !important;
+    top: 1.5rem !important;
+    left: 1.5rem !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    padding: 0.55rem 1.15rem !important;
+    background-color: var(--bg-card) !important;
+    color: var(--text-main) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 9999px !important;
+    font-weight: bold !important;
+    font-size: 0.85rem !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    z-index: 50 !important;
+    cursor: pointer !important;
+}
+
+.back-home-btn:hover {
+    background-color: var(--accent) !important;
+    color: var(--accent-text) !important;
+    border-color: var(--accent) !important;
+    transform: translateX(-3px) !important;
+    box-shadow: 0 10px 20px -3px rgba(0, 0, 0, 0.15) !important;
+}
+
+.back-home-btn svg {
+    transition: transform 0.2s ease !important;
+}
+
+.back-home-btn:hover svg {
+    transform: translateX(-3px) !important;
+}
+
+.theme-ninos .back-home-btn {
+    border-radius: 18px !important;
+}

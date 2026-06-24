@@ -6,18 +6,18 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class MetodoPago extends Model
+class Rol extends Model
 {
     use SoftDeletes;
 
-    protected $table = 'metodoPago';
+    protected $table = 'rol';
 
     protected $fillable = [
         'nombre',
     ];
 
-    public function transacciones(): HasMany
+    public function users(): HasMany
     {
-        return $this->hasMany(Transaccion::class, 'metodoPago_id');
+        return $this->hasMany(User::class, 'rol_id');
     }
 }

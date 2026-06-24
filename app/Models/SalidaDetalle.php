@@ -5,19 +5,19 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class DetallePromo extends Model
+class SalidaDetalle extends Model
 {
-    protected $table = 'detallePromo';
+    protected $table = 'salidaDetalle';
 
     protected $fillable = [
-        'promo_id',
+        'notaSalida_id',
         'producto_id',
         'cantidad',
     ];
 
-    public function promo(): BelongsTo
+    public function notaSalida(): BelongsTo
     {
-        return $this->belongsTo(Promo::class, 'promo_id');
+        return $this->belongsTo(NotaSalida::class, 'notaSalida_id');
     }
 
     public function producto(): BelongsTo

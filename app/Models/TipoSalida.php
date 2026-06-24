@@ -6,14 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Proveedor extends Model
+class TipoSalida extends Model
 {
     use SoftDeletes;
 
-    protected $table = 'proveedor';
+    protected $table = 'tiposSalida';
 
     protected $fillable = [
-        'nombre',
         'descripcion',
         'estado',
     ];
@@ -25,8 +24,8 @@ class Proveedor extends Model
         ];
     }
 
-    public function compras(): HasMany
+    public function notasSalida(): HasMany
     {
-        return $this->hasMany(Compra::class, 'proveedor_id');
+        return $this->hasMany(NotaSalida::class, 'tiposSalida_id');
     }
 }
