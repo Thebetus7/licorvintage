@@ -15,9 +15,12 @@ class VentaController extends Controller
     public function store(Request $request, VentaService $ventaService, CajaService $cajaService): RedirectResponse
     {
         $user = $request->user();
-        $caja = $cajaService->activeCaja($user);
 
-        abort_unless($caja, 403, 'Debes tener una caja abierta para registrar ventas.');
+        // Si el usuario es cliente, usa la caja activa del sistema (del vendedor)
+        $caja = $cajaService->activeCaja($user) ?? $cajaService->activeCajaDelSistema();
+
+        abort_unless($caja, 403, 'No hay ninguna caja abierta en el sistema para registrar ventas.');
+
 
         $validated = $request->validate([
             'tipo_pago' => 'required|string',

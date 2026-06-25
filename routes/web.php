@@ -103,9 +103,8 @@ Route::middleware([
         Route::get('/caja', [CajaController::class, 'index'])->name('caja.index');
         Route::post('/caja/open', [CajaController::class, 'open'])->name('caja.open');
         Route::put('/caja/{caja}/close', [CajaController::class, 'close'])->name('caja.close');
-        
-        Route::post('/ventas', [VentaController::class, 'store'])->name('ventas.store');
-        
+
+
         Route::resource('usuarios', UsuarioController::class)->except(['create', 'show', 'edit']);
 
         Route::prefix('inventario')->name('inventario.')->group(function () {
@@ -138,4 +137,7 @@ Route::middleware([
 
         Route::get('/cliente/catalogo', ClienteProductoController::class)->name('cliente.productos');
     });
+
+    // Ruta de ventas disponible para todos los roles autenticados (clientes incluidos)
+    Route::post('/ventas', [VentaController::class, 'store'])->name('ventas.store');
 });

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Producto;
+use App\Models\Promocion;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -16,6 +17,10 @@ class ClienteProductoController extends Controller
                 ->where('publicado', true)
                 ->whereHas('stockActual', fn ($query) => $query->where('stock', '>', 0))
                 ->orderBy('nombre')
+                ->get(),
+            'promocionesActive' => Promocion::whereDate('fecha_inicio', '<=', today())
+                ->whereDate('fecha_fin', '>=', today())
+                ->orderBy('nombre_promo')
                 ->get(),
         ]);
     }

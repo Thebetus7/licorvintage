@@ -50,4 +50,12 @@ class CajaService
             ->latest()
             ->first();
     }
+
+    public function activeCajaDelSistema(): ?AperturaCaja
+    {
+        return AperturaCaja::query()
+            ->where('estado', 'abierta')
+            ->latest()
+            ->first();
+    }
 }
