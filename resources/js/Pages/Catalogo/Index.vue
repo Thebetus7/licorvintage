@@ -21,11 +21,17 @@ const clienteId = computed(() => page.props.auth.user?.id);
 // Estado de Carrito
 const cart = ref([]);
 const showDrawer = ref(false);
+const showPaymentMethodModal = ref(false);
 const showPaymentModal = ref(false);
+
+// Estado QR
+const qrData = ref(null);
+const qrLoading = ref(false);
+const qrError = ref('');
 
 // Formularios
 const saleForm = useForm({
-    tipo_pago: 'compra_directa', // 'compra_directa', 'efectivo', 'qr', 'tarjeta', 'credito'
+    tipo_pago: 'compra_directa',
     monto_pagado: 0,
     detalles: [],
     cliente_id: clienteId.value,
@@ -94,40 +100,90 @@ const totalFinal = computed(() => {
     return Math.max(0, subtotal.value - discountAmount.value);
 });
 
-// Cuotas a crédito
 const quotaAmount = computed(() => {
     if (saleForm.nro_cuotas < 2) return 0;
     return totalFinal.value / saleForm.nro_cuotas;
 });
 
-// Checkout
+// Checkout — muestra modal de selección de método
 const handleCheckout = () => {
     if (cart.value.length === 0) return;
 
-    // Poblar detalles del form
     saleForm.detalles = cart.value.map(item => ({
         producto_id: item.producto_id,
         cantidad: item.cantidad
     }));
     saleForm.cliente_id = clienteId.value;
 
-    if (saleForm.tipo_pago === 'qr' || saleForm.tipo_pago === 'tarjeta') {
+    showPaymentMethodModal.value = true;
+};
+
+// Seleccionar método de pago
+const selectPaymentMethod = (method) => {
+    saleForm.tipo_pago = method;
+    showPaymentMethodModal.value = false;
+
+    if (method === 'qr') {
+        generateQR();
+    } else if (method === 'tarjeta') {
         showPaymentModal.value = true;
     } else {
         submitSale();
     }
 };
 
+// Generar QR via backend
+const generateQR = async () => {
+    qrLoading.value = true;
+    qrError.value = '';
+    qrData.value = null;
+
+    try {
+        const response = await window.axios.post(route('pago.qr.generar'), {
+            monto: totalFinal.value,
+            orderDetail: cart.value.map((item, index) => ({
+                serial: index + 1,
+                product: item.nombre,
+                quantity: item.cantidad,
+                price: item.precio,
+                discount: 0,
+                total: item.precio * item.cantidad,
+            })),
+        });
+
+        if (response.data.error) {
+            qrError.value = response.data.message || 'Error al generar QR';
+        } else {
+            qrData.value = response.data.data;
+            showPaymentModal.value = true;
+        }
+    } catch (err) {
+        qrError.value = err.response?.data?.message || 'Error de conexión al generar QR';
+    } finally {
+        qrLoading.value = false;
+    }
+};
+
+// Cerrar modal de pago y limpiar estado QR
+const closePaymentModal = () => {
+    showPaymentModal.value = false;
+    if (saleForm.tipo_pago === 'qr') {
+        qrData.value = null;
+        qrError.value = '';
+    }
+};
+
+// Confirmar pago y finalizar compra
 const submitSale = () => {
     saleForm.monto_pagado = totalFinal.value;
-    // La venta para el cliente requiere que exista una caja abierta de un vendedor en el sistema.
-    // Usualmente el sistema validará esto en el backend, por lo que usaremos una caja activa.
     saleForm.post(route('ventas.store'), {
         preserveScroll: true,
         onSuccess: () => {
             cart.value = [];
             saleForm.reset();
+            qrData.value = null;
             showPaymentModal.value = false;
+            showPaymentMethodModal.value = false;
             showDrawer.value = false;
         },
         onError: (err) => {
@@ -251,34 +307,41 @@ const submitSale = () => {
                             </div>
 
                             <!-- Modalidad y Método de Pago -->
-                            <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                    <InputLabel value="Método de Pago" class="text-xs text-white/70" />
-                                    <select
-                                        v-model="saleForm.tipo_pago"
-                                        class="mt-1 block w-full rounded-xl border-white/10 bg-slate-900 text-white focus:border-indigo-500 focus:ring-indigo-500 shadow-sm text-xs p-2 transition"
+                            <div>
+                                <InputLabel value="Método de Pago" class="text-xs text-white/70" />
+                                <div class="grid grid-cols-2 gap-2 mt-1">
+                                    <button
+                                        v-for="opt in [
+                                            { value: 'qr', label: 'Código QR', icon: '📱' },
+                                            { value: 'tarjeta', label: 'Tarjeta', icon: '💳' },
+                                            { value: 'efectivo', label: 'Efectivo', icon: '💵' },
+                                            { value: 'credito', label: 'Crédito', icon: '📋' },
+                                        ]"
+                                        :key="opt.value"
+                                        class="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition border cursor-pointer"
+                                        :class="saleForm.tipo_pago === opt.value
+                                            ? 'bg-indigo-500/20 border-indigo-400/40 text-indigo-300'
+                                            : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10'"
+                                        @click="saleForm.tipo_pago = opt.value"
                                     >
-                                        <option value="compra_directa">Compra Directa</option>
-                                        <option value="efectivo">Efectivo</option>
-                                        <option value="qr">Código QR</option>
-                                        <option value="tarjeta">Tarjeta Bancaria</option>
-                                        <option value="credito">A Crédito (Cuotas)</option>
-                                    </select>
+                                        <span>{{ opt.icon }}</span>
+                                        {{ opt.label }}
+                                    </button>
                                 </div>
+                            </div>
 
-                                <div v-if="saleForm.tipo_pago === 'credito'">
-                                    <InputLabel value="Nro. Cuotas" class="text-xs text-white/70" />
-                                    <select
-                                        v-model="saleForm.nro_cuotas"
-                                        class="mt-1 block w-full rounded-xl border-white/10 bg-slate-900 text-white focus:border-indigo-500 focus:ring-indigo-500 shadow-sm text-xs p-2 transition"
-                                    >
-                                        <option :value="2">2 cuotas</option>
-                                        <option :value="3">3 cuotas</option>
-                                        <option :value="4">4 cuotas</option>
-                                        <option :value="6">6 cuotas</option>
-                                        <option :value="12">12 cuotas</option>
-                                    </select>
-                                </div>
+                            <div v-if="saleForm.tipo_pago === 'credito'">
+                                <InputLabel value="Nro. Cuotas" class="text-xs text-white/70" />
+                                <select
+                                    v-model="saleForm.nro_cuotas"
+                                    class="mt-1 block w-full rounded-xl border-white/10 bg-slate-900 text-white focus:border-indigo-500 focus:ring-indigo-500 shadow-sm text-xs p-2 transition"
+                                >
+                                    <option :value="2">2 cuotas</option>
+                                    <option :value="3">3 cuotas</option>
+                                    <option :value="4">4 cuotas</option>
+                                    <option :value="6">6 cuotas</option>
+                                    <option :value="12">12 cuotas</option>
+                                </select>
                             </div>
 
                             <!-- Plan de Cuotas Estimado -->
@@ -319,31 +382,86 @@ const submitSale = () => {
             </div>
         </transition>
 
-        <!-- MODAL: SIMULADOR DE PAGOS ELECTRÓNICOS (CLIENTE) -->
-        <DialogModal :show="showPaymentModal" @close="showPaymentModal = false">
+        <!-- MODAL: SELECCIÓN DE MÉTODO DE PAGO -->
+        <DialogModal :show="showPaymentMethodModal" @close="showPaymentMethodModal = false">
+            <template #title>
+                <h3 class="text-lg font-bold text-[var(--text-primary)]">Selecciona método de pago</h3>
+            </template>
+
+            <template #content>
+                <div class="grid grid-cols-2 gap-4 py-4">
+                    <button
+                        class="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition cursor-pointer"
+                        :class="saleForm.tipo_pago === 'qr'
+                            ? 'border-indigo-400 bg-indigo-500/10'
+                            : 'border-white/10 bg-white/5 hover:border-indigo-400/50 hover:bg-indigo-500/5'"
+                        @click="selectPaymentMethod('qr')"
+                    >
+                        <span class="text-4xl">📱</span>
+                        <span class="font-bold text-sm text-[var(--text-primary)]">Código QR</span>
+                        <span class="text-[10px] text-[var(--text-secondary)]">Paga con tu app bancaria</span>
+                    </button>
+                    <button
+                        class="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition cursor-pointer"
+                        :class="saleForm.tipo_pago === 'tarjeta'
+                            ? 'border-indigo-400 bg-indigo-500/10'
+                            : 'border-white/10 bg-white/5 hover:border-indigo-400/50 hover:bg-indigo-500/5'"
+                        @click="selectPaymentMethod('tarjeta')"
+                    >
+                        <span class="text-4xl">💳</span>
+                        <span class="font-bold text-sm text-[var(--text-primary)]">Tarjeta</span>
+                        <span class="text-[10px] text-[var(--text-secondary)]">Débito o Crédito</span>
+                    </button>
+                </div>
+            </template>
+
+            <template #footer>
+                <SecondaryButton @click="showPaymentMethodModal = false">Cancelar</SecondaryButton>
+            </template>
+        </DialogModal>
+
+        <!-- MODAL: PAGO QR / TARJETA -->
+        <DialogModal :show="showPaymentModal" @close="closePaymentModal">
             <template #title>
                 <h3 class="text-lg font-bold text-[var(--text-primary)]">
-                    {{ saleForm.tipo_pago === 'qr' ? 'Pago con Código QR' : 'Procesador de Tarjeta' }}
+                    {{ saleForm.tipo_pago === 'qr' ? 'Pago con Código QR' : 'Pago con Tarjeta' }}
                 </h3>
             </template>
 
             <template #content>
-                <!-- Simulador de Pago con QR -->
+                <!-- QR: generado por PagoFacil -->
                 <div v-if="saleForm.tipo_pago === 'qr'" class="flex flex-col items-center space-y-4 py-4 text-center">
-                    <p class="text-sm text-[var(--text-secondary)]">Escanea el código QR desde tu aplicación bancaria para liquidar los <strong class="text-[var(--text-primary)]">{{ totalFinal.toFixed(2) }} Bs</strong>.</p>
-                    <div class="bg-white p-3 rounded-2xl shadow-xl flex items-center justify-center">
-                        <img
-                            :src="`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=CobroLicorVintage:${totalFinal.toFixed(2)}Bs`"
-                            alt="QR de Pago"
-                            class="w-40 h-40"
-                        />
+                    <div v-if="qrLoading" class="flex flex-col items-center gap-3 py-8">
+                        <svg class="animate-spin h-10 w-10 text-indigo-400" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        <span class="text-sm text-[var(--text-secondary)]">Generando código QR...</span>
                     </div>
-                    <span class="text-[10px] bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 px-3 py-1 rounded-full uppercase font-bold tracking-wider">
-                        Pago en Espera de Confirmación
-                    </span>
+
+                    <div v-else-if="qrError" class="text-center py-6">
+                        <p class="text-rose-400 text-sm font-semibold">{{ qrError }}</p>
+                        <button class="mt-3 text-xs text-indigo-400 underline cursor-pointer" @click="generateQR">Intentar de nuevo</button>
+                    </div>
+
+                    <template v-else-if="qrData">
+                        <p class="text-sm text-[var(--text-secondary)]">Escanea el código QR desde tu aplicación bancaria para pagar <strong class="text-[var(--text-primary)]">{{ totalFinal.toFixed(2) }} Bs</strong>.</p>
+                        <div class="bg-white p-3 rounded-2xl shadow-xl flex items-center justify-center">
+                            <img
+                                :src="`data:image/png;base64,${qrData.qrBase64}`"
+                                alt="QR de Pago"
+                                class="w-48 h-48"
+                            />
+                        </div>
+                        <div class="flex items-center gap-2 text-[10px] bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 px-4 py-2 rounded-full uppercase font-bold tracking-wider">
+                            <span class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
+                            Esperando confirmación de pago
+                        </div>
+                        <p class="text-[10px] text-[var(--text-secondary)]">Transacción: {{ qrData.transactionId }}</p>
+                    </template>
                 </div>
 
-                <!-- Simulador de Pago con Tarjeta -->
+                <!-- Tarjeta -->
                 <div v-else class="space-y-4 py-2">
                     <p class="text-xs text-[var(--text-secondary)]">Simulador de Transacción Bancaria. Introduce datos ficticios para validar.</p>
                     
@@ -374,11 +492,24 @@ const submitSale = () => {
 
             <template #footer>
                 <div class="flex items-center gap-3">
-                    <SecondaryButton @click="showPaymentModal = false">
+                    <SecondaryButton @click="closePaymentModal">
                         Cancelar
                     </SecondaryButton>
-                    <PrimaryButton :class="{ 'opacity-25': saleForm.processing }" :disabled="saleForm.processing" @click="submitSale">
-                        Confirmar Pago Simulado
+                    <PrimaryButton
+                        v-if="saleForm.tipo_pago === 'qr' && qrData && !qrLoading"
+                        :class="{ 'opacity-25': saleForm.processing }"
+                        :disabled="saleForm.processing"
+                        @click="submitSale"
+                    >
+                        {{ saleForm.processing ? 'Procesando...' : 'Ya pagué — Confirmar' }}
+                    </PrimaryButton>
+                    <PrimaryButton
+                        v-else-if="saleForm.tipo_pago === 'tarjeta'"
+                        :class="{ 'opacity-25': saleForm.processing }"
+                        :disabled="saleForm.processing"
+                        @click="submitSale"
+                    >
+                        {{ saleForm.processing ? 'Procesando...' : 'Confirmar Pago' }}
                     </PrimaryButton>
                 </div>
             </template>

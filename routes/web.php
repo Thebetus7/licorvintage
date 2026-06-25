@@ -9,6 +9,7 @@ use App\Http\Controllers\ProductoImagenController;
 use App\Http\Controllers\ProveedorController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\VentaController;
+use App\Http\Controllers\PagoController;
 use App\Http\Controllers\PromocionController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -140,4 +141,7 @@ Route::middleware([
 
     // Ruta de ventas disponible para todos los roles autenticados (clientes incluidos)
     Route::post('/ventas', [VentaController::class, 'store'])->name('ventas.store');
+
+    // Pago QR
+    Route::post('/pago/qr/generar', [PagoController::class, 'generateQR'])->name('pago.qr.generar');
 });

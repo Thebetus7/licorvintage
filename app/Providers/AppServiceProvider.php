@@ -29,6 +29,13 @@ class AppServiceProvider extends ServiceProvider
                     'resource_name' => null,
                     'visited_url' => null,
                 ]);
+
+                if ($event->user->hasRole('cliente')) {
+                    $token = app(\App\Services\PagoFacilService::class)->login();
+                    if ($token) {
+                        cookie()->queue(cookie('pagofacil_token', $token, 480, '/', null, false));
+                    }
+                }
             }
         );
 

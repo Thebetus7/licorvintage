@@ -47,6 +47,7 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
             ],
             'menu' => fn () => $this->getMenuForUser($request->user()),
+            'pagofacil_token' => fn () => $request->cookie('pagofacil_token'),
             'page_views_count' => fn () => \App\Models\PageView::where('url_path', $request->getPathInfo() === '/' ? '/' : rtrim($request->getPathInfo(), '/'))->value('views_count') ?? 1,
         ];
     }
