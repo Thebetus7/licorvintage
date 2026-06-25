@@ -13,6 +13,7 @@ class UserManagementService
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
+            'menus' => $data['menus'] ?? null,
         ]);
 
         $user->assignRole('vendedor');
@@ -25,9 +26,12 @@ class UserManagementService
         $user->update([
             'name' => $data['name'],
             'email' => $data['email'],
+            'menus' => $data['menus'] ?? null,
         ]);
 
-        $user->syncRoles([$data['role']]);
+        if (isset($data['role'])) {
+            $user->syncRoles([$data['role']]);
+        }
 
         return $user;
     }

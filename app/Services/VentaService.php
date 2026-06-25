@@ -6,6 +6,7 @@ use App\Models\AperturaCaja;
 use App\Models\Producto;
 use App\Models\User;
 use App\Models\Venta;
+use App\Models\Promocion;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -36,22 +37,73 @@ class VentaService
                 ];
             });
 
-            $total = $detalles->sum('subtotal');
+            $totalOriginal = $detalles->sum('subtotal');
+            $totalFinal = $totalOriginal;
+            $promocionId = null;
+            $codigoPromoApplied = null;
 
-            if ($data['monto_pagado'] < $total) {
-                throw ValidationException::withMessages([
-                    'monto_pagado' => 'El monto pagado no cubre el total de la venta.',
-                ]);
+            // Procesar promoción si se especifica
+            if (!empty($data['codigo_promo'])) {
+                $promocion = Promocion::where('codigo_promo', $data['codigo_promo'])->first();
+
+                if (!$promocion) {
+                    throw ValidationException::withMessages([
+                        'codigo_promo' => 'El código de promoción no existe.',
+                    ]);
+                }
+
+                $hoy = today();
+                if ($hoy->lt($promocion->fecha_inicio) || $hoy->gt($promocion->fecha_fin)) {
+                    throw ValidationException::withMessages([
+                        'codigo_promo' => 'La promoción no está vigente.',
+                    ]);
+                }
+
+                $promocionId = $promocion->id;
+                $codigoPromoApplied = $promocion->codigo_promo;
+
+                if ($promocion->tipo_descuento === 'porcentaje') {
+                    $descuento = $totalOriginal * ($promocion->descuento / 100);
+                } else {
+                    $descuento = $promocion->descuento;
+                }
+
+                $totalFinal = max(0, $totalOriginal - $descuento);
+            }
+
+            $tipoPago = $data['tipo_pago'];
+            $isCredito = $tipoPago === 'credito';
+            $nroCuotas = $isCredito ? (int)$data['nro_cuotas'] : 1;
+
+            if ($isCredito) {
+                if (empty($data['cliente_id'])) {
+                    throw ValidationException::withMessages([
+                        'cliente_id' => 'El cliente es obligatorio para ventas a crédito.',
+                    ]);
+                }
+                if ($nroCuotas < 2) {
+                    throw ValidationException::withMessages([
+                        'nro_cuotas' => 'Una venta a crédito debe tener al menos 2 cuotas.',
+                    ]);
+                }
+            } else {
+                $montoPagado = (float)($data['monto_pagado'] ?? $totalFinal);
+                if ($montoPagado < $totalFinal) {
+                    throw ValidationException::withMessages([
+                        'monto_pagado' => 'El monto pagado no cubre el total de la venta.',
+                    ]);
+                }
             }
 
             $venta = Venta::create([
-                'monto_pagado' => $data['monto_pagado'],
-                'cod_descuento' => null,
-                'monto_original' => $total,
-                'monto_final' => $total,
-                'nro_cuotas' => 1,
-                'tipo_pago' => $data['tipo_pago'],
-                'detalle_promo_id' => null,
+                'monto_pagado' => $isCredito ? 0 : ($data['monto_pagado'] ?? $totalFinal),
+                'cod_descuento' => $codigoPromoApplied,
+                'monto_original' => $totalOriginal,
+                'monto_final' => $totalFinal,
+                'nro_cuotas' => $nroCuotas,
+                'tipo_pago' => $tipoPago,
+                'promocion_id' => $promocionId,
+                'cliente_id' => $data['cliente_id'] ?? null,
                 'user_id' => $user->id,
             ]);
 
@@ -75,15 +127,31 @@ class VentaService
                 );
             }
 
-            $venta->metodoPagos()->create(['tipo_pago' => $data['tipo_pago']]);
-            $caja->movimientoCajas()->create([
-                'monto' => $total,
-                'tipo' => 'venta',
-                'detalle' => "Venta #{$venta->id}",
-            ]);
-            $caja->increment('monto_sistema', $total);
+            $venta->metodoPagos()->create(['tipo_pago' => $tipoPago]);
 
-            return $venta->load('detalleVentas.producto');
+            if ($isCredito) {
+                // Registrar cuotas
+                $subMontoCuota = round($totalFinal / $nroCuotas, 2);
+                for ($i = 1; $i <= $nroCuotas; $i++) {
+                    // Ajustar céntimos en la última cuota si hay diferencias por redondeo
+                    $montoCuota = ($i === $nroCuotas) ? ($totalFinal - ($subMontoCuota * ($nroCuotas - 1))) : $subMontoCuota;
+                    $venta->ventaCuotas()->create([
+                        'sub_monto' => $montoCuota,
+                        'nro_cuota' => $i,
+                        'estado' => 'pendiente',
+                    ]);
+                }
+            } else {
+                // Registrar pago al contado en caja
+                $caja->movimientoCajas()->create([
+                    'monto' => $totalFinal,
+                    'tipo' => 'venta',
+                    'detalle' => "Venta #{$venta->id} ({$tipoPago})",
+                ]);
+                $caja->increment('monto_sistema', $totalFinal);
+            }
+
+            return $venta->load(['detalleVentas.producto', 'cliente', 'ventaCuotas']);
         });
     }
 }

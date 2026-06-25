@@ -20,6 +20,8 @@ return new class extends Migration
             $table->integer('nro_cuotas');
             $table->string('tipo_pago');
             $table->foreignId('detalle_promo_id')->nullable();
+            $table->foreignId('cliente_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->unsignedBigInteger('promocion_id')->nullable();
             $table->foreignId('user_id')->constrained()->restrictOnDelete();
             $table->timestamps();
             $table->softDeletes();

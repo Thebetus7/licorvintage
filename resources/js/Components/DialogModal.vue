@@ -40,27 +40,27 @@ const close = () => {
         >
             <div
                 class="shrink-0 px-6 py-4"
-                :class="scrollable ? 'border-b border-stone-200 bg-white' : ''"
+                :class="scrollable ? 'border-b border-stone-800/80 bg-transparent' : ''"
             >
-                <div class="text-lg font-semibold text-[#2b1115]">
+                <div class="text-lg font-bold text-amber-200">
                     <slot name="title" />
                 </div>
 
-                <div v-if="!scrollable" class="mt-4 text-sm text-stone-600">
+                <div v-if="!scrollable" class="mt-4 text-sm text-stone-300">
                     <slot name="content" />
                 </div>
             </div>
 
             <div
                 v-if="scrollable"
-                class="min-h-0 flex-1 overflow-y-auto px-6 py-4 text-sm text-stone-600"
+                class="min-h-0 flex-1 overflow-y-auto px-6 py-4 text-sm text-stone-300"
             >
                 <slot name="content" />
             </div>
 
             <div
-                class="shrink-0 bg-stone-50 text-end"
-                :class="scrollable ? 'border-t border-stone-200 px-6 py-3' : 'flex flex-row justify-end px-6 py-4 bg-gray-100'"
+                class="shrink-0 text-end"
+                :class="scrollable ? 'border-t border-stone-800/80 px-6 py-3 bg-[#241518]/20' : 'flex flex-row justify-end px-6 py-4 bg-[#241518]/30 border-t border-stone-800/40'"
             >
                 <slot name="footer" />
             </div>

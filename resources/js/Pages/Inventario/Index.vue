@@ -39,12 +39,16 @@ const tipoLabel = (tipo) => tipo.replace(/_/g, ' ');
         <template #header>
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                    <h1 class="text-2xl font-semibold text-[#2b1115]">Inventario</h1>
-                    <p class="text-sm text-stone-500">Movimientos, costo promedio, conteo y valorizacion.</p>
+                    <h1 class="text-2xl font-semibold text-[var(--text-primary)]">Inventario</h1>
+                    <p class="text-sm text-[var(--text-secondary)]">Movimientos, costo promedio, conteo y valorización.</p>
                 </div>
                 <div class="flex gap-2">
-                    <SecondaryButton @click="showIngreso = true">Registrar ingreso</SecondaryButton>
-                    <SecondaryButton @click="showSalida = true">Registrar salida</SecondaryButton>
+                    <button @click="showIngreso = true" class="px-4 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[var(--accent)] hover:bg-[var(--accent)]/10 hover:text-[var(--text-primary)] rounded-md font-semibold text-sm transition cursor-pointer">
+                        Registrar ingreso
+                    </button>
+                    <button @click="showSalida = true" class="px-4 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[var(--accent)] hover:bg-[var(--accent)]/10 hover:text-[var(--text-primary)] rounded-md font-semibold text-sm transition cursor-pointer">
+                        Registrar salida
+                    </button>
                 </div>
             </div>
         </template>
@@ -53,24 +57,24 @@ const tipoLabel = (tipo) => tipo.replace(/_/g, ' ');
             <InventarioNav />
 
             <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <div class="rounded-lg border bg-white p-5 shadow-sm">
-                    <div class="text-sm text-stone-500">Valor total inventario</div>
-                    <div class="mt-1 text-2xl font-bold text-[#2b1115]">Bs {{ Number(valorTotal).toFixed(2) }}</div>
+                <div class="rounded-lg border border-[var(--border-color)] bg-[var(--bg-tertiary)]/80 p-5 shadow-sm text-[var(--text-primary)] transition-colors duration-300">
+                    <div class="text-sm text-[var(--text-secondary)]">Valor total inventario</div>
+                    <div class="mt-1 text-2xl font-bold text-[var(--text-primary)]">Bs {{ Number(valorTotal).toFixed(2) }}</div>
                 </div>
-                <div class="rounded-lg border bg-white p-5 shadow-sm">
-                    <div class="text-sm text-stone-500">Productos bajo minimo</div>
-                    <div class="mt-1 text-2xl font-bold text-amber-700">{{ productosBajoMinimo }}</div>
+                <div class="rounded-lg border border-[var(--border-color)] bg-[var(--bg-tertiary)]/80 p-5 shadow-sm text-[var(--text-primary)] transition-colors duration-300">
+                    <div class="text-sm text-[var(--text-secondary)]">Productos bajo mínimo</div>
+                    <div class="mt-1 text-2xl font-bold text-[var(--accent)]">{{ productosBajoMinimo }}</div>
                 </div>
-                <div class="rounded-lg border bg-white p-5 shadow-sm">
-                    <div class="text-sm text-stone-500">Ultimos movimientos</div>
-                    <div class="mt-1 text-2xl font-bold text-[#2b1115]">{{ ultimosMovimientos.length }}</div>
+                <div class="rounded-lg border border-[var(--border-color)] bg-[var(--bg-tertiary)]/80 p-5 shadow-sm text-[var(--text-primary)] transition-colors duration-300">
+                    <div class="text-sm text-[var(--text-secondary)]">Últimos movimientos</div>
+                    <div class="mt-1 text-2xl font-bold text-[var(--text-primary)]">{{ ultimosMovimientos.length }}</div>
                 </div>
             </div>
 
-            <div class="mt-6 overflow-hidden rounded-lg border bg-white shadow-sm">
-                <div class="border-b px-4 py-3 font-semibold text-[#2b1115]">Ultimos movimientos</div>
-                <table class="min-w-full divide-y divide-stone-200 text-sm">
-                    <thead class="bg-stone-50 text-left text-xs uppercase text-stone-500">
+            <div class="mt-6 overflow-hidden rounded-lg border border-[var(--border-color)] bg-[var(--bg-tertiary)]/80 shadow-sm transition-colors duration-300">
+                <div class="border-b border-[var(--border-color)] bg-[var(--bg-secondary)]/30 px-4 py-3 font-semibold text-[var(--text-primary)]">Últimos movimientos</div>
+                <table class="min-w-full divide-y divide-[var(--border-color)] text-sm text-[var(--text-secondary)]">
+                    <thead class="bg-[var(--bg-secondary)]/50 text-left text-xs uppercase text-[var(--accent)]">
                         <tr>
                             <th class="px-4 py-3">Fecha</th>
                             <th class="px-4 py-3">Producto</th>
@@ -80,10 +84,10 @@ const tipoLabel = (tipo) => tipo.replace(/_/g, ' ');
                             <th class="px-4 py-3">Saldo</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-stone-100">
-                        <tr v-for="mov in ultimosMovimientos" :key="mov.id">
-                            <td class="px-4 py-3">{{ new Date(mov.created_at).toLocaleString() }}</td>
-                            <td class="px-4 py-3">{{ mov.producto?.nombre }}</td>
+                    <tbody class="divide-y divide-[var(--border-color)]">
+                        <tr v-for="mov in ultimosMovimientos" :key="mov.id" class="hover:bg-white/5 transition-colors">
+                            <td class="px-4 py-3 text-xs font-mono">{{ new Date(mov.created_at).toLocaleString() }}</td>
+                            <td class="px-4 py-3 font-semibold text-[var(--text-primary)]">{{ mov.producto?.nombre }}</td>
                             <td class="px-4 py-3 capitalize">{{ tipoLabel(mov.tipo) }}</td>
                             <td class="px-4 py-3">{{ mov.cantidad }}</td>
                             <td class="px-4 py-3">Bs {{ Number(mov.costo_unitario).toFixed(2) }}</td>

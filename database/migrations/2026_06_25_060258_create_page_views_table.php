@@ -11,12 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('venta_cuotas', function (Blueprint $table) {
+        Schema::create('page_views', function (Blueprint $table) {
             $table->id();
-            $table->double('sub_monto');
-            $table->foreignId('venta_id');
+            $table->string('url_path')->unique();
+            $table->unsignedInteger('views_count')->default(0);
             $table->timestamps();
-            $table->softDeletes();
         });
     }
 
@@ -25,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('venta_cuotas');
+        Schema::dropIfExists('page_views');
     }
 };

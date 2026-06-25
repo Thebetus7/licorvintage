@@ -15,11 +15,36 @@ class AppServiceProvider extends ServiceProvider
         $this->app->register(PermissionServiceProvider::class);
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
-        //
+        \Illuminate\Support\Facades\Event::listen(
+            \Illuminate\Auth\Events\Login::class,
+            function (\Illuminate\Auth\Events\Login $event) {
+                \App\Models\ActivityLog::create([
+                    'event_type' => 'login_success',
+                    'user_id' => $event->user->id,
+                    'user_identity' => $event->user->email,
+                    'ip_address' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                    'resource_name' => null,
+                    'visited_url' => null,
+                ]);
+            }
+        );
+
+        \Illuminate\Support\Facades\Event::listen(
+            \Illuminate\Auth\Events\Failed::class,
+            function (\Illuminate\Auth\Events\Failed $event) {
+                \App\Models\ActivityLog::create([
+                    'event_type' => 'login_failed',
+                    'user_id' => $event->user ? $event->user->id : null,
+                    'user_identity' => $event->credentials['email'] ?? ($event->user ? $event->user->email : 'unknown'),
+                    'ip_address' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                    'resource_name' => null,
+                    'visited_url' => null,
+                ]);
+            }
+        );
     }
 }

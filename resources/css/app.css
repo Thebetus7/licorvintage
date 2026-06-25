@@ -2,6 +2,125 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+    /* Tema Adulto - Noche (por defecto) */
+    --bg-primary: #140b0d;
+    --bg-secondary: #2b1115;
+    --bg-tertiary: #1b0f12;
+    --text-primary: #f5f5f4; /* stone-100 */
+    --text-secondary: #d6d3d1; /* stone-300 */
+    --accent: #d97706; /* amber-600 */
+    --accent-hover: #f59e0b; /* amber-500 */
+    --border-color: rgba(120, 53, 4, 0.15);
+    --glow-1: rgba(245, 158, 11, 0.05); /* amber-500/5 */
+    --glow-2: rgba(76, 5, 25, 0.2); /* rose-950/20 */
+    
+    /* Configuración de accesibilidad */
+    --font-scale: 1.0;
+    --border-radius: 0.5rem;
+}
+
+/* Aplicar la escala de fuentes de accesibilidad */
+html {
+    font-size: calc(16px * var(--font-scale)) !important;
+}
+
+/* Modificadores de Temas */
+
+/* Tema Adultos - Día (Light) */
+.theme-adults.theme-light {
+    --bg-primary: #fafaf9; /* stone-50 */
+    --bg-secondary: #f5f5f4; /* stone-100 */
+    --bg-tertiary: #e7e5e4; /* stone-200 */
+    --text-primary: #1c1917; /* stone-900 */
+    --text-secondary: #44403c; /* stone-700 */
+    --accent: #b45309; /* amber-700 */
+    --accent-hover: #d97706; /* amber-600 */
+    --border-color: rgba(120, 53, 4, 0.2);
+    --glow-1: rgba(217, 119, 6, 0.03);
+    --glow-2: rgba(120, 53, 4, 0.05);
+}
+
+/* Tema Jóvenes (Cyberpunk) - Noche */
+.theme-youth {
+    --bg-primary: #0b071e;
+    --bg-secondary: #160e37;
+    --bg-tertiary: #1f144e;
+    --text-primary: #f8fafc;
+    --text-secondary: #cbd5e1;
+    --accent: #ec4899; /* magenta */
+    --accent-hover: #f43f5e;
+    --border-color: rgba(236, 72, 153, 0.25);
+    --glow-1: rgba(6, 182, 212, 0.15); /* cian glow */
+    --glow-2: rgba(236, 72, 153, 0.2); /* pink glow */
+    --border-radius: 0.75rem;
+}
+
+/* Tema Jóvenes (Cyberpunk) - Día */
+.theme-youth.theme-light {
+    --bg-primary: #f5f3ff;
+    --bg-secondary: #ede9fe;
+    --bg-tertiary: #ddd6fe;
+    --text-primary: #1e1b4b;
+    --text-secondary: #4f46e5;
+    --accent: #db2777;
+    --accent-hover: #be185d;
+    --border-color: rgba(99, 102, 241, 0.2);
+    --glow-1: rgba(99, 102, 241, 0.05);
+    --glow-2: rgba(217, 70, 239, 0.05);
+}
+
+/* Tema Niños (Pastel) - Noche */
+.theme-kids {
+    --bg-primary: #1d3557;
+    --bg-secondary: #14213d;
+    --bg-tertiary: #2e4a62;
+    --text-primary: #f1faee;
+    --text-secondary: #a8dadc;
+    --accent: #ffb703; /* Amarillo */
+    --accent-hover: #fb8500;
+    --border-color: rgba(255, 183, 3, 0.3);
+    --glow-1: rgba(255, 183, 3, 0.15);
+    --glow-2: rgba(230, 57, 70, 0.2);
+    --border-radius: 1.5rem; /* Bordes ultra redondeados para niños */
+}
+
+/* Tema Niños (Pastel) - Día */
+.theme-kids.theme-light {
+    --bg-primary: #f0f9ff; /* celeste cielo muy claro */
+    --bg-secondary: #e0f2fe;
+    --bg-tertiary: #bae6fd;
+    --text-primary: #0f172a;
+    --text-secondary: #0284c7;
+    --accent: #fb7185; /* rosa pastel vibrante */
+    --accent-hover: #f43f5e;
+    --border-color: rgba(251, 113, 133, 0.3);
+    --glow-1: rgba(251, 113, 133, 0.1);
+    --glow-2: rgba(14, 165, 233, 0.1);
+    --border-radius: 1.5rem;
+}
+
+/* Alto Contraste */
+.contrast-high {
+    --bg-primary: #000000 !important;
+    --bg-secondary: #000000 !important;
+    --bg-tertiary: #000000 !important;
+    --text-primary: #ffff00 !important; /* Amarillo de alto contraste */
+    --text-secondary: #ffffff !important; /* Blanco */
+    --accent: #ffff00 !important;
+    --accent-hover: #ffffff !important;
+    --border-color: #ffffff !important;
+    --glow-1: transparent !important;
+    --glow-2: transparent !important;
+    --border-radius: 0px !important; /* Sin bordes redondeados para alto contraste */
+}
+
+/* Ajustes dinámicos de redondeado a través de variables CSS */
+.rounded-lg, .rounded-xl, .rounded-2xl {
+    border-radius: var(--border-radius) !important;
+}
+
 [x-cloak] {
     display: none;
 }
+

@@ -10,7 +10,7 @@ class ClienteProductoController extends Controller
 {
     public function __invoke(): Response
     {
-        return Inertia::render('Cliente/Productos', [
+        return Inertia::render('Catalogo/Index', [
             'productos' => Producto::query()
                 ->with('stockActual')
                 ->where('publicado', true)

@@ -20,6 +20,8 @@ class UpdateUsuarioRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($usuario?->id)],
             'role' => ['required', Rule::in(['vendedor', 'cliente'])],
+            'menus' => ['nullable', 'array'],
+            'menus.*' => ['string'],
         ];
     }
 }

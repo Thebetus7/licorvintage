@@ -19,6 +19,7 @@ class UsuarioController extends Controller
                 ->with('roles')
                 ->latest()
                 ->paginate(10),
+            'menuItems' => \App\Models\MenuItem::all(),
         ]);
     }
 

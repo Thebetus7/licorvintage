@@ -20,12 +20,15 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
+            \App\Http\Middleware\LogResourceAccess::class,
+            \App\Http\Middleware\TrackPageViews::class,
         ]);
 
         $middleware->alias([
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
+            'menu.auth' => \App\Http\Middleware\AuthorizeMenuAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

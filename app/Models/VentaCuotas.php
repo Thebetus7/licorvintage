@@ -18,6 +18,9 @@ class VentaCuotas extends Model
      */
     protected $fillable = [
         'sub_monto',
+        'nro_cuota',
+        'estado',
+        'fecha_pago',
         'venta_id',
     ];
 
@@ -31,6 +34,8 @@ class VentaCuotas extends Model
         return [
             'id' => 'integer',
             'sub_monto' => 'double',
+            'nro_cuota' => 'integer',
+            'fecha_pago' => 'datetime',
             'venta_id' => 'integer',
         ];
     }

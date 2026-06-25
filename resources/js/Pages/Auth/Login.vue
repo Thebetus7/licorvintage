@@ -6,6 +6,7 @@ import Checkbox from '@/Components/Checkbox.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
+import SecondaryButton from '@/Components/SecondaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 
 defineProps({
@@ -18,6 +19,16 @@ const form = useForm({
     password: '',
     remember: false,
 });
+
+const fillAdmin = () => {
+    form.email = 'admin@gmail.com';
+    form.password = '123456789';
+};
+
+const fillCliente = () => {
+    form.email = 'cliente@gmail.com';
+    form.password = '123456789';
+};
 
 const submit = () => {
     form.transform(data => ({
@@ -72,12 +83,21 @@ const submit = () => {
             <div class="block mt-4">
                 <label class="flex items-center">
                     <Checkbox v-model:checked="form.remember" name="remember" />
-                    <span class="ms-2 text-sm text-gray-600">Remember me</span>
+                    <span class="ms-2 text-sm text-stone-400">Remember me</span>
                 </label>
             </div>
 
             <div class="flex items-center justify-end mt-4">
-                <Link v-if="canResetPassword" :href="route('password.request')" class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                <div class="flex flex-col gap-2 me-auto">
+                    <SecondaryButton type="button" @click="fillAdmin">
+                        Llenar Admin
+                    </SecondaryButton>
+                    <SecondaryButton type="button" @click="fillCliente">
+                        Llenar Cliente
+                    </SecondaryButton>
+                </div>
+
+                <Link v-if="canResetPassword" :href="route('password.request')" class="underline text-sm text-stone-400 hover:text-stone-200 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500">
                     Forgot your password?
                 </Link>
 
@@ -88,3 +108,4 @@ const submit = () => {
         </form>
     </AuthenticationCard>
 </template>
+

@@ -11,15 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('productos', function (Blueprint $table) {
+        Schema::create('menu_items', function (Blueprint $table) {
             $table->id();
-            $table->string('nombre');
-            $table->integer('mililitros');
-            $table->text('descripcion')->nullable();
-            $table->string('imagen')->nullable();
-            $table->string('codigo_barra')->unique();
+            $table->string('label');
+            $table->string('route_name');
+            $table->json('roles'); // Contiene los roles que tienen acceso a este ítem de menú
             $table->timestamps();
-            $table->softDeletes();
         });
     }
 
@@ -28,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('productos');
+        Schema::dropIfExists('menu_items');
     }
 };

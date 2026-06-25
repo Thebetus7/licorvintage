@@ -14,6 +14,9 @@ return new class extends Migration
         Schema::create('venta_cuotas', function (Blueprint $table) {
             $table->id();
             $table->decimal('sub_monto', 12, 2);
+            $table->integer('nro_cuota');
+            $table->string('estado')->default('pendiente');
+            $table->timestamp('fecha_pago')->nullable();
             $table->foreignId('venta_id')->constrained('ventas')->cascadeOnDelete();
             $table->timestamps();
             $table->softDeletes();

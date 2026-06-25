@@ -25,6 +25,8 @@ class Venta extends Model
         'nro_cuotas',
         'tipo_pago',
         'detalle_promo_id',
+        'cliente_id',
+        'promocion_id',
         'user_id',
     ];
 
@@ -41,6 +43,8 @@ class Venta extends Model
             'monto_original' => 'double',
             'monto_final' => 'double',
             'detalle_promo_id' => 'integer',
+            'cliente_id' => 'integer',
+            'promocion_id' => 'integer',
             'user_id' => 'integer',
         ];
     }
@@ -48,6 +52,16 @@ class Venta extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function cliente(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'cliente_id');
+    }
+
+    public function promocion(): BelongsTo
+    {
+        return $this->belongsTo(Promocion::class, 'promocion_id');
     }
 
     public function detallePromo(): BelongsTo

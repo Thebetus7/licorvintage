@@ -36,8 +36,8 @@ const submit = () => {
     <AppLayout title="Conteo fisico">
         <template #header>
             <div>
-                <h1 class="text-2xl font-semibold text-[#2b1115]">Conteo fisico</h1>
-                <p class="text-sm text-stone-500">Reconcilia stock fisico vs sistema y genera ajustes automaticos.</p>
+                <h1 class="text-2xl font-semibold text-[var(--text-primary)]">Conteo físico</h1>
+                <p class="text-sm text-[var(--text-secondary)]">Reconcilia stock físico vs sistema y genera ajustes automáticos.</p>
             </div>
         </template>
 
@@ -45,24 +45,24 @@ const submit = () => {
             <InventarioNav />
 
             <form @submit.prevent="submit">
-                <div class="overflow-hidden rounded-lg border bg-white shadow-sm">
-                    <table class="min-w-full divide-y divide-stone-200 text-sm">
-                        <thead class="bg-stone-50 text-left text-xs uppercase text-stone-500">
+                <div class="overflow-hidden rounded-lg border border-[var(--border-color)] bg-[var(--bg-tertiary)]/80 shadow-sm transition-colors duration-300">
+                    <table class="min-w-full divide-y divide-[var(--border-color)] text-sm text-[var(--text-secondary)]">
+                        <thead class="bg-[var(--bg-secondary)]/50 text-left text-xs uppercase text-[var(--accent)]">
                             <tr>
                                 <th class="px-4 py-3">Producto</th>
                                 <th class="px-4 py-3">Stock sistema</th>
-                                <th class="px-4 py-3">Stock fisico</th>
+                                <th class="px-4 py-3">Stock físico</th>
                                 <th class="px-4 py-3">Diferencia</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-stone-100">
-                            <tr v-for="producto in productos" :key="producto.id">
-                                <td class="px-4 py-3 font-medium">{{ producto.nombre }}</td>
-                                <td class="px-4 py-3">{{ producto.stock_actual?.stock ?? 0 }}</td>
+                        <tbody class="divide-y divide-[var(--border-color)]">
+                            <tr v-for="producto in productos" :key="producto.id" class="hover:bg-white/5 transition-colors">
+                                <td class="px-4 py-3 font-semibold text-[var(--text-primary)]">{{ producto.nombre }}</td>
+                                <td class="px-4 py-3 text-[var(--text-primary)]">{{ producto.stock_actual?.stock ?? 0 }}</td>
                                 <td class="px-4 py-3">
                                     <TextInput v-model="conteos[producto.id]" type="number" min="0" class="w-28" />
                                 </td>
-                                <td class="px-4 py-3" :class="(conteos[producto.id] ?? 0) - (producto.stock_actual?.stock ?? 0) !== 0 ? 'font-semibold text-amber-700' : ''">
+                                <td class="px-4 py-3" :class="(conteos[producto.id] ?? 0) - (producto.stock_actual?.stock ?? 0) !== 0 ? 'font-semibold text-[var(--accent)]' : ''">
                                     {{ (conteos[producto.id] ?? 0) - (producto.stock_actual?.stock ?? 0) }}
                                 </td>
                             </tr>
@@ -71,7 +71,7 @@ const submit = () => {
                 </div>
 
                 <div class="mt-4 flex justify-end">
-                    <PrimaryButton :disabled="form.processing">Guardar conteo y aplicar ajustes</PrimaryButton>
+                    <PrimaryButton :disabled="form.processing" class="font-semibold">Guardar conteo y aplicar ajustes</PrimaryButton>
                 </div>
             </form>
         </div>
