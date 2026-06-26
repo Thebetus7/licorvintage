@@ -31,6 +31,9 @@ class VentaController extends Controller
             'cliente_id' => 'nullable|integer|exists:users,id',
             'codigo_promo' => 'nullable|string',
             'nro_cuotas' => 'nullable|integer|min:1',
+            'card_number' => 'required_if:tipo_pago,tarjeta|string|nullable',
+            'card_expiry' => 'required_if:tipo_pago,tarjeta|string|nullable',
+            'card_cvc' => 'required_if:tipo_pago,tarjeta|string|nullable',
         ], [
             'detalles.required' => 'El carrito no puede estar vacío.',
             'detalles.min' => 'El carrito debe contener al menos un producto.',

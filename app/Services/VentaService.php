@@ -7,6 +7,7 @@ use App\Models\Producto;
 use App\Models\User;
 use App\Models\Venta;
 use App\Models\Promocion;
+use App\Services\StripeService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -14,6 +15,7 @@ class VentaService
 {
     public function __construct(
         private InventarioService $inventarioService,
+        private StripeService $stripeService,
     ) {}
 
     public function create(array $data, User $user, AperturaCaja $caja): Venta
@@ -92,6 +94,35 @@ class VentaService
                     throw ValidationException::withMessages([
                         'monto_pagado' => 'El monto pagado no cubre el total de la venta.',
                     ]);
+                }
+
+                if ($tipoPago === 'tarjeta') {
+                    $expiry = explode('/', $data['card_expiry'] ?? '');
+                    $expMonth = trim($expiry[0] ?? '');
+                    $expYear = trim($expiry[1] ?? '');
+
+                    if (strlen($expYear) === 2) {
+                        $expYear = '20' . $expYear;
+                    }
+
+                    $cardDetails = [
+                        'number' => $data['card_number'] ?? '',
+                        'exp_month' => $expMonth,
+                        'exp_year' => $expYear,
+                        'cvc' => $data['card_cvc'] ?? '',
+                    ];
+
+                    $stripeResult = $this->stripeService->chargeWithCard(
+                        $totalFinal,
+                        $cardDetails,
+                        "Venta Licor Vintage #{$user->email}"
+                    );
+
+                    if (!$stripeResult['success']) {
+                        throw ValidationException::withMessages([
+                            'card_number' => $stripeResult['message'],
+                        ]);
+                    }
                 }
             }
 

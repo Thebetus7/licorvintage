@@ -23,6 +23,7 @@ const cart = ref([]);
 const showDrawer = ref(false);
 const showPaymentMethodModal = ref(false);
 const showPaymentModal = ref(false);
+const showSuccessModal = ref(false);
 
 // Estado QR
 const qrData = ref(null);
@@ -37,6 +38,9 @@ const saleForm = useForm({
     cliente_id: clienteId.value,
     codigo_promo: '',
     nro_cuotas: 2,
+    card_number: '',
+    card_expiry: '',
+    card_cvc: '',
 });
 
 // Lógica de Carrito
@@ -173,12 +177,25 @@ const closePaymentModal = () => {
     }
 };
 
+// Formatear fecha de expiración automáticamente (MM/AA)
+const formatExpiry = (event) => {
+    let input = event.target.value;
+    let clearValue = input.replace(/\D/g, ''); // Solo dígitos
+    
+    if (clearValue.length > 2) {
+        saleForm.card_expiry = clearValue.substring(0, 2) + '/' + clearValue.substring(2, 4);
+    } else {
+        saleForm.card_expiry = clearValue;
+    }
+};
+
 // Confirmar pago y finalizar compra
 const submitSale = () => {
     saleForm.monto_pagado = totalFinal.value;
     saleForm.post(route('ventas.store'), {
         preserveScroll: true,
         onSuccess: () => {
+            showSuccessModal.value = true;
             cart.value = [];
             saleForm.reset();
             qrData.value = null;
@@ -473,17 +490,17 @@ const submitSale = () => {
 
                         <div>
                             <InputLabel value="Número de Tarjeta" class="text-[10px] text-white/50" />
-                            <TextInput type="text" class="w-full text-sm font-mono mt-1" placeholder="4000 1234 5678 9010" />
+                            <TextInput type="text" v-model="saleForm.card_number" class="w-full text-sm font-mono mt-1" placeholder="4000 1234 5678 9010" required />
                         </div>
 
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <InputLabel value="Vencimiento" class="text-[10px] text-white/50" />
-                                <TextInput type="text" class="w-full text-sm font-mono mt-1" placeholder="MM/AA" />
+                                <TextInput type="text" v-model="saleForm.card_expiry" @input="formatExpiry" maxlength="5" class="w-full text-sm font-mono mt-1" placeholder="MM/AA" required />
                             </div>
                             <div>
                                 <InputLabel value="CVV" class="text-[10px] text-white/50" />
-                                <TextInput type="password" class="w-full text-sm font-mono mt-1" placeholder="***" />
+                                <TextInput type="password" v-model="saleForm.card_cvc" class="w-full text-sm font-mono mt-1" placeholder="***" required />
                             </div>
                         </div>
                     </div>
@@ -512,6 +529,50 @@ const submitSale = () => {
                         {{ saleForm.processing ? 'Procesando...' : 'Confirmar Pago' }}
                     </PrimaryButton>
                 </div>
+            </template>
+        </DialogModal>
+
+        <!-- MODAL: PAGO EXITOSO -->
+        <DialogModal :show="showSuccessModal" @close="showSuccessModal = false">
+            <template #title>
+                <div class="flex items-center gap-2 text-emerald-400 font-bold text-lg">
+                    <span>✨ Compra Exitosa</span>
+                </div>
+            </template>
+
+            <template #content>
+                <div class="flex flex-col items-center text-center py-6 space-y-4">
+                    <!-- Icono Animado de Éxito -->
+                    <div class="w-16 h-16 bg-emerald-500/10 border border-emerald-500/30 rounded-full flex items-center justify-center text-emerald-400 text-3xl animate-bounce shadow-lg shadow-emerald-500/10">
+                        ✓
+                    </div>
+                    <div class="space-y-2">
+                        <h3 class="text-xl font-extrabold text-[var(--text-primary)]">¡Muchas gracias por tu compra!</h3>
+                        <p class="text-sm text-[var(--text-secondary)] max-w-sm">
+                            Tu pago ha sido procesado de forma segura. El pedido se ha registrado correctamente y el stock ha sido actualizado.
+                        </p>
+                    </div>
+                    <div class="bg-white/5 border border-white/10 rounded-2xl p-4 w-full text-left text-xs font-mono text-[var(--text-secondary)] space-y-1">
+                        <div class="flex justify-between">
+                            <span>Estado:</span>
+                            <span class="text-emerald-400 font-bold uppercase">Aprobado</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Plataforma:</span>
+                            <span>Licor Vintage S.R.L.</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Detalle de Pago:</span>
+                            <span class="text-indigo-400 font-bold">Tarjeta de Crédito</span>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            <template #footer>
+                <PrimaryButton @click="showSuccessModal = false" class="w-full justify-center">
+                    Entendido
+                </PrimaryButton>
             </template>
         </DialogModal>
     </AppLayout>
