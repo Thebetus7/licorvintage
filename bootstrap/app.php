@@ -1,6 +1,10 @@
 <?php
 
+use App\Http\Middleware\AuthorizeMenuAccess;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\LogResourceAccess;
+use App\Http\Middleware\LogValidationErrors;
+use App\Http\Middleware\TrackPageViews;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -20,15 +24,16 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
-            \App\Http\Middleware\LogResourceAccess::class,
-            \App\Http\Middleware\TrackPageViews::class,
+            LogResourceAccess::class,
+            TrackPageViews::class,
+            LogValidationErrors::class,
         ]);
 
         $middleware->alias([
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
-            'menu.auth' => \App\Http\Middleware\AuthorizeMenuAccess::class,
+            'menu.auth' => AuthorizeMenuAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

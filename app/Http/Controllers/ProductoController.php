@@ -38,7 +38,22 @@ class ProductoController extends Controller
 
     public function destroy(Producto $producto): RedirectResponse
     {
+        $nombre = $producto->nombre;
+        $codigo = $producto->codigo_barra;
+        $id = $producto->id;
+
         $producto->delete();
+
+        \App\Models\ActivityLog::create([
+            'event_type' => 'product_deleted',
+            'user_id' => auth()->id(),
+            'user_identity' => auth()->user()?->email ?? 'sistema',
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+            'resource_name' => 'Productos',
+            'visited_url' => request()->getRequestUri(),
+            'description' => "Producto eliminado: {$nombre} (ID: {$id}) - Código: {$codigo}.",
+        ]);
 
         return back()->with('success', 'Producto eliminado correctamente.');
     }

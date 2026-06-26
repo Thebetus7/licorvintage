@@ -40,6 +40,17 @@ class ProductoService
                 );
             }
 
+            \App\Models\ActivityLog::create([
+                'event_type' => 'product_created',
+                'user_id' => $user->id,
+                'user_identity' => $user->email,
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+                'resource_name' => 'Productos',
+                'visited_url' => request()->getRequestUri(),
+                'description' => "Producto creado: {$producto->nombre} ({$producto->mililitros} ml) - Código: {$producto->codigo_barra}. Precio Venta: {$producto->precio_venta} Bs, Costo: {$producto->costo} Bs, Stock Inicial: {$stockInicial}.",
+            ]);
+
             return $producto->load('stockActual');
         });
     }
@@ -63,6 +74,17 @@ class ProductoService
                     ],
                 );
             }
+
+            \App\Models\ActivityLog::create([
+                'event_type' => 'product_updated',
+                'user_id' => auth()->id(),
+                'user_identity' => auth()->user()?->email ?? 'sistema',
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+                'resource_name' => 'Productos',
+                'visited_url' => request()->getRequestUri(),
+                'description' => "Producto actualizado: {$producto->nombre} (ID: {$producto->id}) - Código: {$producto->codigo_barra}. Precio Venta: {$producto->precio_venta} Bs, Costo: {$producto->costo} Bs.",
+            ]);
 
             return $producto->load('stockActual');
         });

@@ -14,16 +14,22 @@ const props = defineProps({
 });
 
 const getEventBadgeClass = (type) => {
-    switch (type) {
-        case 'login_success':
-            return 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
-        case 'login_failed':
-            return 'bg-rose-500/10 text-rose-400 border border-rose-500/20';
-        case 'resource_access':
-            return 'bg-blue-500/10 text-blue-400 border border-blue-500/20';
-        default:
-            return 'bg-stone-500/10 text-stone-400 border border-stone-500/20';
+    if (type.endsWith('_success') || type.endsWith('_created') || type === 'caja_opened' || type === 'sale_created') {
+        return 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
     }
+    if (type.endsWith('_failed') || type === 'sale_failed' || type === 'caja_open_failed') {
+        return 'bg-rose-500/10 text-rose-400 border border-rose-500/20';
+    }
+    if (type.endsWith('_updated') || type === 'caja_movement') {
+        return 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
+    }
+    if (type.endsWith('_deleted') || type === 'caja_closed') {
+        return 'bg-stone-500/20 text-stone-400 border border-stone-500/25';
+    }
+    if (type === 'resource_access') {
+        return 'bg-blue-500/10 text-blue-400 border border-blue-500/20';
+    }
+    return 'bg-stone-500/10 text-stone-400 border border-stone-500/20';
 };
 
 const getEventLabel = (type) => {
@@ -34,8 +40,32 @@ const getEventLabel = (type) => {
             return '⚠️ Intento Fallido';
         case 'resource_access':
             return '📂 Acceso a Recurso';
+        case 'product_created':
+            return '📦 Producto Creado';
+        case 'product_updated':
+            return '📦 Producto Editado';
+        case 'product_deleted':
+            return '🗑️ Producto Eliminado';
+        case 'purchase_created':
+            return '📥 Compra Registrada';
+        case 'purchase_updated':
+            return '📥 Compra Editada';
+        case 'purchase_deleted':
+            return '🗑️ Compra Revertida';
+        case 'caja_opened':
+            return '💵 Caja Abierta';
+        case 'caja_closed':
+            return '🔒 Caja Cerrada';
+        case 'caja_open_failed':
+            return '🚨 Fallo Apertura';
+        case 'caja_movement':
+            return '💸 Movimiento Caja';
+        case 'sale_created':
+            return '🛒 Venta Registrada';
+        case 'sale_failed':
+            return '❌ Venta Fallida';
         default:
-            return type;
+            return type.replace('_', ' ').toUpperCase();
     }
 };
 
@@ -62,7 +92,7 @@ const cleanAgent = (userAgent) => {
 </script>
 
 <template>
-    <div class="space-y-6">
+    <div class="space-y-6 select-none">
         <!-- Tarjetas Estadísticas Superiores -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="rounded-2xl border border-[var(--border-color)] bg-[var(--bg-tertiary)]/40 p-5 shadow-xl backdrop-blur-md transition-colors duration-300">
@@ -105,8 +135,8 @@ const cleanAgent = (userAgent) => {
         <!-- Tabla de logs -->
         <div class="rounded-2xl border border-[var(--border-color)] bg-[var(--bg-tertiary)]/40 p-6 shadow-xl backdrop-blur-md transition-colors duration-300">
             <div class="mb-4">
-                <h3 class="text-lg font-bold text-[var(--text-primary)]">Registro de Auditoría Reciente</h3>
-                <p class="text-xs text-[var(--text-secondary)]">Monitorea todos los eventos de acceso, intentos fallidos y actividad de usuarios.</p>
+                <h3 class="text-lg font-bold text-[var(--text-primary)]">Registro de Auditoría Integral (Bitácora)</h3>
+                <p class="text-xs text-[var(--text-secondary)]">Monitorea en tiempo real todos los eventos de acceso, transacciones exitosas, errores del sistema e intentos fallidos.</p>
             </div>
 
             <div class="overflow-x-auto rounded-xl border border-[var(--border-color)]">
@@ -117,8 +147,8 @@ const cleanAgent = (userAgent) => {
                             <th class="px-6 py-4">Tipo de Evento</th>
                             <th class="px-6 py-4">Usuario / Identidad</th>
                             <th class="px-6 py-4">Dirección IP</th>
-                            <th class="px-6 py-4">Navegador</th>
-                            <th class="px-6 py-4">Detalle Recurso</th>
+                            <th class="px-6 py-4">Descripción de la Actividad</th>
+                            <th class="px-6 py-4">Recurso / URL</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-[var(--border-color)] text-sm text-[var(--text-secondary)]">
@@ -144,8 +174,8 @@ const cleanAgent = (userAgent) => {
                             <td class="px-6 py-4 whitespace-nowrap font-mono text-xs">
                                 {{ log.ip_address || '127.0.0.1' }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-xs">
-                                {{ cleanAgent(log.user_agent) }}
+                            <td class="px-6 py-4 text-xs font-medium text-[var(--text-primary)] max-w-sm break-words leading-relaxed">
+                                {{ log.description || 'Sin descripción disponible.' }}
                             </td>
                             <td class="px-6 py-4 text-xs font-mono max-w-xs truncate" :title="log.visited_url">
                                 <span v-if="log.resource_name" class="font-semibold text-[var(--text-primary)] block">

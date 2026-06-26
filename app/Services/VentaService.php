@@ -21,11 +21,13 @@ class VentaService
     public function create(array $data, User $user, AperturaCaja $caja): Venta
     {
         return DB::transaction(function () use ($data, $user, $caja): Venta {
-            $detalles = collect($data['detalles'])->map(function (array $detalle): array {
+            $detalles = collect($data['detalles'])->map(function (array $detalle) use ($user): array {
                 $producto = Producto::query()->with('stockActual')->findOrFail($detalle['producto_id']);
                 $stock = $producto->stockActual;
 
                 if (! $stock || $stock->stock < $detalle['cantidad']) {
+                    $disponibles = $stock ? $stock->stock : 0;
+                    $this->logFailure($user, "Stock insuficiente para el producto {$producto->nombre} (Solicitado: {$detalle['cantidad']}, Disponible: {$disponibles})");
                     throw ValidationException::withMessages([
                         'detalles' => "Stock insuficiente para {$producto->nombre}.",
                     ]);
@@ -49,6 +51,7 @@ class VentaService
                 $promocion = Promocion::where('codigo_promo', $data['codigo_promo'])->first();
 
                 if (!$promocion) {
+                    $this->logFailure($user, "El código de promoción '{$data['codigo_promo']}' no existe");
                     throw ValidationException::withMessages([
                         'codigo_promo' => 'El código de promoción no existe.',
                     ]);
@@ -56,6 +59,7 @@ class VentaService
 
                 $hoy = today();
                 if ($hoy->lt($promocion->fecha_inicio) || $hoy->gt($promocion->fecha_fin)) {
+                    $this->logFailure($user, "La promoción '{$promocion->nombre_promo}' no está vigente (Vigencia: {$promocion->fecha_inicio} al {$promocion->fecha_fin})");
                     throw ValidationException::withMessages([
                         'codigo_promo' => 'La promoción no está vigente.',
                     ]);
@@ -79,11 +83,13 @@ class VentaService
 
             if ($isCredito) {
                 if (empty($data['cliente_id'])) {
+                    $this->logFailure($user, "Cliente no especificado en venta a crédito");
                     throw ValidationException::withMessages([
                         'cliente_id' => 'El cliente es obligatorio para ventas a crédito.',
                     ]);
                 }
                 if ($nroCuotas < 2) {
+                    $this->logFailure($user, "Se intentó registrar una venta a crédito con menos de 2 cuotas (Recibido: {$nroCuotas})");
                     throw ValidationException::withMessages([
                         'nro_cuotas' => 'Una venta a crédito debe tener al menos 2 cuotas.',
                     ]);
@@ -91,6 +97,7 @@ class VentaService
             } else {
                 $montoPagado = (float)($data['monto_pagado'] ?? $totalFinal);
                 if ($montoPagado < $totalFinal) {
+                    $this->logFailure($user, "Monto pagado ({$montoPagado} Bs) es menor al costo total final ({$totalFinal} Bs)");
                     throw ValidationException::withMessages([
                         'monto_pagado' => 'El monto pagado no cubre el total de la venta.',
                     ]);
@@ -119,6 +126,7 @@ class VentaService
                     );
 
                     if (!$stripeResult['success']) {
+                        $this->logFailure($user, "Pago con tarjeta fallido mediante pasarela Stripe. Motivo: '{$stripeResult['message']}'");
                         throw ValidationException::withMessages([
                             'card_number' => $stripeResult['message'],
                         ]);
@@ -182,7 +190,48 @@ class VentaService
                 $caja->increment('monto_sistema', $totalFinal);
             }
 
+            $this->logSuccess($user, $venta);
+
             return $venta->load(['detalleVentas.producto', 'cliente', 'ventaCuotas']);
         });
+    }
+
+    /**
+     * Registrar intento fallido de venta en la bitácora.
+     */
+    private function logFailure(User $user, string $reason): void
+    {
+        \App\Models\ActivityLog::create([
+            'event_type' => 'sale_failed',
+            'user_id' => $user->id,
+            'user_identity' => $user->email,
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+            'resource_name' => 'Ventas',
+            'visited_url' => request()->getRequestUri(),
+            'description' => "Venta fallida. Motivo: {$reason}.",
+        ]);
+    }
+
+    /**
+     * Registrar registro exitoso de venta en la bitácora.
+     */
+    private function logSuccess(User $user, Venta $venta): void
+    {
+        $clienteName = $venta->cliente ? $venta->cliente->name : 'Consumidor Final';
+        $detallePago = $venta->tipo_pago === 'credito' 
+            ? "al crédito ({$venta->nro_cuotas} cuotas)" 
+            : "al contado ({$venta->tipo_pago})";
+        
+        \App\Models\ActivityLog::create([
+            'event_type' => 'sale_created',
+            'user_id' => $user->id,
+            'user_identity' => $user->email,
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+            'resource_name' => 'Ventas',
+            'visited_url' => request()->getRequestUri(),
+            'description' => "Venta #{$venta->id} registrada exitosamente por {$venta->monto_final} Bs {$detallePago}. Cliente: {$clienteName}.",
+        ]);
     }
 }

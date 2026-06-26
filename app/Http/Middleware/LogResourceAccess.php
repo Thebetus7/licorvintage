@@ -2,11 +2,11 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\ActivityLog;
+use App\Models\MenuItem;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
-use App\Models\ActivityLog;
-use App\Models\MenuItem;
 
 class LogResourceAccess
 {
@@ -26,10 +26,10 @@ class LogResourceAccess
                 $menuItem = MenuItem::all()->first(function ($item) use ($routeName) {
                     $itemRouteParts = explode('.', $item->route_name);
                     $currentRouteParts = explode('.', $routeName);
-                    
+
                     $itemRouteRoot = $itemRouteParts[0] ?? null;
                     $currentRouteRoot = $currentRouteParts[0] ?? null;
-                    
+
                     return $itemRouteRoot && $itemRouteRoot === $currentRouteRoot;
                 });
 
@@ -42,6 +42,7 @@ class LogResourceAccess
                         'user_agent' => $request->userAgent(),
                         'resource_name' => $menuItem->label,
                         'visited_url' => $request->getRequestUri(),
+                        'description' => "Ingreso a la pantalla de {$menuItem->label}.",
                     ]);
                 }
             }

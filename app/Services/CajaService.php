@@ -13,12 +13,23 @@ class CajaService
         $activeCaja = $this->activeCaja($user);
 
         if ($activeCaja) {
+            \App\Models\ActivityLog::create([
+                'event_type' => 'caja_open_failed',
+                'user_id' => $user->id,
+                'user_identity' => $user->email,
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+                'resource_name' => 'Caja',
+                'visited_url' => request()->getRequestUri(),
+                'description' => "Intento fallido de apertura de caja. Motivo: El usuario ya posee una caja abierta activa (Caja #{$activeCaja->id}).",
+            ]);
+
             throw ValidationException::withMessages([
                 'monto_inicial' => 'Ya tienes una caja abierta.',
             ]);
         }
 
-        return AperturaCaja::create([
+        $caja = AperturaCaja::create([
             'monto_inicial' => $montoInicial,
             'monto_sistema' => $montoInicial,
             'monto_real' => null,
@@ -28,6 +39,19 @@ class CajaService
             'estado' => 'abierta',
             'user_id' => $user->id,
         ]);
+
+        \App\Models\ActivityLog::create([
+            'event_type' => 'caja_opened',
+            'user_id' => $user->id,
+            'user_identity' => $user->email,
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+            'resource_name' => 'Caja',
+            'visited_url' => request()->getRequestUri(),
+            'description' => "Apertura de caja realizada exitosamente (Caja #{$caja->id}) con un monto inicial de {$montoInicial} Bs.",
+        ]);
+
+        return $caja;
     }
 
     public function close(AperturaCaja $caja, float $montoReal): AperturaCaja
@@ -37,6 +61,17 @@ class CajaService
             'diferencia' => $montoReal - $caja->monto_sistema,
             'tiempo_cierre' => now(),
             'estado' => 'cerrada',
+        ]);
+
+        \App\Models\ActivityLog::create([
+            'event_type' => 'caja_closed',
+            'user_id' => auth()->id(),
+            'user_identity' => auth()->user()?->email ?? 'sistema',
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+            'resource_name' => 'Caja',
+            'visited_url' => request()->getRequestUri(),
+            'description' => "Cierre de caja realizado (Caja #{$caja->id}). Monto sistema: {$caja->monto_sistema} Bs. Monto real: {$montoReal} Bs. Diferencia: " . ($montoReal - $caja->monto_sistema) . " Bs.",
         ]);
 
         return $caja;

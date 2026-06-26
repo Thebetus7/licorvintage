@@ -80,6 +80,17 @@ class CajaController extends Controller
 
         $caja->increment('monto_sistema', $cuota->sub_monto);
 
+        \App\Models\ActivityLog::create([
+            'event_type' => 'caja_movement',
+            'user_id' => $user->id,
+            'user_identity' => $user->email,
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+            'resource_name' => 'Caja',
+            'visited_url' => request()->getRequestUri(),
+            'description' => "Cobro de cuota realizado: Ingreso de {$cuota->sub_monto} Bs por la cuota #{$cuota->nro_cuota} de la venta #{$cuota->venta_id} en la caja activa (Caja #{$caja->id}).",
+        ]);
+
         return back()->with('success', "Cuota #{$cuota->nro_cuota} cobrada correctamente.");
     }
 }

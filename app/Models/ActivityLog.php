@@ -14,6 +14,7 @@ class ActivityLog extends Model
         'user_agent',
         'resource_name',
         'visited_url',
+        'description',
     ];
 
     public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo

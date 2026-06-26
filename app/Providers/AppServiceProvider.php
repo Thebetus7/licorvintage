@@ -2,6 +2,11 @@
 
 namespace App\Providers;
 
+use App\Models\ActivityLog;
+use App\Services\PagoFacilService;
+use Illuminate\Auth\Events\Failed;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Spatie\Permission\PermissionServiceProvider;
 
@@ -17,21 +22,25 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        \Illuminate\Support\Facades\Event::listen(
-            \Illuminate\Auth\Events\Login::class,
-            function (\Illuminate\Auth\Events\Login $event) {
-                \App\Models\ActivityLog::create([
+        Event::listen(
+            Login::class,
+            function (Login $event) {
+                $roles = $event->user->roles->pluck('name')->toArray();
+                $rolesStr = implode(', ', $roles);
+
+                ActivityLog::create([
                     'event_type' => 'login_success',
                     'user_id' => $event->user->id,
                     'user_identity' => $event->user->email,
                     'ip_address' => request()->ip(),
                     'user_agent' => request()->userAgent(),
-                    'resource_name' => null,
+                    'resource_name' => 'Autenticación',
                     'visited_url' => null,
+                    'description' => "Inicio de sesión exitoso. Usuario: {$event->user->name} (Rol: {$rolesStr})",
                 ]);
 
                 if ($event->user->hasRole('cliente')) {
-                    $token = app(\App\Services\PagoFacilService::class)->login();
+                    $token = app(PagoFacilService::class)->login();
                     if ($token) {
                         cookie()->queue(cookie('pagofacil_token', $token, 480, '/', null, false));
                     }
@@ -39,17 +48,23 @@ class AppServiceProvider extends ServiceProvider
             }
         );
 
-        \Illuminate\Support\Facades\Event::listen(
-            \Illuminate\Auth\Events\Failed::class,
-            function (\Illuminate\Auth\Events\Failed $event) {
-                \App\Models\ActivityLog::create([
+        Event::listen(
+            Failed::class,
+            function (Failed $event) {
+                $email = $event->credentials['email'] ?? ($event->user ? $event->user->email : 'desconocido');
+                $reason = $event->user
+                    ? 'Contraseña incorrecta para el correo registrado'
+                    : 'El correo electrónico no está registrado en el sistema';
+
+                ActivityLog::create([
                     'event_type' => 'login_failed',
                     'user_id' => $event->user ? $event->user->id : null,
-                    'user_identity' => $event->credentials['email'] ?? ($event->user ? $event->user->email : 'unknown'),
+                    'user_identity' => $email,
                     'ip_address' => request()->ip(),
                     'user_agent' => request()->userAgent(),
-                    'resource_name' => null,
+                    'resource_name' => 'Autenticación',
                     'visited_url' => null,
+                    'description' => "Intento de inicio de sesión fallido. Motivo: {$reason}. Credencial ingresada: {$email}",
                 ]);
             }
         );
