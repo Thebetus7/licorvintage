@@ -48,6 +48,9 @@ class VentaController extends Controller
         $validated = $request->validate([
             'tipo_pago' => 'required|string',
             'monto_pagado' => 'nullable|numeric',
+            'payment_methods' => 'nullable|array',
+            'payment_methods.*.tipo_pago' => 'required_with:payment_methods|string',
+            'payment_methods.*.monto' => 'required_with:payment_methods|numeric|min:0',
             'detalles' => 'required|array|min:1',
             'detalles.*.producto_id' => 'required|integer|exists:productos,id',
             'detalles.*.cantidad' => 'required|integer|min:1',
@@ -55,9 +58,9 @@ class VentaController extends Controller
             'codigo_promo' => 'nullable|string',
             'nro_cuotas' => 'nullable|integer|min:1',
             'qr_transaction_id' => 'nullable',
-            'card_number' => 'required_if:tipo_pago,tarjeta|string|nullable',
-            'card_expiry' => 'required_if:tipo_pago,tarjeta|string|nullable',
-            'card_cvc' => 'required_if:tipo_pago,tarjeta|string|nullable',
+            'card_number' => 'nullable|string',
+            'card_expiry' => 'nullable|string',
+            'card_cvc' => 'nullable|string',
         ], [
             'detalles.required' => 'El carrito no puede estar vacío.',
             'detalles.min' => 'El carrito debe contener al menos un producto.',

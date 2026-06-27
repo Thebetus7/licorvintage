@@ -31,26 +31,44 @@ const showProductDropdown = ref(false);
 const showBarcodeScanner = ref(false);
 
 const cart = ref([]);
-const paymentMethod = ref('efectivo');
 const montoRecibido = ref('');
 const promoCode = ref('');
 const promoApplied = ref(null);
 const promoError = ref('');
 
-const cardData = ref({ number: '', expiry: '', cvc: '' });
+const methodsConfig = [
+    { tipo: 'efectivo', label: 'Efectivo', icon: '💵' },
+    { tipo: 'qr', label: 'QR', icon: '📱' },
+    { tipo: 'tarjeta', label: 'Tarjeta', icon: '💳' },
+    { tipo: 'credito', label: 'Credito', icon: '📋' },
+];
+
+const paymentMethods = ref(
+    methodsConfig.map(m => ({ ...m, monto: 0, enabled: false, pagado: m.tipo === 'efectivo' }))
+);
+
+const activeMethods = computed(() => paymentMethods.value.filter(m => m.enabled));
+
+const totalAsignado = computed(() =>
+    paymentMethods.value.reduce((s, m) => s + (parseFloat(m.monto) || 0), 0)
+);
+
+const asignadoOk = computed(() =>
+    Math.abs(totalAsignado.value - totalFinal.value) < 0.01
+);
+
 const nroCuotas = ref(2);
 
+// QR state
 const qrImage = ref(null);
 const qrLoading = ref(false);
 const qrTransactionId = ref(null);
 const qrFormat = ref('png');
-const qrAmount = ref(0);
-const qrPaid = ref(false);
 const qrChecking = ref(false);
 const qrCheckStatus = ref('');
 
-const tarjetaAmount = ref(0);
-const tarjetaPaid = ref(false);
+// Card state
+const cardData = ref({ number: '', expiry: '', cvc: '' });
 
 const showConfirmModal = ref(false);
 const showNewClientModal = ref(false);
@@ -61,9 +79,6 @@ const lastSale = ref(null);
 const submitting = ref(false);
 const processingQr = ref(false);
 const processingCard = ref(false);
-const pollingActive = ref(false);
-const pollingStatus = ref('');
-let pollingInterval = null;
 
 const quickClientForm = useForm({
     name: '',
@@ -110,28 +125,51 @@ const descuentoMonto = computed(() => {
 
 const totalFinal = computed(() => Math.max(0, total.value - descuentoMonto.value));
 
-const cambio = computed(() => {
-    const recibido = parseFloat(montoRecibido.value) || 0;
-    return Math.max(0, recibido - totalFinal.value);
-});
-
-const cuotaMonto = computed(() => {
-    if (paymentMethod.value !== 'credito' || nroCuotas.value < 1) return 0;
-    return totalFinal.value / nroCuotas.value;
-});
+const cuotaMonto = computed(() => totalFinal.value / nroCuotas.value);
 
 const canFinalizar = computed(() => {
     if (cart.value.length === 0) return false;
     if (!selectedClient.value) return false;
-    if (paymentMethod.value === 'efectivo') {
-        const recibido = parseFloat(montoRecibido.value) || 0;
-        if (recibido < totalFinal.value) return false;
+    if (activeMethods.value.length === 0) return false;
+
+    const credito = paymentMethods.value.find(p => p.tipo === 'credito');
+    if (credito?.enabled) {
+        return nroCuotas.value >= 2;
     }
-    if (paymentMethod.value === 'qr') return qrPaid.value;
-    if (paymentMethod.value === 'tarjeta') return tarjetaPaid.value;
-    if (paymentMethod.value === 'credito' && nroCuotas.value < 2) return false;
+
+    if (!asignadoOk.value) return false;
+    if (activeMethods.value.some(m => !m.pagado)) return false;
     return true;
 });
+
+const metodosActivos = computed(() => {
+    const creditoMethod = paymentMethods.value.find(p => p.tipo === 'credito' && p.enabled);
+    if (creditoMethod) {
+        return [{ tipo: 'credito', label: 'Credito', monto: totalFinal.value, pagado: true }];
+    }
+    return paymentMethods.value.filter(m => m.enabled && (parseFloat(m.monto) || 0) > 0);
+});
+
+const sumaMetodos = computed(() =>
+    paymentMethods.value.reduce((s, m) => s + (parseFloat(m.monto) || 0), 0)
+);
+
+const totalEfectivoRestante = computed(() => {
+    const ef = paymentMethods.value.find(m => m.tipo === 'efectivo');
+    return parseFloat(ef?.monto) || 0;
+});
+
+function getMethod(tipo) {
+    return paymentMethods.value.find(p => p.tipo === tipo);
+}
+
+function getMethodEnabled(tipo) {
+    return paymentMethods.value.find(p => p.tipo === tipo)?.enabled ?? false;
+}
+
+function getMethodPagado(tipo) {
+    return paymentMethods.value.find(p => p.tipo === tipo)?.pagado ?? false;
+}
 
 function selectClient(client) {
     selectedClient.value = client;
@@ -201,15 +239,45 @@ function handleBarcodeScanned(code) {
     }
 }
 
+function toggleMetodo(tipo) {
+    const m = paymentMethods.value.find(p => p.tipo === tipo);
+    if (!m) return;
+
+    if (tipo === 'credito') {
+        m.enabled = !m.enabled;
+        if (m.enabled) {
+            paymentMethods.value.forEach(p => {
+                if (p.tipo !== 'credito') p.enabled = false;
+            });
+        }
+        return;
+    }
+
+    m.enabled = !m.enabled;
+    if (!m.enabled) {
+        m.monto = 0;
+        m.pagado = false;
+        if (tipo === 'qr') {
+            qrImage.value = null;
+            qrTransactionId.value = null;
+        }
+    } else {
+        const credito = paymentMethods.value.find(p => p.tipo === 'credito');
+        if (credito) credito.enabled = false;
+        m.pagado = tipo === 'efectivo';
+    }
+}
+
 async function handlePagar() {
     if (!canFinalizar.value) return;
     showConfirmModal.value = true;
 }
 
-async function handleQRPayment() {
+async function handleQRForMethod() {
+    const m = paymentMethods.value.find(p => p.tipo === 'qr');
+    if (!m || !m.enabled) return;
     qrLoading.value = true;
     processingQr.value = true;
-    qrPaid.value = false;
     try {
         const details = cart.value.map((item, i) => ({
             serial: i + 1,
@@ -220,7 +288,7 @@ async function handleQRPayment() {
             total: item.subtotal,
         }));
         const resp = await window.axios.post(route('pago.qr.generar'), {
-            monto: parseFloat(qrAmount.value || totalFinal.value),
+            monto: parseFloat(m.monto || totalFinal.value),
             orderDetail: details,
         });
         if (resp.data?.error === false && resp.data?.data?.qrBase64) {
@@ -244,7 +312,8 @@ async function handleCheckQRPayment() {
     if (!qrTransactionId.value) return;
 
     if (String(qrTransactionId.value).startsWith('local_')) {
-        qrPaid.value = true;
+        const m = paymentMethods.value.find(p => p.tipo === 'qr');
+        if (m) m.pagado = true;
         return;
     }
 
@@ -261,7 +330,8 @@ async function handleCheckQRPayment() {
             const statusCode = resp.data.data.paymentStatus;
 
             if (statusDesc === 'Pagado' || statusCode === 2) {
-                qrPaid.value = true;
+                const m = paymentMethods.value.find(p => p.tipo === 'qr');
+                if (m) m.pagado = true;
                 qrCheckStatus.value = '';
                 qrChecking.value = false;
                 return;
@@ -283,12 +353,12 @@ async function handleCheckQRPayment() {
     }
 }
 
-async function handleCardPayment() {
+async function handleCardForMethod() {
     processingCard.value = true;
-    tarjetaPaid.value = false;
-    // Simular pago con tarjeta - el cargo real se hace en el backend al enviar la venta
+    const m = paymentMethods.value.find(p => p.tipo === 'tarjeta');
+    if (!m) { processingCard.value = false; return; }
     await new Promise(r => setTimeout(r, 500));
-    tarjetaPaid.value = true;
+    m.pagado = true;
     processingCard.value = false;
 }
 
@@ -296,20 +366,70 @@ function submitSale() {
     if (submitting.value) return;
     submitting.value = true;
 
+    const creditoMethod = paymentMethods.value.find(p => p.tipo === 'credito' && p.enabled);
+
+    if (creditoMethod) {
+        const saleForm = useForm({
+            tipo_pago: 'credito',
+            monto_pagado: totalFinal.value,
+            payment_methods: [{ tipo_pago: 'credito', monto: totalFinal.value }],
+            cliente_id: selectedClient.value?.id,
+            detalles: cart.value.map(i => ({
+                producto_id: i.producto_id,
+                cantidad: i.cantidad,
+            })),
+            codigo_promo: promoApplied.value ? promoApplied.value.codigo_promo : null,
+            nro_cuotas: nroCuotas.value,
+            card_number: null,
+            card_expiry: null,
+            card_cvc: null,
+            qr_transaction_id: null,
+        });
+
+        saleForm.post(route('ventas.store'), {
+            preserveScroll: true,
+            onSuccess: () => {
+                showConfirmModal.value = false;
+                lastSale.value = {
+                    cliente: selectedClient.value,
+                    detalles: [...cart.value],
+                    total: totalFinal.value,
+                    tipo_pago: 'credito',
+                    payment_methods: [{ tipo: 'credito', label: 'Credito', monto: totalFinal.value, pagado: true }],
+                    promo: promoApplied.value,
+                    nro_cuotas: nroCuotas.value,
+                };
+                showSuccessModal.value = true;
+                resetForm();
+            },
+            onError: (errors) => {
+                submitting.value = false;
+            },
+            onFinish: () => {
+                submitting.value = false;
+            },
+        });
+        return;
+    }
+
+    const active = paymentMethods.value.filter(p => p.enabled && (parseFloat(p.monto) || 0) > 0);
+    const singleTipo = active.length === 1 ? active[0].tipo : 'mixto';
+
     const saleForm = useForm({
-        tipo_pago: paymentMethod.value,
-        monto_pagado: paymentMethod.value === 'efectivo' ? montoRecibido.value : totalFinal.value,
+        tipo_pago: singleTipo,
+        monto_pagado: totalFinal.value,
+        payment_methods: active.map(p => ({ tipo_pago: p.tipo, monto: parseFloat(p.monto) })),
         cliente_id: selectedClient.value?.id,
         detalles: cart.value.map(i => ({
             producto_id: i.producto_id,
             cantidad: i.cantidad,
         })),
         codigo_promo: promoApplied.value ? promoApplied.value.codigo_promo : null,
-        nro_cuotas: paymentMethod.value === 'credito' ? nroCuotas.value : null,
-        card_number: paymentMethod.value === 'tarjeta' ? cardData.value.number : null,
-        card_expiry: paymentMethod.value === 'tarjeta' ? cardData.value.expiry : null,
-        card_cvc: paymentMethod.value === 'tarjeta' ? cardData.value.cvc : null,
-        qr_transaction_id: paymentMethod.value === 'qr' ? qrTransactionId.value : null,
+        nro_cuotas: null,
+        card_number: active.some(p => p.tipo === 'tarjeta') ? cardData.value.number : null,
+        card_expiry: active.some(p => p.tipo === 'tarjeta') ? cardData.value.expiry : null,
+        card_cvc: active.some(p => p.tipo === 'tarjeta') ? cardData.value.cvc : null,
+        qr_transaction_id: qrTransactionId.value,
     });
 
     saleForm.post(route('ventas.store'), {
@@ -320,10 +440,8 @@ function submitSale() {
                 cliente: selectedClient.value,
                 detalles: [...cart.value],
                 total: totalFinal.value,
-                tipo_pago: paymentMethod.value,
-                nro_cuotas: paymentMethod.value === 'credito' ? nroCuotas.value : null,
-                monto_pagado: paymentMethod.value === 'efectivo' ? montoRecibido.value : totalFinal.value,
-                cambio: paymentMethod.value === 'efectivo' ? cambio.value : 0,
+                tipo_pago: singleTipo,
+                payment_methods: active.map(p => ({ ...p })),
                 promo: promoApplied.value,
                 qrImage: qrImage.value,
             };
@@ -343,26 +461,17 @@ function resetForm() {
     cart.value = [];
     selectedClient.value = null;
     clienteSearch.value = '';
-    paymentMethod.value = 'efectivo';
     montoRecibido.value = '';
-    promoCode.value = '';
     promoCode.value = '';
     promoApplied.value = null;
     promoError.value = '';
-    paymentMethod.value = 'efectivo';
-    montoRecibido.value = '';
-    cardData.value = { number: '', expiry: '', cvc: '' };
+    paymentMethods.value = methodsConfig.map(m => ({ ...m, monto: 0, enabled: false, pagado: m.tipo === 'efectivo' }));
     nroCuotas.value = 2;
     qrImage.value = null;
     qrTransactionId.value = null;
-    qrAmount.value = 0;
-    qrPaid.value = false;
     qrChecking.value = false;
     qrCheckStatus.value = '';
-    tarjetaAmount.value = 0;
-    tarjetaPaid.value = false;
-    pollingActive.value = false;
-    pollingStatus.value = '';
+    cardData.value = { number: '', expiry: '', cvc: '' };
     if (pollingInterval) {
         clearInterval(pollingInterval);
         pollingInterval = null;
@@ -601,52 +710,57 @@ function focusClienteInput(el) {
 
                 <div class="flex flex-wrap gap-2 mb-4">
                     <button
-                        v-for="metodo in ['efectivo', 'qr', 'tarjeta', 'credito']"
-                        :key="metodo"
+                        v-for="m in methodsConfig"
+                        :key="m.tipo"
                         type="button"
+                        @click="toggleMetodo(m.tipo)"
                         class="rounded-lg px-4 py-2 text-sm font-medium transition"
-                        :class="paymentMethod === metodo
-                            ? 'bg-amber-600 text-white shadow-lg shadow-amber-600/30'
+                        :class="getMethodEnabled(m.tipo)
+                            ? getMethodPagado(m.tipo)
+                                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 ring-2 ring-emerald-400'
+                                : 'bg-amber-600 text-white shadow-lg shadow-amber-600/30'
                             : 'bg-stone-700 text-stone-300 hover:bg-stone-600'"
-                        @click="paymentMethod = metodo; qrPaid = false; tarjetaPaid = false; qrImage = null"
                     >
-                        <template v-if="metodo === 'efectivo'">Efectivo</template>
-                        <template v-else-if="metodo === 'qr'">QR</template>
-                        <template v-else-if="metodo === 'tarjeta'">Tarjeta</template>
-                        <template v-else>Credito</template>
+                        <span v-if="getMethodPagado(m.tipo)" class="mr-1.5">✓</span>
+                        {{ m.label }}
                     </button>
                 </div>
 
                 <!-- Efectivo -->
-                <div v-if="paymentMethod === 'efectivo'" class="space-y-2">
+                <div v-if="getMethodEnabled('efectivo')" class="space-y-2 border-t border-stone-700/60 pt-3">
                     <div class="flex items-center gap-4">
                         <div>
-                            <label class="mb-1 block text-xs text-stone-400">Monto recibido</label>
-                            <TextInput v-model="montoRecibido" type="number" min="0" step="0.01" class="w-40" />
+                            <label class="mb-1 block text-xs text-stone-400">Monto efectivo</label>
+                            <TextInput v-model.number="getMethod('efectivo').monto" type="number" min="0" step="0.01" class="w-40" />
                         </div>
-                        <div v-if="parseFloat(montoRecibido) >= totalFinal" class="mt-5">
-                            <span class="text-sm text-stone-400">Cambio: </span>
-                            <span class="font-mono font-bold text-emerald-400">Bs {{ cambio.toFixed(2) }}</span>
+                        <div v-if="getMethodPagado('efectivo') && parseFloat(getMethod('efectivo').monto) > 0" class="flex items-center gap-2 text-sm text-emerald-400 font-semibold mt-5">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            Pagado
                         </div>
+                    </div>
+                    <div v-if="parseFloat(getMethod('efectivo').monto) >= totalEfectivoRestante" class="text-sm text-stone-400">
+                        Cambio: <span class="font-mono font-bold text-emerald-400">Bs {{ (parseFloat(getMethod('efectivo').monto) - totalEfectivoRestante).toFixed(2) }}</span>
                     </div>
                 </div>
 
                 <!-- QR -->
-                <div v-if="paymentMethod === 'qr'" class="space-y-3">
+                <div v-if="getMethodEnabled('qr')" class="space-y-3 border-t border-stone-700/60 pt-3">
                     <div class="flex items-center gap-4">
                         <div>
                             <label class="mb-1 block text-xs text-stone-400">Monto QR</label>
-                            <TextInput v-model.number="qrAmount" type="number" min="0" step="0.01" class="w-40" :placeholder="totalFinal.toFixed(2)" />
+                            <TextInput v-model.number="getMethod('qr').monto" type="number" min="0" step="0.01" class="w-40" />
                         </div>
-                        <div v-if="!qrPaid && !qrImage" class="mt-5">
-                            <PrimaryButton type="button" :disabled="qrLoading" @click="handleQRPayment">
+                        <div v-if="!getMethodPagado('qr') && !qrImage" class="mt-5">
+                            <PrimaryButton type="button" :disabled="qrLoading" @click="handleQRForMethod">
                                 {{ qrLoading ? 'Generando...' : 'Generar QR' }}
                             </PrimaryButton>
                         </div>
                     </div>
 
                     <!-- QR Image -->
-                    <div v-if="qrImage && !qrPaid" class="space-y-3">
+                    <div v-if="qrImage && !getMethodPagado('qr')" class="space-y-3">
                         <div class="flex justify-center">
                             <img :src="`data:image/${qrFormat};base64,${qrImage}`" class="h-48 w-48 rounded-lg border border-white/10" alt="QR">
                         </div>
@@ -662,44 +776,42 @@ function focusClienteInput(el) {
                     </div>
 
                     <!-- QR Paid status -->
-                    <div v-if="qrPaid" class="flex items-center gap-2 text-sm text-emerald-400 font-semibold">
+                    <div v-if="getMethodPagado('qr')" class="flex items-center gap-2 text-sm text-emerald-400 font-semibold">
                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
-                        Pagado — Bs {{ parseFloat(qrAmount || totalFinal).toFixed(2) }}
+                        Pagado — Bs {{ (parseFloat(getMethod('qr').monto) || totalFinal).toFixed(2) }}
                     </div>
                 </div>
 
                 <!-- Tarjeta -->
-                <div v-if="paymentMethod === 'tarjeta'" class="space-y-3">
+                <div v-if="getMethodEnabled('tarjeta')" class="space-y-3 border-t border-stone-700/60 pt-3">
                     <div class="flex items-center gap-4">
                         <div>
                             <label class="mb-1 block text-xs text-stone-400">Monto tarjeta</label>
-                            <TextInput v-model.number="tarjetaAmount" type="number" min="0" step="0.01" class="w-40" :placeholder="totalFinal.toFixed(2)" />
+                            <TextInput v-model.number="getMethod('tarjeta').monto" type="number" min="0" step="0.01" class="w-40" />
                         </div>
                     </div>
 
-                    <!-- Card Form (solo si hay monto > 0) -->
-                    <div v-if="(parseFloat(tarjetaAmount) || 0) > 0 && !tarjetaPaid">
+                    <div v-if="(parseFloat(getMethod('tarjeta').monto) || 0) > 0 && !getMethodPagado('tarjeta')">
                         <CreditCardForm v-model="cardData" />
                         <div class="mt-3 flex justify-end">
-                            <PrimaryButton type="button" :disabled="processingCard || !cardData.number" @click="handleCardPayment">
+                            <PrimaryButton type="button" :disabled="processingCard || !cardData.number" @click="handleCardForMethod">
                                 {{ processingCard ? 'Procesando...' : 'Pagar con tarjeta' }}
                             </PrimaryButton>
                         </div>
                     </div>
 
-                    <!-- Tarjeta Paid status -->
-                    <div v-if="tarjetaPaid" class="flex items-center gap-2 text-sm text-emerald-400 font-semibold">
+                    <div v-if="getMethodPagado('tarjeta')" class="flex items-center gap-2 text-sm text-emerald-400 font-semibold">
                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
-                        Pagado — Bs {{ parseFloat(tarjetaAmount || totalFinal).toFixed(2) }}
+                        Pagado — Bs {{ (parseFloat(getMethod('tarjeta').monto) || totalFinal).toFixed(2) }}
                     </div>
                 </div>
 
                 <!-- Credito -->
-                <div v-if="paymentMethod === 'credito'" class="space-y-2">
+                <div v-if="getMethodEnabled('credito')" class="space-y-2 border-t border-stone-700/60 pt-3">
                     <div class="flex items-center gap-4">
                         <div>
                             <label class="mb-1 block text-xs text-stone-400">Numero de cuotas</label>
@@ -717,6 +829,21 @@ function focusClienteInput(el) {
                     <p v-if="!selectedClient" class="text-sm text-amber-400">
                         Debe seleccionar un cliente para ventas a credito.
                     </p>
+                </div>
+
+                <!-- Total desglose -->
+                <div v-if="metodosActivos.length > 1 || getMethodEnabled('credito')" class="border-t border-stone-700/60 pt-3 text-xs text-stone-400">
+                    <div class="space-y-1">
+                        <div v-for="m in metodosActivos" :key="m.tipo" class="flex justify-between">
+                            <span>{{ m.label }}: Bs {{ (parseFloat(m.monto) || 0).toFixed(2) }}</span>
+                            <span v-if="m.pagado" class="text-emerald-400">✓ Pagado</span>
+                            <span v-else class="text-amber-400">Pendiente</span>
+                        </div>
+                        <div class="flex justify-between border-t border-stone-700/30 pt-1 font-semibold text-stone-200">
+                            <span>Total</span>
+                            <span>{{ sumaMetodos.toFixed(2) }} / {{ totalFinal.toFixed(2) }}</span>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Action button -->
@@ -788,11 +915,14 @@ function focusClienteInput(el) {
                             <span class="font-mono text-amber-200">Bs {{ totalFinal.toFixed(2) }}</span>
                         </div>
                         <div class="mt-1 text-xs text-stone-400">
-                            <div class="font-semibold text-stone-300">Pago: {{ paymentMethod === 'efectivo' ? 'Efectivo' : paymentMethod === 'qr' ? 'QR' : paymentMethod === 'tarjeta' ? 'Tarjeta' : 'Credito' }}</div>
-                            <template v-if="paymentMethod === 'credito'"> — {{ nroCuotas }} cuotas de Bs {{ cuotaMonto.toFixed(2) }}</template>
-                            <template v-if="paymentMethod === 'efectivo'"> — Recibido: Bs {{ (parseFloat(montoRecibido) || 0).toFixed(2) }}{{ parseFloat(montoRecibido) >= totalFinal ? ' — Cambio: Bs ' + cambio.toFixed(2) : '' }}</template>
-                            <template v-if="paymentMethod === 'qr'"> — Bs {{ parseFloat(qrAmount || totalFinal).toFixed(2) }} ✓ Pagado</template>
-                            <template v-if="paymentMethod === 'tarjeta'"> — Bs {{ parseFloat(tarjetaAmount || totalFinal).toFixed(2) }} ✓ Pagado</template>
+                            <div v-for="m in metodosActivos" :key="m.tipo" class="flex justify-between">
+                                <span>{{ m.label }}: Bs {{ (parseFloat(m.monto) || 0).toFixed(2) }}</span>
+                                <span v-if="m.pagado" class="text-emerald-400">✓ Pagado</span>
+                                <span v-else class="text-amber-400">Pendiente</span>
+                            </div>
+                            <div v-if="getMethodEnabled('credito')" class="text-stone-500">
+                                {{ nroCuotas }} cuotas de Bs {{ cuotaMonto.toFixed(2) }} c/u
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -805,7 +935,7 @@ function focusClienteInput(el) {
                         :disabled="submitting"
                         @click="submitSale()"
                     >
-                        {{ submitting ? 'Procesando...' : (qrImage ? 'Confirmar pago QR' : 'Confirmar venta') }}
+                        {{ submitting ? 'Procesando...' : (qrImage ? 'Confirmar venta' : 'Confirmar venta') }}
                     </PrimaryButton>
                 </div>
             </template>
@@ -849,9 +979,13 @@ function focusClienteInput(el) {
                             <span class="font-mono text-amber-200">Bs {{ parseFloat(lastSale.total).toFixed(2) }}</span>
                         </div>
                         <div class="mt-1 text-xs text-stone-400">
-                            Pago: {{ lastSale.tipo_pago }}
-                            <template v-if="lastSale.tipo_pago === 'efectivo'"> — Cambio: Bs {{ parseFloat(lastSale.cambio).toFixed(2) }}</template>
-                            <template v-if="lastSale.tipo_pago === 'credito'"> — {{ lastSale.nro_cuotas }} cuotas</template>
+                            <div v-for="pm in lastSale.payment_methods" :key="pm.tipo" class="flex justify-between">
+                                <span>{{ pm.label }}: Bs {{ parseFloat(pm.monto || 0).toFixed(2) }}</span>
+                                <span v-if="pm.pagado" class="text-emerald-400">✓ Pagado</span>
+                            </div>
+                            <div v-if="lastSale.nro_cuotas" class="text-stone-500">
+                                {{ lastSale.nro_cuotas }} cuotas de Bs {{ (lastSale.total / lastSale.nro_cuotas).toFixed(2) }} c/u
+                            </div>
                         </div>
                     </div>
                 </div>

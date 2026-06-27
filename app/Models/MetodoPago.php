@@ -19,18 +19,15 @@ class MetodoPago extends Model
     protected $fillable = [
         'tipo_pago',
         'venta_id',
+        'monto',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
             'id' => 'integer',
             'venta_id' => 'integer',
+            'monto' => 'decimal:2',
         ];
     }
 

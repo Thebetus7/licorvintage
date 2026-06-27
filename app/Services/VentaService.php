@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\ActivityLog;
 use App\Models\AperturaCaja;
+use App\Models\MetodoPago;
 use App\Models\Producto;
 use App\Models\Promocion;
 use App\Models\User;
@@ -80,6 +81,9 @@ class VentaService
             $tipoPago = $data['tipo_pago'];
             $isCredito = $tipoPago === 'credito';
             $nroCuotas = $isCredito ? (int) $data['nro_cuotas'] : 1;
+            $paymentMethods = $data['payment_methods'] ?? null;
+
+            $hasMultipleMethods = is_array($paymentMethods) && count($paymentMethods) > 0;
 
             if ($isCredito) {
                 if (empty($data['cliente_id'])) {
@@ -103,7 +107,12 @@ class VentaService
                     ]);
                 }
 
-                if ($tipoPago === 'tarjeta') {
+                // Stripe charge if tarjeta is included
+                $hasTarjeta = $hasMultipleMethods
+                    ? collect($paymentMethods)->contains('tipo_pago', 'tarjeta')
+                    : $tipoPago === 'tarjeta';
+
+                if ($hasTarjeta) {
                     $expiry = explode('/', $data['card_expiry'] ?? '');
                     $expMonth = trim($expiry[0] ?? '');
                     $expYear = trim($expiry[1] ?? '');
@@ -166,13 +175,22 @@ class VentaService
                 );
             }
 
-            $venta->metodoPagos()->create(['tipo_pago' => $tipoPago]);
+            // Register payment methods
+            if ($hasMultipleMethods) {
+                foreach ($paymentMethods as $pm) {
+                    $venta->metodoPagos()->create([
+                        'tipo_pago' => $pm['tipo_pago'],
+                        'monto' => $pm['monto'],
+                    ]);
+                }
+            } else {
+                $venta->metodoPagos()->create(['tipo_pago' => $tipoPago]);
+            }
 
             if ($isCredito) {
                 // Registrar cuotas
                 $subMontoCuota = round($totalFinal / $nroCuotas, 2);
                 for ($i = 1; $i <= $nroCuotas; $i++) {
-                    // Ajustar céntimos en la última cuota si hay diferencias por redondeo
                     $montoCuota = ($i === $nroCuotas) ? ($totalFinal - ($subMontoCuota * ($nroCuotas - 1))) : $subMontoCuota;
                     $venta->ventaCuotas()->create([
                         'sub_monto' => $montoCuota,
@@ -181,15 +199,27 @@ class VentaService
                     ]);
                 }
             } else {
-                // Registrar pago al contado en caja
-                $caja->movimientoCajas()->create([
-                    'monto' => $totalFinal,
-                    'tipo' => 'venta',
-                    'detalle' => "Venta #{$venta->id} ({$tipoPago})",
-                ]);
-                $caja->increment('monto_sistema', $totalFinal);
-
-                $this->actualizarTotalesSistema($caja, $tipoPago, $totalFinal);
+                if ($hasMultipleMethods) {
+                    foreach ($paymentMethods as $pm) {
+                        $tipo = $pm['tipo_pago'];
+                        $monto = (float) $pm['monto'];
+                        $caja->movimientoCajas()->create([
+                            'monto' => $monto,
+                            'tipo' => 'venta',
+                            'detalle' => "Venta #{$venta->id} ({$tipo})",
+                        ]);
+                        $this->actualizarTotalesSistema($caja, $tipo, $monto);
+                    }
+                    $caja->increment('monto_sistema', $totalFinal);
+                } else {
+                    $caja->movimientoCajas()->create([
+                        'monto' => $totalFinal,
+                        'tipo' => 'venta',
+                        'detalle' => "Venta #{$venta->id} ({$tipoPago})",
+                    ]);
+                    $caja->increment('monto_sistema', $totalFinal);
+                    $this->actualizarTotalesSistema($caja, $tipoPago, $totalFinal);
+                }
             }
 
             $this->logSuccess($user, $venta);
