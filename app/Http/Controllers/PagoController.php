@@ -42,6 +42,27 @@ class PagoController extends Controller
         ]);
     }
 
+    public function checkStatus(Request $request, PagoFacilService $pagofacil): JsonResponse
+    {
+        $validated = $request->validate([
+            'transactionId' => 'required',
+        ]);
+
+        $result = $pagofacil->queryTransaction($validated['transactionId']);
+
+        if (! $result) {
+            return response()->json([
+                'error' => true,
+                'message' => 'No se pudo consultar el estado de la transaccion.',
+            ], 500);
+        }
+
+        return response()->json([
+            'error' => false,
+            'data' => $result,
+        ]);
+    }
+
     public function callback(Request $request)
     {
         Log::info('Callback PagoFacil', $request->all());

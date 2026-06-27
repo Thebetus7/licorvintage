@@ -11,13 +11,14 @@ use App\Models\Venta;
 use App\Models\VentaCuotas;
 use App\Services\CajaService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class CajaController extends Controller
 {
-    public function index(CajaService $service): Response
+    public function index(CajaService $service, Request $request): Response
     {
         $user = auth()->user();
         $isPropietario = $user->hasRole('propietario');
@@ -26,14 +27,14 @@ class CajaController extends Controller
             ? $service->activeCajaDelSistema()
             : $service->activeCaja($user);
 
-        $comprobantes = collect();
-        if ($cajaActiva) {
-            $comprobantes = Venta::with(['detalleVentas.producto', 'cliente', 'metodoPagos'])
-                ->where('user_id', $cajaActiva->user_id)
-                ->whereBetween('created_at', [$cajaActiva->tiempo_apertura, now()])
-                ->orderByDesc('created_at')
-                ->get();
-        }
+        $from = $request->get('from', now()->startOfMonth()->toDateString());
+        $to = $request->get('to', now()->toDateString());
+
+        $aperturas = AperturaCaja::with(['user', 'opener'])
+            ->whereDate('created_at', '>=', $from)
+            ->whereDate('created_at', '<=', $to)
+            ->orderByDesc('created_at')
+            ->get();
 
         return Inertia::render('Caja/Index', [
             'cajaActiva' => $cajaActiva?->load(['user', 'opener', 'movimientoCajas']),
@@ -48,7 +49,8 @@ class CajaController extends Controller
                 ->whereHas('ventaCuotas', fn ($q) => $q->where('estado', 'pendiente'))
                 ->orderByDesc('created_at')
                 ->get(),
-            'comprobantes' => $comprobantes,
+            'aperturas' => $aperturas,
+            'filters' => ['from' => $from, 'to' => $to],
         ]);
     }
 

@@ -54,7 +54,7 @@ class VentaController extends Controller
             'cliente_id' => 'nullable|integer|exists:users,id',
             'codigo_promo' => 'nullable|string',
             'nro_cuotas' => 'nullable|integer|min:1',
-            'qr_transaction_id' => 'nullable|string',
+            'qr_transaction_id' => 'nullable',
             'card_number' => 'required_if:tipo_pago,tarjeta|string|nullable',
             'card_expiry' => 'required_if:tipo_pago,tarjeta|string|nullable',
             'card_cvc' => 'required_if:tipo_pago,tarjeta|string|nullable',

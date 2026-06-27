@@ -450,7 +450,7 @@ class LicorModulesTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->component('Caja/Index')
                 ->has('cajaActiva')
-                ->has('comprobantes', 1)
+                ->has('aperturas')
                 ->has('vendedores')
                 ->has('clientes')
             );

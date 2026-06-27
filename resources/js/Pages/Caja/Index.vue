@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue';
-import { useForm, Head, usePage } from '@inertiajs/vue3';
+import { useForm, Head, usePage, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
@@ -15,22 +15,25 @@ const props = defineProps({
     vendedores: Array,
     clientes: Array,
     creditosPendientes: Array,
-    comprobantes: Array,
+    aperturas: Array,
+    filters: Object,
 });
 
 const page = usePage();
 const user = computed(() => page.props.auth.user);
 const isPropietario = computed(() => page.props.auth.roles?.includes('propietario'));
 
-const activeTab = ref('caja');
+const activeTab = ref(page.props.ziggy?.query?.tab || 'caja');
 const showOpenModal = ref(false);
 const showCloseModal = ref(false);
 const showClientModal = ref(false);
 const showCreditDetailModal = ref(false);
 const selectedCredit = ref(null);
 const vendedorSearch = ref('');
-const selectedComprobante = ref(null);
-const showComprobanteModal = ref(false);
+const historialFrom = ref(props.filters?.from || '');
+const historialTo = ref(props.filters?.to || '');
+const selectedApertura = ref(null);
+const showAperturaModal = ref(false);
 
 const openForm = useForm({ monto_inicial: 0, vendedor_id: '' });
 const closeForm = useForm({
@@ -99,11 +102,6 @@ const submitClose = () => {
     });
 };
 
-const verComprobante = (venta) => {
-    selectedComprobante.value = venta;
-    showComprobanteModal.value = true;
-};
-
 const payInstallment = (cuotaId) => {
     installmentForm.post(route('caja.cuotas.pagar', cuotaId), {
         preserveScroll: true,
@@ -129,6 +127,24 @@ const formatTipoPago = (tipo) => {
     const map = { efectivo: 'Efectivo', qr: 'QR', tarjeta: 'Tarjeta', credito: 'Crédito', compra_directa: 'Directo' };
     return map[tipo] || tipo;
 };
+
+const formatDiff = (diff) => {
+    const n = Number(diff || 0);
+    return (n >= 0 ? '+' : '') + n.toFixed(2);
+};
+
+const verApertura = (c) => {
+    selectedApertura.value = c;
+    showAperturaModal.value = true;
+};
+
+const filterHistorial = () => {
+    router.get(route('caja.index'), {
+        from: historialFrom.value,
+        to: historialTo.value,
+        tab: 'historial',
+    }, { preserveState: true, preserveScroll: true });
+};
 </script>
 
 <template>
@@ -149,7 +165,7 @@ const formatTipoPago = (tipo) => {
                 <button
                     v-for="tab in [
                         { key: 'caja', label: '💵 Caja' },
-                        { key: 'comprobantes', label: '🧾 Comprobantes' },
+                        { key: 'historial', label: '📋 Historial' },
                         { key: 'creditos', label: '💳 Créditos' },
                     ]"
                     :key="tab.key"
@@ -279,46 +295,94 @@ const formatTipoPago = (tipo) => {
                 </template>
             </div>
 
-            <!-- TAB: COMPROBANTES -->
-            <div v-if="activeTab === 'comprobantes'">
+            <!-- TAB: HISTORIAL (aperturas y cierres) -->
+            <div v-if="activeTab === 'historial'">
                 <div class="rounded-3xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/40 p-6 shadow-xl backdrop-blur-md">
-                    <h3 class="font-bold text-[var(--text-primary)] mb-1">Comprobantes de Caja</h3>
-                    <p class="text-xs text-[var(--text-secondary)] mb-4">
-                        {{ cajaActiva ? `Ventas registradas durante la caja #${cajaActiva.id}` : 'No hay caja activa.' }}
-                    </p>
+                    <h3 class="font-bold text-[var(--text-primary)] mb-1">Historial de Aperturas y Cierres</h3>
 
-                    <div v-if="comprobantes.length === 0" class="text-center py-12 text-sm text-[var(--text-secondary)]">
-                        No hay comprobantes registrados en esta caja.
+                    <!-- Date filter -->
+                    <div class="flex items-center gap-3 mb-4">
+                        <div>
+                            <label class="block text-[10px] uppercase font-bold text-[var(--text-secondary)] mb-1">Desde</label>
+                            <input
+                                v-model="historialFrom"
+                                type="date"
+                                class="rounded-lg border border-[var(--border-color)] bg-transparent px-3 py-1.5 text-sm text-[var(--text-primary)]"
+                            />
+                        </div>
+                        <div>
+                            <label class="block text-[10px] uppercase font-bold text-[var(--text-secondary)] mb-1">Hasta</label>
+                            <input
+                                v-model="historialTo"
+                                type="date"
+                                class="rounded-lg border border-[var(--border-color)] bg-transparent px-3 py-1.5 text-sm text-[var(--text-primary)]"
+                            />
+                        </div>
+                        <div class="pt-5">
+                            <button
+                                class="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-4 py-1.5 rounded-lg text-sm font-semibold transition cursor-pointer"
+                                @click="filterHistorial"
+                            >
+                                Filtrar
+                            </button>
+                        </div>
                     </div>
 
-                    <div v-else class="space-y-3">
-                        <div
-                            v-for="venta in comprobantes"
-                            :key="venta.id"
-                            class="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition cursor-pointer"
-                            @click="verComprobante(venta)"
-                        >
-                            <div class="flex items-center gap-4">
-                                <span class="text-xs font-mono font-bold text-indigo-300">#{{ venta.id }}</span>
-                                <div>
-                                    <span class="text-sm font-semibold text-[var(--text-primary)]">{{ venta.cliente?.name || 'Consumidor Final' }}</span>
-                                    <span class="text-[10px] text-[var(--text-secondary)] block">{{ new Date(venta.created_at).toLocaleString() }}</span>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <span class="text-xs px-2.5 py-1 rounded-full font-semibold"
-                                    :class="{
-                                        'bg-indigo-500/10 text-indigo-300 border border-indigo-500/20': venta.tipo_pago === 'qr',
-                                        'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20': venta.tipo_pago === 'efectivo' || venta.tipo_pago === 'compra_directa',
-                                        'bg-amber-500/10 text-amber-300 border border-amber-500/20': venta.tipo_pago === 'credito',
-                                        'bg-cyan-500/10 text-cyan-300 border border-cyan-500/20': venta.tipo_pago === 'tarjeta',
-                                    }"
-                                >
-                                    {{ formatTipoPago(venta.tipo_pago) }}
-                                </span>
-                                <span class="font-bold text-sm text-[var(--text-primary)]">{{ Number(venta.monto_final).toFixed(2) }} Bs</span>
-                            </div>
-                        </div>
+                    <div v-if="aperturas.length === 0" class="text-center py-12 text-sm text-[var(--text-secondary)]">
+                        No se encontraron aperturas en este rango de fechas.
+                    </div>
+
+                    <div v-else class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="text-[var(--text-secondary)] border-b border-[var(--border-color)] text-left">
+                                    <th class="py-3 pr-2 font-semibold">#</th>
+                                    <th class="py-3 px-2 font-semibold">Vendedor</th>
+                                    <th class="py-3 px-2 font-semibold">Abrió</th>
+                                    <th class="py-3 px-2 font-semibold text-right">Inicial</th>
+                                    <th class="py-3 px-2 font-semibold text-right">Sistema</th>
+                                    <th class="py-3 px-2 font-semibold text-right">Dif.</th>
+                                    <th class="py-3 px-2 font-semibold">Apertura</th>
+                                    <th class="py-3 px-2 font-semibold">Cierre</th>
+                                    <th class="py-3 px-2 font-semibold">Estado</th>
+                                    <th class="py-3 pl-2 font-semibold text-center">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="c in aperturas" :key="c.id" class="border-b border-[var(--border-color)]/50 hover:bg-white/5 transition">
+                                    <td class="py-3 pr-2 font-mono font-bold text-indigo-300">#{{ c.id }}</td>
+                                    <td class="py-3 px-2">{{ c.user?.name || '—' }}</td>
+                                    <td class="py-3 px-2">{{ c.opener?.name || '—' }}</td>
+                                    <td class="py-3 px-2 text-right font-mono">{{ Number(c.monto_inicial).toFixed(2) }}</td>
+                                    <td class="py-3 px-2 text-right font-mono font-semibold text-indigo-300">{{ Number(c.monto_sistema).toFixed(2) }}</td>
+                                    <td class="py-3 px-2 text-right font-mono font-semibold"
+                                        :class="(Number(c.diferencia) || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'"
+                                    >
+                                        {{ formatDiff(c.diferencia) }}
+                                    </td>
+                                    <td class="py-3 px-2 text-xs">{{ c.tiempo_apertura ? new Date(c.tiempo_apertura).toLocaleString() : '—' }}</td>
+                                    <td class="py-3 px-2 text-xs">{{ c.tiempo_cierre ? new Date(c.tiempo_cierre).toLocaleString() : '—' }}</td>
+                                    <td class="py-3 px-2">
+                                        <span
+                                            class="text-[10px] font-bold px-2.5 py-1 rounded-full uppercase"
+                                            :class="c.estado === 'abierto'
+                                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                                : 'bg-stone-500/10 text-stone-400 border border-stone-500/20'"
+                                        >
+                                            {{ c.estado }}
+                                        </span>
+                                    </td>
+                                    <td class="py-3 pl-2 text-center">
+                                        <button
+                                            class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded-lg text-xs font-semibold transition cursor-pointer"
+                                            @click="verApertura(c)"
+                                        >
+                                            Ver
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -455,50 +519,78 @@ const formatTipoPago = (tipo) => {
             </template>
         </DialogModal>
 
-        <!-- MODAL DETALLE COMPROBANTE -->
-        <DialogModal :show="showComprobanteModal" @close="showComprobanteModal = false">
+        <!-- MODAL DETALLE APERTURA -->
+        <DialogModal :show="showAperturaModal" max-width="lg" scrollable @close="showAperturaModal = false">
             <template #title>
-                <h3 class="text-lg font-bold text-[var(--text-primary)]">Comprobante #{{ selectedComprobante?.id }}</h3>
+                <h3 class="text-lg font-bold text-[var(--text-primary)]">Detalle de Apertura #{{ selectedApertura?.id }}</h3>
             </template>
             <template #content>
-                <div v-if="selectedComprobante" class="space-y-4 text-sm">
+                <div v-if="selectedApertura" class="space-y-4 text-sm">
                     <div class="grid grid-cols-2 gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
                         <div>
-                            <span class="text-[10px] uppercase font-bold text-[var(--text-secondary)] block">Cliente</span>
-                            <span class="font-bold text-[var(--text-primary)]">{{ selectedComprobante.cliente?.name || 'Consumidor Final' }}</span>
+                            <span class="text-[10px] uppercase font-bold text-[var(--text-secondary)] block">Vendedor</span>
+                            <span class="font-bold text-[var(--text-primary)]">{{ selectedApertura.user?.name || '—' }}</span>
                         </div>
                         <div>
-                            <span class="text-[10px] uppercase font-bold text-[var(--text-secondary)] block">Monto Final</span>
-                            <span class="font-bold text-indigo-300">{{ Number(selectedComprobante.monto_final).toFixed(2) }} Bs</span>
+                            <span class="text-[10px] uppercase font-bold text-[var(--text-secondary)] block">Abierta por</span>
+                            <span class="font-bold text-[var(--text-primary)]">{{ selectedApertura.opener?.name || '—' }}</span>
                         </div>
                         <div>
-                            <span class="text-[10px] uppercase font-bold text-[var(--text-secondary)] block">Tipo Pago</span>
-                            <span class="font-bold text-[var(--text-primary)]">{{ formatTipoPago(selectedComprobante.tipo_pago) }}</span>
+                            <span class="text-[10px] uppercase font-bold text-[var(--text-secondary)] block">Monto Inicial</span>
+                            <span class="font-bold text-[var(--text-primary)]">{{ Number(selectedApertura.monto_inicial).toFixed(2) }} Bs</span>
                         </div>
                         <div>
-                            <span class="text-[10px] uppercase font-bold text-[var(--text-secondary)] block">Fecha</span>
-                            <span class="font-bold text-[var(--text-primary)]">{{ new Date(selectedComprobante.created_at).toLocaleString() }}</span>
+                            <span class="text-[10px] uppercase font-bold text-[var(--text-secondary)] block">Total Sistema</span>
+                            <span class="font-bold text-indigo-300">{{ Number(selectedApertura.monto_sistema).toFixed(2) }} Bs</span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] uppercase font-bold text-[var(--text-secondary)] block">Total Real</span>
+                            <span class="font-bold text-[var(--text-primary)]">{{ Number(selectedApertura.monto_real || 0).toFixed(2) }} Bs</span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] uppercase font-bold text-[var(--text-secondary)] block">Diferencia</span>
+                            <span class="font-bold font-mono" :class="(Number(selectedApertura.diferencia) || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'">
+                                {{ formatDiff(selectedApertura.diferencia) }} Bs
+                            </span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] uppercase font-bold text-[var(--text-secondary)] block">Apertura</span>
+                            <span class="font-bold text-[var(--text-primary)] text-xs">{{ selectedApertura.tiempo_apertura ? new Date(selectedApertura.tiempo_apertura).toLocaleString() : '—' }}</span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] uppercase font-bold text-[var(--text-secondary)] block">Cierre</span>
+                            <span class="font-bold text-[var(--text-primary)] text-xs">{{ selectedApertura.tiempo_cierre ? new Date(selectedApertura.tiempo_cierre).toLocaleString() : '—' }}</span>
                         </div>
                     </div>
 
-                    <h4 class="font-bold text-xs uppercase tracking-wider text-[var(--text-secondary)]">Productos</h4>
-                    <div class="space-y-2">
-                        <div v-for="det in selectedComprobante.detalle_ventas" :key="det.id" class="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/5">
-                            <div>
-                                <span class="font-bold text-xs">{{ det.producto?.nombre || 'Producto #' + det.producto_id }}</span>
-                                <span class="text-[10px] text-[var(--text-secondary)] block">{{ det.cantidad }} x {{ Number(det.precio_u_final).toFixed(2) }} Bs</span>
-                            </div>
-                            <span class="font-bold text-xs">{{ Number(det.subtotal).toFixed(2) }} Bs</span>
-                        </div>
-                    </div>
-
-                    <div v-if="selectedComprobante.cod_descuento" class="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs">
-                        🏷️ Cupón aplicado: {{ selectedComprobante.cod_descuento }}
-                    </div>
+                    <h4 class="font-bold text-xs uppercase tracking-wider text-[var(--text-secondary)]">Arqueo por Tipo de Pago</h4>
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="text-[var(--text-secondary)] border-b border-[var(--border-color)]">
+                                <th class="text-left py-2 font-semibold">Tipo</th>
+                                <th class="text-right py-2 font-semibold">Sistema</th>
+                                <th class="text-right py-2 font-semibold">Caja</th>
+                                <th class="text-right py-2 font-semibold">Dif.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="tipo in tiposPago" :key="tipo" class="border-b border-[var(--border-color)]/50">
+                                <td class="py-2 capitalize font-medium">{{ tipo }}</td>
+                                <td class="py-2 text-right font-mono">{{ (selectedApertura.totales_sistema?.[tipo] || 0).toFixed(2) }}</td>
+                                <td class="py-2 text-right font-mono">{{ (selectedApertura.totales_caja?.[tipo] || 0).toFixed(2) }}</td>
+                                <td class="py-2 text-right font-mono font-semibold"
+                                    :class="((selectedApertura.totales_caja?.[tipo] || 0) - (selectedApertura.totales_sistema?.[tipo] || 0)) >= 0 ? 'text-emerald-400' : 'text-rose-400'"
+                                >
+                                    {{ ((selectedApertura.totales_caja?.[tipo] || 0) - (selectedApertura.totales_sistema?.[tipo] || 0)) >= 0 ? '+' : '' }}
+                                    {{ ((selectedApertura.totales_caja?.[tipo] || 0) - (selectedApertura.totales_sistema?.[tipo] || 0)).toFixed(2) }}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </template>
             <template #footer>
-                <SecondaryButton @click="showComprobanteModal = false">Cerrar</SecondaryButton>
+                <SecondaryButton @click="showAperturaModal = false">Cerrar</SecondaryButton>
             </template>
         </DialogModal>
 

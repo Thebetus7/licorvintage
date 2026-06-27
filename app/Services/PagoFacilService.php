@@ -107,10 +107,10 @@ class PagoFacilService
                 'phoneNumber' => $params['phoneNumber'] ?? '75540850',
                 'email' => $params['email'] ?? 'mario.herbas@pagofacil.com.bo',
                 'paymentNumber' => $paymentNumber,
-                'amount' => $params['amount'] ?? 0.01,
+                'amount' => 0.01,
                 'currency' => $params['currency'] ?? 2,
                 'clientCode' => $params['clientCode'] ?? '11001',
-                'callbackUrl' => $params['callbackUrl'] ?? 'https://uncle-prideful-uncloak.ngrok-free.dev/api/callbacks/pagofacil',
+                'callbackUrl' => 'https://uncle-prideful-uncloak.ngrok-free.dev/api/callbacks/pagofacil',
                 'orderDetail' => $orderDetail,
             ];
 
@@ -145,6 +145,42 @@ class PagoFacilService
             Log::error('PagoFacil generateQR exception, using local fallback', ['message' => $e->getMessage()]);
 
             return $this->generateLocalQR($params);
+        }
+    }
+
+    public function queryTransaction(int|string $transactionId): ?array
+    {
+        try {
+            $token = $this->getAccessToken();
+            if (! $token) {
+                Log::error('PagoFacil queryTransaction failed: no access token');
+
+                return null;
+            }
+
+            $response = Http::withToken($token)
+                ->post("{$this->baseUrl}/query-transaction", [
+                    'pagofacilTransactionId' => (int) $transactionId,
+                ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+
+                if (isset($data['values'])) {
+                    return $data['values'];
+                }
+            }
+
+            Log::warning('PagoFacil queryTransaction failed', [
+                'status' => $response->status(),
+                'body' => substr($response->body(), 0, 500),
+            ]);
+
+            return null;
+        } catch (\Exception $e) {
+            Log::error('PagoFacil queryTransaction exception', ['message' => $e->getMessage()]);
+
+            return null;
         }
     }
 
