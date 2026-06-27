@@ -3,9 +3,12 @@
 namespace Tests\Feature;
 
 use App\Models\AperturaCaja;
+use App\Models\MenuItem;
 use App\Models\MovimientoInventario;
 use App\Models\Producto;
 use App\Models\User;
+use App\Models\Venta;
+use App\Models\VentaCuotas;
 use App\Services\InventarioService;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -50,7 +53,7 @@ class LicorModulesTest extends TestCase
         $producto = Producto::where('codigo_barra', 'INV-001')->firstOrFail();
 
         $this->assertSame(12, $producto->stockActual->stock);
-        $this->assertSame(140.0, $producto->precio_venta);
+        $this->assertEquals(140.0, $producto->precio_venta);
         $this->assertFalse($producto->publicado);
         $this->assertDatabaseHas('movimiento_inventarios', [
             'producto_id' => $producto->id,
@@ -218,9 +221,239 @@ class LicorModulesTest extends TestCase
 
     public function test_vendedor_cannot_access_inventory_module(): void
     {
+        MenuItem::create([
+            'label' => 'Inventario',
+            'route_name' => 'inventario.index',
+            'roles' => ['propietario'],
+        ]);
+
         $seller = $this->userWithRole('vendedor');
 
         $this->actingAs($seller)->get(route('inventario.index'))->assertForbidden();
+    }
+
+    public function test_caja_full_flow_open_sales_close(): void
+    {
+        // 1. Setup: propietario, vendedor, product with stock
+        $owner = $this->userWithRole('propietario');
+        $seller = $this->userWithRole('vendedor');
+        $producto = $this->createProductWithStock('CAJA-TEST-001', 50, 30, 55);
+
+        // 2. Propietario opens caja for vendedor
+        $this->actingAs($owner)->post(route('caja.open'), [
+            'vendedor_id' => $seller->id,
+            'monto_inicial' => 500,
+        ])->assertSessionHasNoErrors();
+
+        $caja = AperturaCaja::where('user_id', $seller->id)
+            ->where('estado', 'abierta')
+            ->firstOrFail();
+
+        $this->assertSame(500.0, $caja->monto_inicial);
+        $this->assertSame(500.0, $caja->monto_sistema);
+        $this->assertSame($owner->id, $caja->opened_by);
+        $this->assertSame($seller->id, $caja->user_id);
+        $this->assertNull($caja->getRawOriginal('totales_caja'));
+        $this->assertEquals(['efectivo' => 0, 'qr' => 0, 'tarjeta' => 0, 'credito' => 0], $caja->totales_sistema);
+
+        // 3. Vendedor creates an efectivo sale
+        $this->actingAs($seller)->post(route('ventas.store'), [
+            'tipo_pago' => 'efectivo',
+            'monto_pagado' => 110,
+            'detalles' => [
+                ['producto_id' => $producto->id, 'cantidad' => 2],
+            ],
+        ])->assertSessionHasNoErrors();
+
+        $caja->refresh();
+        $this->assertEquals(['efectivo' => 110, 'qr' => 0, 'tarjeta' => 0, 'credito' => 0], $caja->totales_sistema);
+        $this->assertEquals(610.0, $caja->monto_sistema); // 500 + 110
+        $this->assertDatabaseHas('movimiento_cajas', [
+            'apertura_caja_id' => $caja->id,
+            'tipo' => 'venta',
+            'monto' => 110,
+        ]);
+
+        // 4. Vendedor creates a QR sale
+        $this->actingAs($seller)->post(route('ventas.store'), [
+            'tipo_pago' => 'qr',
+            'monto_pagado' => 110,
+            'detalles' => [
+                ['producto_id' => $producto->id, 'cantidad' => 2],
+            ],
+        ])->assertSessionHasNoErrors();
+
+        $caja->refresh();
+        $this->assertEquals(['efectivo' => 110, 'qr' => 110, 'tarjeta' => 0, 'credito' => 0], $caja->totales_sistema);
+        $this->assertEquals(720.0, $caja->monto_sistema); // 610 + 110
+
+        // 5. Vendedor creates a credit sale to a client
+        Role::create(['name' => 'cliente', 'guard_name' => 'web']);
+        $cliente = User::factory()->create();
+        $cliente->assignRole('cliente');
+        $this->actingAs($seller)->post(route('ventas.store'), [
+            'tipo_pago' => 'credito',
+            'cliente_id' => $cliente->id,
+            'nro_cuotas' => 3,
+            'detalles' => [
+                ['producto_id' => $producto->id, 'cantidad' => 5],
+            ],
+        ])->assertSessionHasNoErrors();
+
+        $caja->refresh();
+        // Credit sales don't affect cash register totals
+        $this->assertEquals(['efectivo' => 110, 'qr' => 110, 'tarjeta' => 0, 'credito' => 0], $caja->totales_sistema);
+        $this->assertEquals(720.0, $caja->monto_sistema);
+
+        // Verify credit installments were created
+        $ventaCredito = Venta::with('ventaCuotas')
+            ->where('tipo_pago', 'credito')
+            ->where('cliente_id', $cliente->id)
+            ->firstOrFail();
+        $this->assertCount(3, $ventaCredito->ventaCuotas);
+        $this->assertEquals(275.0, $ventaCredito->monto_final); // 5 * 55 = 275
+        $this->assertTrue($ventaCredito->ventaCuotas->every(fn ($q) => $q->estado === 'pendiente'));
+
+        // 6. Vendedor closes the caja with arqueo data
+        $this->actingAs($seller)->put(route('caja.close', $caja), [
+            'totales_caja' => [
+                'efectivo' => 110,
+                'qr' => 110,
+                'tarjeta' => 0,
+                'credito' => 0,
+            ],
+        ])->assertSessionHasNoErrors();
+
+        $caja->refresh();
+        $this->assertEquals('cerrada', $caja->estado);
+        $this->assertEquals(220.0, $caja->monto_real);  // 110 + 110 + 0 + 0
+        $this->assertEquals(220.0 - 720.0, $caja->diferencia); // -500
+        $this->assertNotNull($caja->tiempo_cierre);
+        $this->assertEquals([
+            'efectivo' => 110,
+            'qr' => 110,
+            'tarjeta' => 0,
+            'credito' => 0,
+        ], $caja->totales_caja);
+
+        // 7. Verify another vendedor cannot close someone else's caja
+        $otherSeller = $this->userWithRole('vendedor');
+        $cajaCerrada = $caja->fresh();
+
+        // 8. Verify propietario cannot sell without an open caja
+        $otherProducto = $this->createProductWithStock('CAJA-TEST-002', 10, 20, 40);
+        $this->actingAs($seller)->post(route('ventas.store'), [
+            'tipo_pago' => 'efectivo',
+            'monto_pagado' => 40,
+            'detalles' => [
+                ['producto_id' => $otherProducto->id, 'cantidad' => 1],
+            ],
+        ])->assertForbidden();
+    }
+
+    public function test_caja_installment_payment_updates_cash_register(): void
+    {
+        // Setup: owner opens caja, seller creates credit sale
+        $owner = $this->userWithRole('propietario');
+        $seller = $this->userWithRole('vendedor');
+        Role::findOrCreate('cliente');
+        $cliente = User::factory()->create();
+        $cliente->assignRole('cliente');
+        $producto = $this->createProductWithStock('CAJA-TEST-003', 20, 15, 30);
+
+        $this->actingAs($owner)->post(route('caja.open'), [
+            'vendedor_id' => $seller->id,
+            'monto_inicial' => 200,
+        ])->assertSessionHasNoErrors();
+
+        $caja = AperturaCaja::where('estado', 'abierta')->firstOrFail();
+
+        $this->actingAs($seller)->post(route('ventas.store'), [
+            'tipo_pago' => 'credito',
+            'cliente_id' => $cliente->id,
+            'nro_cuotas' => 2,
+            'detalles' => [
+                ['producto_id' => $producto->id, 'cantidad' => 3],
+            ],
+        ])->assertSessionHasNoErrors();
+
+        $cuota = VentaCuotas::whereHas('venta', fn ($q) => $q->where('cliente_id', $cliente->id))
+            ->where('estado', 'pendiente')
+            ->firstOrFail();
+
+        $montoCuota = $cuota->sub_monto;
+
+        // Pay the installment
+        $this->actingAs($seller)->post(route('caja.cuotas.pagar', $cuota))
+            ->assertSessionHasNoErrors();
+
+        $caja->refresh();
+        $this->assertEquals(200.0 + $montoCuota, $caja->monto_sistema);
+        $this->assertDatabaseHas('venta_cuotas', [
+            'id' => $cuota->id,
+            'estado' => 'pagado',
+        ]);
+        $this->assertDatabaseHas('movimiento_cajas', [
+            'apertura_caja_id' => $caja->id,
+            'tipo' => 'ingreso',
+            'monto' => $montoCuota,
+        ]);
+    }
+
+    public function test_caja_open_validates_vendedor_exists(): void
+    {
+        $owner = $this->userWithRole('propietario');
+
+        $this->actingAs($owner)->post(route('caja.open'), [
+            'vendedor_id' => 99999,
+            'monto_inicial' => 100,
+        ])->assertSessionHasErrors('vendedor_id');
+    }
+
+    public function test_propietario_can_view_caja_index(): void
+    {
+        Role::findOrCreate('vendedor');
+        Role::findOrCreate('cliente');
+        $owner = $this->userWithRole('propietario');
+
+        $this->actingAs($owner)
+            ->get(route('caja.index'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->component('Caja/Index'));
+    }
+
+    public function test_caja_index_shows_comprobantes_and_creditos(): void
+    {
+        Role::findOrCreate('cliente');
+        $owner = $this->userWithRole('propietario');
+        $seller = $this->userWithRole('vendedor');
+        $producto = $this->createProductWithStock('CAJA-TEST-004', 30, 20, 50);
+
+        $this->actingAs($owner)->post(route('caja.open'), [
+            'vendedor_id' => $seller->id,
+            'monto_inicial' => 300,
+        ])->assertSessionHasNoErrors();
+
+        // Create some sales
+        $this->actingAs($seller)->post(route('ventas.store'), [
+            'tipo_pago' => 'efectivo',
+            'monto_pagado' => 100,
+            'detalles' => [
+                ['producto_id' => $producto->id, 'cantidad' => 2],
+            ],
+        ])->assertSessionHasNoErrors();
+
+        // Propietario views caja index
+        $this->actingAs($owner)
+            ->get(route('caja.index'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Caja/Index')
+                ->has('cajaActiva')
+                ->has('comprobantes', 1)
+                ->has('vendedores')
+                ->has('clientes')
+            );
     }
 
     private function createProductWithStock(string $codigo, int $stock, float $costo, float $precio = 85): Producto

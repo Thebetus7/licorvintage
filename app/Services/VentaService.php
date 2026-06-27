@@ -2,12 +2,12 @@
 
 namespace App\Services;
 
+use App\Models\ActivityLog;
 use App\Models\AperturaCaja;
 use App\Models\Producto;
+use App\Models\Promocion;
 use App\Models\User;
 use App\Models\Venta;
-use App\Models\Promocion;
-use App\Services\StripeService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -47,10 +47,10 @@ class VentaService
             $codigoPromoApplied = null;
 
             // Procesar promoción si se especifica
-            if (!empty($data['codigo_promo'])) {
+            if (! empty($data['codigo_promo'])) {
                 $promocion = Promocion::where('codigo_promo', $data['codigo_promo'])->first();
 
-                if (!$promocion) {
+                if (! $promocion) {
                     $this->logFailure($user, "El código de promoción '{$data['codigo_promo']}' no existe");
                     throw ValidationException::withMessages([
                         'codigo_promo' => 'El código de promoción no existe.',
@@ -79,11 +79,11 @@ class VentaService
 
             $tipoPago = $data['tipo_pago'];
             $isCredito = $tipoPago === 'credito';
-            $nroCuotas = $isCredito ? (int)$data['nro_cuotas'] : 1;
+            $nroCuotas = $isCredito ? (int) $data['nro_cuotas'] : 1;
 
             if ($isCredito) {
                 if (empty($data['cliente_id'])) {
-                    $this->logFailure($user, "Cliente no especificado en venta a crédito");
+                    $this->logFailure($user, 'Cliente no especificado en venta a crédito');
                     throw ValidationException::withMessages([
                         'cliente_id' => 'El cliente es obligatorio para ventas a crédito.',
                     ]);
@@ -95,7 +95,7 @@ class VentaService
                     ]);
                 }
             } else {
-                $montoPagado = (float)($data['monto_pagado'] ?? $totalFinal);
+                $montoPagado = (float) ($data['monto_pagado'] ?? $totalFinal);
                 if ($montoPagado < $totalFinal) {
                     $this->logFailure($user, "Monto pagado ({$montoPagado} Bs) es menor al costo total final ({$totalFinal} Bs)");
                     throw ValidationException::withMessages([
@@ -109,7 +109,7 @@ class VentaService
                     $expYear = trim($expiry[1] ?? '');
 
                     if (strlen($expYear) === 2) {
-                        $expYear = '20' . $expYear;
+                        $expYear = '20'.$expYear;
                     }
 
                     $cardDetails = [
@@ -125,7 +125,7 @@ class VentaService
                         "Venta Licor Vintage #{$user->email}"
                     );
 
-                    if (!$stripeResult['success']) {
+                    if (! $stripeResult['success']) {
                         $this->logFailure($user, "Pago con tarjeta fallido mediante pasarela Stripe. Motivo: '{$stripeResult['message']}'");
                         throw ValidationException::withMessages([
                             'card_number' => $stripeResult['message'],
@@ -188,6 +188,8 @@ class VentaService
                     'detalle' => "Venta #{$venta->id} ({$tipoPago})",
                 ]);
                 $caja->increment('monto_sistema', $totalFinal);
+
+                $this->actualizarTotalesSistema($caja, $tipoPago, $totalFinal);
             }
 
             $this->logSuccess($user, $venta);
@@ -199,9 +201,25 @@ class VentaService
     /**
      * Registrar intento fallido de venta en la bitácora.
      */
+    private function actualizarTotalesSistema(AperturaCaja $caja, string $tipoPago, float $monto): void
+    {
+        $mapa = [
+            'efectivo' => 'efectivo',
+            'compra_directa' => 'efectivo',
+            'qr' => 'qr',
+            'tarjeta' => 'tarjeta',
+            'credito' => 'credito',
+        ];
+
+        $clave = $mapa[$tipoPago] ?? 'efectivo';
+        $totales = $caja->totales_sistema;
+        $totales[$clave] = ($totales[$clave] ?? 0) + $monto;
+        $caja->updateQuietly(['totales_sistema' => $totales]);
+    }
+
     private function logFailure(User $user, string $reason): void
     {
-        \App\Models\ActivityLog::create([
+        ActivityLog::create([
             'event_type' => 'sale_failed',
             'user_id' => $user->id,
             'user_identity' => $user->email,
@@ -219,11 +237,11 @@ class VentaService
     private function logSuccess(User $user, Venta $venta): void
     {
         $clienteName = $venta->cliente ? $venta->cliente->name : 'Consumidor Final';
-        $detallePago = $venta->tipo_pago === 'credito' 
-            ? "al crédito ({$venta->nro_cuotas} cuotas)" 
+        $detallePago = $venta->tipo_pago === 'credito'
+            ? "al crédito ({$venta->nro_cuotas} cuotas)"
             : "al contado ({$venta->tipo_pago})";
-        
-        \App\Models\ActivityLog::create([
+
+        ActivityLog::create([
             'event_type' => 'sale_created',
             'user_id' => $user->id,
             'user_identity' => $user->email,

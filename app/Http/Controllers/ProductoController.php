@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Producto\StoreProductoRequest;
 use App\Http\Requests\Producto\UpdateProductoRequest;
+use App\Models\ActivityLog;
 use App\Models\Producto;
 use App\Services\ProductoService;
 use Illuminate\Http\RedirectResponse;
@@ -44,7 +45,7 @@ class ProductoController extends Controller
 
         $producto->delete();
 
-        \App\Models\ActivityLog::create([
+        ActivityLog::create([
             'event_type' => 'product_deleted',
             'user_id' => auth()->id(),
             'user_identity' => auth()->user()?->email ?? 'sistema',

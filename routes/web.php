@@ -4,28 +4,28 @@ use App\Http\Controllers\CajaController;
 use App\Http\Controllers\ClienteProductoController;
 use App\Http\Controllers\CompraController;
 use App\Http\Controllers\InventarioController;
+use App\Http\Controllers\PagoController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\ProductoImagenController;
+use App\Http\Controllers\PromocionController;
 use App\Http\Controllers\ProveedorController;
+use App\Http\Controllers\SearchController;
+use App\Http\Controllers\SecurityController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\VentaController;
-use App\Http\Controllers\PagoController;
-use App\Http\Controllers\PromocionController;
+use App\Models\ActivityLog;
+use App\Models\AperturaCaja;
+use App\Models\Compra;
+use App\Models\PageView;
+use App\Models\Producto;
+use App\Models\User;
+use App\Models\Venta;
 use Illuminate\Foundation\Application;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-
-use App\Http\Controllers\SecurityController;
-use App\Http\Controllers\SearchController;
-use App\Models\Venta;
-use App\Models\Compra;
-use App\Models\AperturaCaja;
-use App\Models\Producto;
-use App\Models\PageView;
-use App\Models\ActivityLog;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -80,9 +80,9 @@ Route::middleware([
 
         return Inertia::render('Dashboard', [
             'stats' => [
-                'ventas_hoy' => (float)$ventasHoy,
-                'compras_mes' => (float)$comprasMes,
-                'monto_caja' => (float)$montoCaja,
+                'ventas_hoy' => (float) $ventasHoy,
+                'compras_mes' => (float) $comprasMes,
+                'monto_caja' => (float) $montoCaja,
                 'total_productos' => $totalProductos,
             ],
             'paginas_visitadas' => $paginasMasVisitadas,
@@ -100,15 +100,14 @@ Route::middleware([
     Route::middleware('menu.auth')->group(function () {
         Route::resource('productos', ProductoController::class)->except(['create', 'show', 'edit']);
         Route::post('/productos/imagen', [ProductoImagenController::class, 'store'])->name('productos.imagen.store');
-        
+
         Route::resource('compras', CompraController::class)->except(['create', 'show', 'edit']);
-        
+
         Route::resource('proveedores', ProveedorController::class)->except(['create', 'show', 'edit']);
-        
+
         Route::get('/caja', [CajaController::class, 'index'])->name('caja.index');
         Route::post('/caja/open', [CajaController::class, 'open'])->name('caja.open');
         Route::put('/caja/{caja}/close', [CajaController::class, 'close'])->name('caja.close');
-
 
         Route::resource('usuarios', UsuarioController::class)->except(['create', 'show', 'edit']);
 
@@ -131,12 +130,13 @@ Route::middleware([
                 'email' => 'required|string|email|max:255|unique:users,email',
                 'password' => 'required|string|min:8',
             ]);
-            $user = \App\Models\User::create([
+            $user = User::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
             ]);
             $user->assignRole('cliente');
+
             return back()->with('success', 'Cliente registrado correctamente.');
         })->name('caja.clientes.rapido');
 

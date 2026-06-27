@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\MenuItem;
+use App\Models\PageView;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -48,18 +50,18 @@ class HandleInertiaRequests extends Middleware
             ],
             'menu' => fn () => $this->getMenuForUser($request->user()),
             'pagofacil_token' => fn () => $request->cookie('pagofacil_token'),
-            'page_views_count' => fn () => \App\Models\PageView::where('url_path', $request->getPathInfo() === '/' ? '/' : rtrim($request->getPathInfo(), '/'))->value('views_count') ?? 1,
+            'page_views_count' => fn () => rescue(fn () => PageView::where('url_path', $request->getPathInfo() === '/' ? '/' : rtrim($request->getPathInfo(), '/'))->value('views_count'), 1, false),
         ];
     }
 
     protected function getMenuForUser($user): array
     {
-        if (!$user) {
+        if (! $user) {
             return [];
         }
 
         // Obtener todos los ítems de menú de la base de datos
-        $menuItems = \App\Models\MenuItem::all();
+        $menuItems = MenuItem::all();
 
         $menu = [];
 
@@ -73,6 +75,7 @@ class HandleInertiaRequests extends Middleware
                     ];
                 }
             }
+
             return $menu;
         }
 

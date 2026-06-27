@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Promocion;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Http\RedirectResponse;
 
 class PromocionController extends Controller
 {
@@ -56,7 +56,7 @@ class PromocionController extends Controller
     {
         $validated = $request->validate([
             'nombre_promo' => 'required|string|max:255',
-            'codigo_promo' => 'required|string|max:100|unique:promocions,codigo_promo,' . $promocione->id,
+            'codigo_promo' => 'required|string|max:100|unique:promocions,codigo_promo,'.$promocione->id,
             'descuento' => 'required|numeric|min:0',
             'tipo_descuento' => 'required|string|in:porcentaje,monto',
             'fecha_inicio' => 'required|date',

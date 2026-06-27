@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\ActivityLog;
 use App\Models\Compra;
 use App\Models\Producto;
 use App\Models\User;
@@ -43,7 +44,7 @@ class CompraService
                 );
             }
 
-            \App\Models\ActivityLog::create([
+            ActivityLog::create([
                 'event_type' => 'purchase_created',
                 'user_id' => $user->id,
                 'user_identity' => $user->email,
@@ -51,7 +52,7 @@ class CompraService
                 'user_agent' => request()->userAgent(),
                 'resource_name' => 'Compras',
                 'visited_url' => request()->getRequestUri(),
-                'description' => "Compra registrada exitosamente (Compra #{$compra->id}) por un costo total de {$total} Bs. Proveedor: " . ($compra->proveedor?->nombre ?? 'N/A') . ".",
+                'description' => "Compra registrada exitosamente (Compra #{$compra->id}) por un costo total de {$total} Bs. Proveedor: ".($compra->proveedor?->nombre ?? 'N/A').'.',
             ]);
 
             return $compra->load(['proveedor', 'detalleCompras.producto.stockActual', 'user']);
@@ -100,7 +101,7 @@ class CompraService
                 );
             }
 
-            \App\Models\ActivityLog::create([
+            ActivityLog::create([
                 'event_type' => 'purchase_updated',
                 'user_id' => $user->id,
                 'user_identity' => $user->email,
@@ -108,7 +109,7 @@ class CompraService
                 'user_agent' => request()->userAgent(),
                 'resource_name' => 'Compras',
                 'visited_url' => request()->getRequestUri(),
-                'description' => "Compra actualizada exitosamente (Compra #{$compra->id}) por un nuevo costo total de " . collect($detalles)->sum('sub_costo') . " Bs.",
+                'description' => "Compra actualizada exitosamente (Compra #{$compra->id}) por un nuevo costo total de ".collect($detalles)->sum('sub_costo').' Bs.',
             ]);
 
             return $compra->load(['proveedor', 'detalleCompras.producto.stockActual', 'user']);
@@ -135,7 +136,7 @@ class CompraService
             $compra->detalleCompras()->delete();
             $compra->delete();
 
-            \App\Models\ActivityLog::create([
+            ActivityLog::create([
                 'event_type' => 'purchase_deleted',
                 'user_id' => $user->id,
                 'user_identity' => $user->email,

@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\VentaService;
 use App\Services\CajaService;
-use Illuminate\Http\Request;
+use App\Services\VentaService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
 class VentaController extends Controller
 {
@@ -20,7 +20,6 @@ class VentaController extends Controller
         $caja = $cajaService->activeCaja($user) ?? $cajaService->activeCajaDelSistema();
 
         abort_unless($caja, 403, 'No hay ninguna caja abierta en el sistema para registrar ventas.');
-
 
         $validated = $request->validate([
             'tipo_pago' => 'required|string',

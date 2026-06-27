@@ -2,14 +2,16 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class PagoFacilService
 {
     protected string $baseUrl;
+
     protected string $tokenService;
+
     protected string $tokenSecret;
 
     public function __construct()
@@ -34,7 +36,7 @@ class PagoFacilService
                     $accessToken = $data['values']['accessToken'];
                     $expiresInMinutes = $data['values']['expiresInMinutes'] ?? 800;
 
-                    Cache::put('pagofacil_access_token', $accessToken, now()->addMinutes((int)$expiresInMinutes));
+                    Cache::put('pagofacil_access_token', $accessToken, now()->addMinutes((int) $expiresInMinutes));
 
                     Log::info('PagoFacil login successful');
 
@@ -65,36 +67,36 @@ class PagoFacilService
     {
         try {
             $token = $this->getAccessToken();
-            if (!$token) {
+            if (! $token) {
                 Log::error('PagoFacil generateQR failed: no access token');
+
                 return null;
             }
 
             $payload = [
-            'paymentMethod' => $params['paymentMethod'] ?? 34,
-            'clientName'    => $params['clientName'] ?? 'Jhon Daniel',
-            'documentType'  => $params['documentType'] ?? 1,
-            'documentId'    => $params['documentId'] ?? '11317191',
-            'phoneNumber'   => $params['phoneNumber'] ?? '75540850',
-            'email'         => $params['email'] ?? 'mario.herbas@pagofacil.com.bo',
-            'paymentNumber' => '2026050210643',
-            'amount'        => 0.01,
-            'currency'      => $params['currency'] ?? 2,
-            'clientCode'    => $params['clientCode'] ?? '11001',
-            'callbackUrl'   => 'https://uncle-prideful-uncloak.ngrok-free.dev/api/callbacks/pagofacil',
+                'paymentMethod' => $params['paymentMethod'] ?? 34,
+                'clientName' => $params['clientName'] ?? 'Jhon Daniel',
+                'documentType' => $params['documentType'] ?? 1,
+                'documentId' => $params['documentId'] ?? '11317191',
+                'phoneNumber' => $params['phoneNumber'] ?? '75540850',
+                'email' => $params['email'] ?? 'mario.herbas@pagofacil.com.bo',
+                'paymentNumber' => '2026050210643',
+                'amount' => 0.01,
+                'currency' => $params['currency'] ?? 2,
+                'clientCode' => $params['clientCode'] ?? '11001',
+                'callbackUrl' => 'https://uncle-prideful-uncloak.ngrok-free.dev/api/callbacks/pagofacil',
 
-            'orderDetail' => [
-                [
-                    'serial'   => 1,
-                    'product'  => 'Detalle_Item',
-                    'quantity' => 1,
-                    'price'    => 0.10,
-                    'discount' => 0,
-                    'total'    => 0.10,
-                ]
-            ],
-        ];
-
+                'orderDetail' => [
+                    [
+                        'serial' => 1,
+                        'product' => 'Detalle_Item',
+                        'quantity' => 1,
+                        'price' => 0.10,
+                        'discount' => 0,
+                        'total' => 0.10,
+                    ],
+                ],
+            ];
 
             $response = Http::withToken($token)
                 ->post("{$this->baseUrl}/generate-qr", $payload);

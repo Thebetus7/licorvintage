@@ -21,8 +21,8 @@ class SearchController extends Controller
         $productos = Producto::with('stockActual')
             ->where(function ($q) use ($query) {
                 $q->where('nombre', 'like', "%{$query}%")
-                  ->orWhere('codigo_barra', 'like', "%{$query}%")
-                  ->orWhere('descripcion', 'like', "%{$query}%");
+                    ->orWhere('codigo_barra', 'like', "%{$query}%")
+                    ->orWhere('descripcion', 'like', "%{$query}%");
             })
             ->limit(10)
             ->get();

@@ -14,7 +14,11 @@ class CloseCajaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'monto_real' => ['required', 'numeric', 'min:0'],
+            'totales_caja' => ['required', 'array'],
+            'totales_caja.efectivo' => ['required', 'numeric', 'min:0'],
+            'totales_caja.qr' => ['required', 'numeric', 'min:0'],
+            'totales_caja.tarjeta' => ['required', 'numeric', 'min:0'],
+            'totales_caja.credito' => ['required', 'numeric', 'min:0'],
         ];
     }
 }

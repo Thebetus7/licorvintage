@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Models\ActivityLog;
+use App\Models\MenuItem;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
-use App\Models\MenuItem;
-use App\Models\ActivityLog;
 use Spatie\Permission\Models\Role;
-use Illuminate\Support\Facades\DB;
 
 class SecurityController extends Controller
 {
@@ -72,19 +72,21 @@ class SecurityController extends Controller
                 if ($menuItem) {
                     // Filtrar roles vacíos y limpiar
                     $rolesToSave = array_values(array_filter($authorizedRoles, function ($role) {
-                        return !empty($role);
+                        return ! empty($role);
                     }));
 
                     $menuItem->update([
-                        'roles' => $rolesToSave
+                        'roles' => $rolesToSave,
                     ]);
                 }
             }
             DB::commit();
+
             return back()->with('success', 'Matriz de acceso actualizada correctamente.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Ocurrió un error al actualizar la matriz: ' . $e->getMessage());
+
+            return back()->with('error', 'Ocurrió un error al actualizar la matriz: '.$e->getMessage());
         }
     }
 }

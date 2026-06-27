@@ -1,191 +1,121 @@
 <script setup>
-import { ref, computed, watch } from 'vue';
-import { useForm, Head } from '@inertiajs/vue3';
+import { ref, computed } from 'vue';
+import { useForm, Head, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputError from '@/Components/InputError.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
+import DangerButton from '@/Components/DangerButton.vue';
 import DialogModal from '@/Components/DialogModal.vue';
 
 const props = defineProps({
     cajaActiva: Object,
-    productos: Array,
+    vendedores: Array,
     clientes: Array,
-    promocionesActive: Array,
     creditosPendientes: Array,
+    comprobantes: Array,
 });
 
-// Pestaña activa de la columna izquierda
-const activeLeftTab = ref('caja'); // 'caja' o 'creditos'
+const page = usePage();
+const user = computed(() => page.props.auth.user);
+const isPropietario = computed(() => page.props.auth.roles?.includes('propietario'));
 
-// Buscador de productos en POS
-const productSearch = ref('');
-
-// Control de Modales
+const activeTab = ref('caja');
+const showOpenModal = ref(false);
+const showCloseModal = ref(false);
 const showClientModal = ref(false);
-const showPaymentModal = ref(false);
 const showCreditDetailModal = ref(false);
-
 const selectedCredit = ref(null);
+const vendedorSearch = ref('');
+const selectedComprobante = ref(null);
+const showComprobanteModal = ref(false);
 
-// Formularios
-const openForm = useForm({ monto_inicial: 0 });
-const closeForm = useForm({ monto_real: 0 });
-
-const clientForm = useForm({
-    name: '',
-    email: '',
-    password: 'cliente123456789',
+const openForm = useForm({ monto_inicial: 0, vendedor_id: '' });
+const closeForm = useForm({
+    totales_caja: { efectivo: 0, qr: 0, tarjeta: 0, credito: 0 },
 });
 
-const saleForm = useForm({
-    tipo_pago: 'compra_directa', // 'compra_directa', 'efectivo', 'qr', 'tarjeta', 'credito'
-    monto_pagado: 0,
-    detalles: [], // { producto_id, cantidad, precio, nombre }
-    cliente_id: '',
-    codigo_promo: '',
-    nro_cuotas: 2,
-});
-
-// Filtrado de productos en POS
-const filteredProducts = computed(() => {
-    if (!productSearch.value.trim()) return props.productos;
-    const query = productSearch.value.toLowerCase();
-    return props.productos.filter(p => 
-        p.nombre.toLowerCase().includes(query) || 
-        p.codigo_barra.toLowerCase().includes(query)
+const filteredVendedores = computed(() => {
+    if (!vendedorSearch.value.trim()) return props.vendedores;
+    const q = vendedorSearch.value.toLowerCase();
+    return props.vendedores.filter(v =>
+        v.name.toLowerCase().includes(q) || v.email.toLowerCase().includes(q)
     );
 });
 
-// Lógica de Carrito
-const addProduct = (producto) => {
-    const existing = saleForm.detalles.find((item) => item.producto_id === producto.id);
-    const stock = producto.stock_actual?.stock || producto.stockActual?.stock || 0;
+const tiposPago = ['efectivo', 'qr', 'tarjeta', 'credito'];
 
-    if (existing) {
-        if (existing.cantidad < stock) {
-            existing.cantidad++;
-        }
-        return;
-    }
+const totalSistemaPorTipo = (tipo) => {
+    return Number(props.cajaActiva?.totales_sistema?.[tipo] || 0);
+};
 
-    saleForm.detalles.push({
-        producto_id: producto.id,
-        nombre: producto.nombre,
-        precio: Number(producto.precio_venta),
-        cantidad: 1,
-        stock: stock
+const totalCajaPorTipo = (tipo) => {
+    return Number(closeForm.totales_caja[tipo] || 0);
+};
+
+const diferenciaPorTipo = (tipo) => {
+    return totalCajaPorTipo(tipo) - totalSistemaPorTipo(tipo);
+};
+
+const totalSistemaGlobal = computed(() => {
+    return tiposPago.reduce((s, t) => s + totalSistemaPorTipo(t), 0) + Number(props.cajaActiva?.monto_inicial || 0);
+});
+
+const totalCajaGlobal = computed(() => {
+    return tiposPago.reduce((s, t) => s + totalCajaPorTipo(t), 0);
+});
+
+const diferenciaGlobal = computed(() => {
+    return totalCajaGlobal.value - totalSistemaGlobal.value;
+});
+
+const submitOpen = () => {
+    openForm.post(route('caja.open'), {
+        preserveScroll: true,
+        onSuccess: () => {
+            showOpenModal.value = false;
+            openForm.reset();
+            vendedorSearch.value = '';
+        },
     });
 };
 
-const updateQty = (item, amt) => {
-    const newQty = item.cantidad + amt;
-    if (newQty <= 0) {
-        saleForm.detalles = saleForm.detalles.filter(d => d.producto_id !== item.producto_id);
-    } else if (newQty <= item.stock) {
-        item.cantidad = newQty;
-    }
+const confirmClose = () => {
+    showCloseModal.value = true;
 };
 
-const removeProduct = (productId) => {
-    saleForm.detalles = saleForm.detalles.filter(d => d.producto_id !== productId);
-};
-
-// Totales y Descuentos
-const subtotal = computed(() => {
-    return saleForm.detalles.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
-});
-
-const appliedPromo = computed(() => {
-    if (!saleForm.codigo_promo.trim()) return null;
-    const promo = props.promocionesActive.find(
-        p => p.codigo_promo.toUpperCase() === saleForm.codigo_promo.trim().toUpperCase()
-    );
-    return promo || null;
-});
-
-const discountAmount = computed(() => {
-    const promo = appliedPromo.value;
-    if (!promo) return 0;
-    if (promo.tipo_descuento === 'porcentaje') {
-        return subtotal.value * (Number(promo.descuento) / 100);
-    }
-    return Number(promo.descuento);
-});
-
-const totalFinal = computed(() => {
-    return Math.max(0, subtotal.value - discountAmount.value);
-});
-
-// Cuotas a crédito
-const quotaAmount = computed(() => {
-    if (saleForm.nro_cuotas < 2) return 0;
-    return totalFinal.value / saleForm.nro_cuotas;
-});
-
-// Procesar Venta
-const handleCheckout = () => {
-    if (saleForm.detalles.length === 0) return;
-
-    if (saleForm.tipo_pago === 'credito' && !saleForm.cliente_id) {
-        alert('Debes seleccionar un cliente para realizar una venta a crédito.');
-        return;
-    }
-
-    // Si es pago por QR o Tarjeta, abrimos el modal de simulación de pago primero
-    if (saleForm.tipo_pago === 'qr' || saleForm.tipo_pago === 'tarjeta') {
-        showPaymentModal.value = true;
-    } else {
-        submitSale();
-    }
-};
-
-const submitSale = () => {
-    saleForm.monto_pagado = totalFinal.value;
-    saleForm.post(route('ventas.store'), {
+const submitClose = () => {
+    closeForm.put(route('caja.close', props.cajaActiva.id), {
         preserveScroll: true,
         onSuccess: () => {
-            saleForm.reset();
-            showPaymentModal.value = false;
+            showCloseModal.value = false;
+            closeForm.reset();
         },
         onError: (err) => {
-            console.error('Error al registrar la venta:', err);
-        }
+            console.error('Error al cerrar caja:', err);
+        },
     });
 };
 
-// Crear cliente rápido
-const submitRapidClient = () => {
-    clientForm.post(route('caja.clientes.rapido'), {
+const verComprobante = (venta) => {
+    selectedComprobante.value = venta;
+    showComprobanteModal.value = true;
+};
+
+const payInstallment = (cuotaId) => {
+    installmentForm.post(route('caja.cuotas.pagar', cuotaId), {
         preserveScroll: true,
         onSuccess: () => {
-            showClientModal.value = false;
-            clientForm.reset();
+            if (selectedCredit.value) {
+                const creditId = selectedCredit.value.id;
+                const updated = props.creditosPendientes.find(c => c.id === creditId);
+                if (updated) selectedCredit.value = updated;
+                else showCreditDetailModal.value = false;
+            }
         }
     });
-};
-
-// Cobro de cuotas
-const payInstallment = (cuotaId) => {
-    if (confirm('¿Confirmas el cobro de esta cuota?')) {
-        installmentForm.post(route('caja.cuotas.pagar', cuotaId), {
-            preserveScroll: true,
-            onSuccess: () => {
-                // Actualizar detalle del modal si está abierto
-                if (selectedCredit.value) {
-                    const creditId = selectedCredit.value.id;
-                    const updated = props.creditosPendientes.find(c => c.id === creditId);
-                    if (updated) {
-                        selectedCredit.value = updated;
-                    } else {
-                        showCreditDetailModal.value = false;
-                    }
-                }
-            }
-        });
-    }
 };
 
 const installmentForm = useForm({});
@@ -194,6 +124,11 @@ const viewCreditDetails = (credit) => {
     selectedCredit.value = credit;
     showCreditDetailModal.value = true;
 };
+
+const formatTipoPago = (tipo) => {
+    const map = { efectivo: 'Efectivo', qr: 'QR', tarjeta: 'Tarjeta', credito: 'Crédito', compra_directa: 'Directo' };
+    return map[tipo] || tipo;
+};
 </script>
 
 <template>
@@ -201,505 +136,405 @@ const viewCreditDetails = (credit) => {
         <template #header>
             <div class="flex justify-between items-center">
                 <div>
-                    <h1 class="text-2xl font-bold text-[var(--text-primary)]">Terminal de Caja (POS)</h1>
-                    <p class="text-sm text-[var(--text-secondary)]">Aperturas, ventas al contado, plan de cuotas y arqueo contable.</p>
+                    <h1 class="text-2xl font-bold text-[var(--text-primary)]">Módulo de Caja</h1>
+                    <p class="text-sm text-[var(--text-secondary)]">Apertura, arqueo, comprobantes y créditos.</p>
                 </div>
             </div>
         </template>
 
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-6 pb-12">
-            <div class="grid gap-6 lg:grid-cols-[380px_1fr]">
-                
-                <!-- COLUMNA IZQUIERDA: CONTROL DE CAJA Y CRÉDITOS -->
-                <div class="space-y-6">
-                    <!-- Caja Activa y pestañas -->
-                    <div class="rounded-3xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/40 p-6 shadow-xl backdrop-blur-md">
-                        <!-- Pestañas de control -->
-                        <div class="flex border-b border-[var(--border-color)] pb-3 mb-4 gap-2">
+
+            <!-- TABS -->
+            <div class="flex gap-2 border-b border-[var(--border-color)] pb-3">
+                <button
+                    v-for="tab in [
+                        { key: 'caja', label: '💵 Caja' },
+                        { key: 'comprobantes', label: '🧾 Comprobantes' },
+                        { key: 'creditos', label: '💳 Créditos' },
+                    ]"
+                    :key="tab.key"
+                    :class="['px-5 py-2.5 text-sm font-bold rounded-xl transition', activeTab === tab.key ? 'bg-[var(--accent)] text-white shadow-lg' : 'text-[var(--text-secondary)] hover:bg-white/5']"
+                    @click="activeTab = tab.key"
+                >
+                    {{ tab.label }}
+                </button>
+            </div>
+
+            <!-- TAB: CAJA -->
+            <div v-if="activeTab === 'caja'">
+
+                <!-- Sin caja abierta -->
+                <template v-if="!cajaActiva">
+                    <div class="rounded-3xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/40 p-8 shadow-xl backdrop-blur-md text-center max-w-lg mx-auto">
+                        <div class="text-5xl mb-4">🔒</div>
+                        <h3 class="text-lg font-bold text-[var(--text-primary)] mb-2">Caja Cerrada</h3>
+                        <p class="text-sm text-[var(--text-secondary)] mb-6">No hay ninguna caja abierta en el sistema.</p>
+
+                        <template v-if="isPropietario">
+                            <p class="text-xs text-[var(--text-secondary)] mb-4">Abre una caja para que un vendedor pueda operar.</p>
                             <button
-                                :class="['px-4 py-2 text-sm font-semibold rounded-xl transition', activeLeftTab === 'caja' ? 'bg-[var(--accent)] text-white' : 'text-[var(--text-secondary)] hover:bg-white/5']"
-                                @click="activeLeftTab = 'caja'"
+                                class="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-8 py-3 rounded-xl font-bold transition shadow-lg text-sm cursor-pointer"
+                                @click="showOpenModal = true"
                             >
-                                💵 Caja Activa
+                                🔓 Abrir Caja
                             </button>
-                            <button
-                                :class="['px-4 py-2 text-sm font-semibold rounded-xl transition', activeLeftTab === 'creditos' ? 'bg-[var(--accent)] text-white' : 'text-[var(--text-secondary)] hover:bg-white/5']"
-                                @click="activeLeftTab = 'creditos'"
-                            >
-                                💳 Créditos Pendientes
-                            </button>
-                        </div>
+                        </template>
+                        <p v-else class="text-xs text-[var(--text-secondary)]">Espera a que el propietario abra una caja para ti.</p>
+                    </div>
+                </template>
 
-                        <!-- Panel de Caja -->
-                        <div v-if="activeLeftTab === 'caja'">
-                            <h3 class="font-bold text-[var(--text-primary)] mb-3">Estado de Caja</h3>
-                            
-                            <div v-if="cajaActiva" class="space-y-4">
-                                <div class="rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-4 py-3 font-semibold text-sm flex items-center gap-2">
-                                    <span class="relative flex h-2 w-2">
-                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                                    </span>
-                                    Caja Abierta #{{ cajaActiva.id }}
-                                </div>
-
-                                <div class="space-y-2 text-sm">
-                                    <div class="flex justify-between">
-                                        <span class="text-[var(--text-secondary)]">Monto Inicial:</span>
-                                        <span class="font-semibold">{{ Number(cajaActiva.monto_inicial).toFixed(2) }} Bs</span>
-                                    </div>
-                                    <div class="flex justify-between border-t border-[var(--border-color)] pt-2">
-                                        <span class="text-[var(--text-secondary)]">Monto en Sistema:</span>
-                                        <span class="font-bold text-indigo-300 text-base">{{ Number(cajaActiva.monto_sistema).toFixed(2) }} Bs</span>
-                                    </div>
-                                </div>
-
-                                <!-- Cierre de Caja -->
-                                <div class="border-t border-[var(--border-color)] pt-4 space-y-3">
-                                    <h4 class="text-xs uppercase font-bold text-[var(--text-secondary)] tracking-wider">Cierre de Caja</h4>
-                                    <div>
-                                        <InputLabel value="Monto Real en Caja (Efectivo)" />
-                                        <TextInput v-model="closeForm.monto_real" type="number" step="0.01" class="mt-1 w-full" placeholder="0.00" />
-                                        <InputError :message="closeForm.errors.monto_real" class="mt-1" />
-                                    </div>
-                                    <button
-                                        class="w-full bg-rose-600 hover:bg-rose-750 text-white py-2.5 rounded-xl font-bold transition shadow-lg text-sm cursor-pointer"
-                                        :disabled="closeForm.processing"
-                                        @click="closeForm.put(route('caja.close', cajaActiva.id))"
-                                    >
-                                        🔒 Cerrar Caja & Arquear
-                                    </button>
-                                </div>
+                <!-- Caja abierta: dashboard -->
+                <template v-else>
+                    <div class="grid gap-6 lg:grid-cols-3">
+                        <!-- Info de caja -->
+                        <div class="rounded-3xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/40 p-6 shadow-xl backdrop-blur-md space-y-4">
+                            <div class="rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-4 py-3 font-semibold text-sm flex items-center gap-2">
+                                <span class="relative flex h-2 w-2">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                </span>
+                                Caja Abierta #{{ cajaActiva.id }}
                             </div>
 
-                            <!-- Apertura de Caja -->
-                            <form v-else @submit.prevent="openForm.post(route('caja.open'))" class="space-y-4">
-                                <div class="rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/20 px-4 py-3 font-semibold text-sm">
-                                    ⚠️ Caja Cerrada. Abre la caja para operar.
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between">
+                                    <span class="text-[var(--text-secondary)]">Vendedor:</span>
+                                    <span class="font-semibold">{{ cajaActiva.user?.name }}</span>
                                 </div>
-                                <div>
-                                    <InputLabel value="Monto Inicial en Efectivo" />
-                                    <TextInput v-model="openForm.monto_inicial" type="number" step="0.01" class="mt-1 w-full" placeholder="0.00" required />
-                                    <InputError :message="openForm.errors.monto_inicial" class="mt-1" />
+                                <div class="flex justify-between">
+                                    <span class="text-[var(--text-secondary)]">Abierta por:</span>
+                                    <span class="font-semibold">{{ cajaActiva.opener?.name || '—' }}</span>
                                 </div>
-                                <PrimaryButton class="w-full justify-center py-2.5">
-                                    🔓 Abrir Caja
-                                </PrimaryButton>
-                            </form>
+                                <div class="flex justify-between">
+                                    <span class="text-[var(--text-secondary)]">Apertura:</span>
+                                    <span class="font-semibold">{{ new Date(cajaActiva.tiempo_apertura).toLocaleString() }}</span>
+                                </div>
+                                <div class="flex justify-between border-t border-[var(--border-color)] pt-2 mt-2">
+                                    <span class="text-[var(--text-secondary)]">Monto Inicial:</span>
+                                    <span class="font-bold">{{ Number(cajaActiva.monto_inicial).toFixed(2) }} Bs</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-[var(--text-secondary)]">Total Sistema:</span>
+                                    <span class="font-bold text-indigo-300 text-base">{{ Number(cajaActiva.monto_sistema).toFixed(2) }} Bs</span>
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- Panel de Créditos (CU6) -->
-                        <div v-else class="space-y-4">
-                            <h3 class="font-bold text-[var(--text-primary)]">Créditos Vigentes</h3>
-                            <p class="text-xs text-[var(--text-secondary)]">Ventas a crédito con cuotas por cobrar.</p>
+                        <!-- Tabla de arqueo -->
+                        <div class="lg:col-span-2 rounded-3xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/40 p-6 shadow-xl backdrop-blur-md">
+                            <h4 class="text-sm uppercase font-bold text-[var(--text-secondary)] tracking-wider mb-4">Arqueo por Tipo de Pago</h4>
 
-                            <div class="space-y-3 max-h-96 overflow-y-auto pr-1">
-                                <div v-if="creditosPendientes.length === 0" class="text-center py-6 text-sm text-[var(--text-secondary)]">
-                                    No hay créditos pendientes en el sistema.
-                                </div>
-                                <div
-                                    v-for="credit in creditosPendientes"
-                                    :key="credit.id"
-                                    class="p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10 transition duration-200 cursor-pointer flex flex-col justify-between"
-                                    @click="viewCreditDetails(credit)"
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="text-[var(--text-secondary)] border-b border-[var(--border-color)]">
+                                        <th class="text-left py-3 font-semibold">Tipo</th>
+                                        <th class="text-right py-3 font-semibold">Total Sistema</th>
+                                        <th class="text-right py-3 font-semibold">Total Caja</th>
+                                        <th class="text-right py-3 font-semibold">Diferencia</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="tipo in tiposPago" :key="tipo" class="border-b border-[var(--border-color)]/50">
+                                        <td class="py-3 capitalize font-medium">{{ tipo }}</td>
+                                        <td class="py-3 text-right font-mono">{{ totalSistemaPorTipo(tipo).toFixed(2) }}</td>
+                                        <td class="py-3 text-right">
+                                            <input
+                                                v-if="!isPropietario && cajaActiva.user_id === user?.id"
+                                                v-model.number="closeForm.totales_caja[tipo]"
+                                                type="number"
+                                                step="0.01"
+                                                class="w-28 text-right bg-transparent border border-[var(--border-color)] rounded-lg px-3 py-1.5 font-mono text-sm focus:border-indigo-500 focus:ring-0"
+                                            />
+                                            <span v-else class="font-mono">{{ totalCajaPorTipo(tipo).toFixed(2) }}</span>
+                                        </td>
+                                        <td class="py-3 text-right font-mono font-semibold" :class="diferenciaPorTipo(tipo) >= 0 ? 'text-emerald-400' : 'text-rose-400'">
+                                            {{ diferenciaPorTipo(tipo) >= 0 ? '+' : '' }}{{ diferenciaPorTipo(tipo).toFixed(2) }}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr class="font-bold text-base border-t-2 border-[var(--border-color)]">
+                                        <td class="py-3">Totales</td>
+                                        <td class="py-3 text-right font-mono">{{ totalSistemaGlobal.toFixed(2) }}</td>
+                                        <td class="py-3 text-right font-mono">{{ totalCajaGlobal.toFixed(2) }}</td>
+                                        <td class="py-3 text-right font-mono" :class="diferenciaGlobal >= 0 ? 'text-emerald-400' : 'text-rose-400'">
+                                            {{ diferenciaGlobal >= 0 ? '+' : '' }}{{ diferenciaGlobal.toFixed(2) }}
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+
+                            <!-- Botón cerrar (solo vendedor asignado) -->
+                            <div v-if="!isPropietario && cajaActiva.user_id === user?.id" class="border-t border-[var(--border-color)] pt-4 mt-4 flex justify-end">
+                                <button
+                                    class="bg-rose-600 hover:bg-rose-700 text-white px-6 py-2.5 rounded-xl font-bold transition shadow-lg text-sm cursor-pointer disabled:opacity-50"
+                                    :disabled="closeForm.processing"
+                                    @click="confirmClose"
                                 >
-                                    <div class="flex justify-between items-start">
-                                        <div>
-                                            <span class="text-xs font-semibold text-indigo-300 font-mono">Venta #{{ credit.id }}</span>
-                                            <h4 class="text-sm font-bold text-[var(--text-primary)] mt-0.5">{{ credit.cliente?.name || 'Cliente sin nombre' }}</h4>
-                                        </div>
-                                        <span class="text-xs font-bold bg-amber-500/10 border border-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full">
-                                            Crédito
-                                        </span>
-                                    </div>
-                                    <div class="flex justify-between items-center mt-3 pt-2 border-t border-white/5">
-                                        <span class="text-xs text-[var(--text-secondary)]">
-                                            {{ credit.venta_cuotas.filter(c => c.estado === 'pendiente').length }} cuotas pendientes
-                                        </span>
-                                        <span class="text-sm font-extrabold text-[var(--text-primary)]">
-                                            {{ Number(credit.monto_final).toFixed(2) }} Bs
-                                        </span>
-                                    </div>
+                                    🔒 Cerrar Caja & Arquear
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <!-- TAB: COMPROBANTES -->
+            <div v-if="activeTab === 'comprobantes'">
+                <div class="rounded-3xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/40 p-6 shadow-xl backdrop-blur-md">
+                    <h3 class="font-bold text-[var(--text-primary)] mb-1">Comprobantes de Caja</h3>
+                    <p class="text-xs text-[var(--text-secondary)] mb-4">
+                        {{ cajaActiva ? `Ventas registradas durante la caja #${cajaActiva.id}` : 'No hay caja activa.' }}
+                    </p>
+
+                    <div v-if="comprobantes.length === 0" class="text-center py-12 text-sm text-[var(--text-secondary)]">
+                        No hay comprobantes registrados en esta caja.
+                    </div>
+
+                    <div v-else class="space-y-3">
+                        <div
+                            v-for="venta in comprobantes"
+                            :key="venta.id"
+                            class="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition cursor-pointer"
+                            @click="verComprobante(venta)"
+                        >
+                            <div class="flex items-center gap-4">
+                                <span class="text-xs font-mono font-bold text-indigo-300">#{{ venta.id }}</span>
+                                <div>
+                                    <span class="text-sm font-semibold text-[var(--text-primary)]">{{ venta.cliente?.name || 'Consumidor Final' }}</span>
+                                    <span class="text-[10px] text-[var(--text-secondary)] block">{{ new Date(venta.created_at).toLocaleString() }}</span>
                                 </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="text-xs px-2.5 py-1 rounded-full font-semibold"
+                                    :class="{
+                                        'bg-indigo-500/10 text-indigo-300 border border-indigo-500/20': venta.tipo_pago === 'qr',
+                                        'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20': venta.tipo_pago === 'efectivo' || venta.tipo_pago === 'compra_directa',
+                                        'bg-amber-500/10 text-amber-300 border border-amber-500/20': venta.tipo_pago === 'credito',
+                                        'bg-cyan-500/10 text-cyan-300 border border-cyan-500/20': venta.tipo_pago === 'tarjeta',
+                                    }"
+                                >
+                                    {{ formatTipoPago(venta.tipo_pago) }}
+                                </span>
+                                <span class="font-bold text-sm text-[var(--text-primary)]">{{ Number(venta.monto_final).toFixed(2) }} Bs</span>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- COLUMNA DERECHA: PUNTO DE VENTA (POS) -->
-                <div class="grid gap-6 md:grid-cols-[1fr_360px]">
-                    <!-- Lista de Productos y Buscador -->
-                    <div class="rounded-3xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/40 p-6 shadow-xl backdrop-blur-md space-y-4">
-                        <div class="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center">
-                            <h3 class="font-bold text-[var(--text-primary)]">Selección de Productos</h3>
-                            <TextInput
-                                v-model="productSearch"
-                                type="text"
-                                placeholder="🔍 Buscar por nombre o barra..."
-                                class="w-full sm:w-64 text-xs py-1.5"
-                                :disabled="!cajaActiva"
-                            />
-                        </div>
+            <!-- TAB: CRÉDITOS -->
+            <div v-if="activeTab === 'creditos'">
+                <div class="rounded-3xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/40 p-6 shadow-xl backdrop-blur-md">
+                    <h3 class="font-bold text-[var(--text-primary)] mb-1">Créditos Vigentes</h3>
+                    <p class="text-xs text-[var(--text-secondary)] mb-4">Ventas a crédito con cuotas por cobrar.</p>
 
-                        <div class="grid gap-4 sm:grid-cols-2 max-h-[500px] overflow-y-auto pr-1">
-                            <div v-if="filteredProducts.length === 0" class="col-span-2 text-center py-12 text-[var(--text-secondary)] text-sm">
-                                No se encontraron productos.
-                            </div>
-                            <button
-                                v-for="item in filteredProducts"
-                                :key="item.id"
-                                class="rounded-2xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/30 p-4 text-left hover:border-[var(--accent)] hover:bg-[var(--accent)]/5 text-[var(--text-primary)] transition duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group flex gap-3 items-center"
-                                :disabled="!cajaActiva"
-                                @click="addProduct(item)"
-                            >
-                                <img
-                                    :src="item.imagen"
-                                    :alt="item.nombre"
-                                    class="w-12 h-12 rounded-xl object-cover bg-white/10 flex-shrink-0"
-                                />
-                                <div class="min-w-0">
-                                    <div class="font-bold text-sm text-[var(--text-primary)] truncate group-hover:text-[var(--accent)] transition-colors">{{ item.nombre }}</div>
-                                    <div class="text-xs text-[var(--text-secondary)] mt-0.5">
-                                        Stock: {{ item.stock_actual?.stock || item.stockActual?.stock || 0 }} uds
-                                    </div>
-                                    <div class="text-xs font-extrabold text-indigo-300 mt-1">
-                                        {{ Number(item.precio_venta).toFixed(2) }} Bs
-                                    </div>
-                                </div>
-                            </button>
-                        </div>
+                    <div v-if="creditosPendientes.length === 0" class="text-center py-12 text-sm text-[var(--text-secondary)]">
+                        No hay créditos pendientes en el sistema.
                     </div>
 
-                    <!-- Carrito y Procesador de Venta -->
-                    <div class="rounded-3xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/40 p-6 shadow-xl backdrop-blur-md flex flex-col justify-between space-y-4">
-                        <div class="space-y-4">
-                            <h3 class="font-bold text-[var(--text-primary)] border-b border-[var(--border-color)] pb-3">Detalle de Venta</h3>
-
-                            <!-- Carrito -->
-                            <div class="space-y-3 max-h-64 overflow-y-auto pr-1">
-                                <div v-if="saleForm.detalles.length === 0" class="text-center py-8 text-xs text-[var(--text-secondary)] leading-relaxed">
-                                    El carrito está vacío.<br>Agrega productos para iniciar la venta.
-                                </div>
-                                <div
-                                    v-for="item in saleForm.detalles"
-                                    :key="item.producto_id"
-                                    class="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/5"
-                                >
-                                    <div class="min-w-0 flex-1 mr-2">
-                                        <h4 class="text-xs font-bold text-[var(--text-primary)] truncate">{{ item.nombre }}</h4>
-                                        <span class="text-[10px] text-[var(--text-secondary)]">
-                                            {{ item.precio.toFixed(2) }} Bs c/u
-                                        </span>
-                                    </div>
-
-                                    <div class="flex items-center gap-2">
-                                        <button
-                                            class="w-6 h-6 rounded-lg bg-white/5 hover:bg-white/15 text-xs text-[var(--text-primary)] flex items-center justify-center font-bold"
-                                            @click="updateQty(item, -1)"
-                                        >
-                                            -
-                                        </button>
-                                        <span class="text-xs font-semibold px-1 min-w-[20px] text-center">{{ item.cantidad }}</span>
-                                        <button
-                                            class="w-6 h-6 rounded-lg bg-white/5 hover:bg-white/15 text-xs text-[var(--text-primary)] flex items-center justify-center font-bold"
-                                            @click="updateQty(item, 1)"
-                                        >
-                                            +
-                                        </button>
-                                        <button
-                                            class="w-6 h-6 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-[10px] text-rose-400 flex items-center justify-center font-bold ml-1"
-                                            @click="removeProduct(item.producto_id)"
-                                        >
-                                            ✕
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Aplicación de Promociones (CU5) -->
-                            <div class="pt-3 border-t border-[var(--border-color)]">
-                                <InputLabel value="Cupón de Promoción" class="text-xs" />
-                                <div class="flex gap-2 mt-1">
-                                    <TextInput
-                                        v-model="saleForm.codigo_promo"
-                                        type="text"
-                                        class="w-full text-xs uppercase font-mono py-1.5"
-                                        placeholder="Ej. VINTAGE10"
-                                        :disabled="saleForm.detalles.length === 0"
-                                    />
-                                </div>
-                                <div v-if="saleForm.codigo_promo.trim() && appliedPromo" class="text-xs text-emerald-400 font-semibold mt-1">
-                                    ✓ Cupón aplicado: {{ appliedPromo.nombre_promo }} ({{ Number(appliedPromo.descuento) }}{{ appliedPromo.tipo_descuento === 'porcentaje' ? '%' : ' Bs' }})
-                                </div>
-                                <div v-else-if="saleForm.codigo_promo.trim() && !appliedPromo" class="text-xs text-rose-400 font-semibold mt-1">
-                                    ✕ Cupón no válido o expirado
-                                </div>
-                            </div>
-
-                            <!-- Selector de Cliente (CU6) -->
-                            <div class="pt-3 border-t border-[var(--border-color)]">
-                                <div class="flex justify-between items-center">
-                                    <InputLabel value="Cliente" class="text-xs" />
-                                    <button
-                                        type="button"
-                                        class="text-indigo-400 hover:text-indigo-300 text-xs font-semibold"
-                                        @click="showClientModal = true"
-                                    >
-                                        + Registrar Rápido
-                                    </button>
-                                </div>
-                                <select
-                                    v-model="saleForm.cliente_id"
-                                    class="mt-1 block w-full rounded-xl border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-primary)] focus:border-indigo-500 focus:ring-indigo-500 shadow-sm text-xs p-2 transition"
-                                >
-                                    <option value="">-- Cliente Genérico (Contado) --</option>
-                                    <option v-for="c in clientes" :key="c.id" :value="c.id">
-                                        {{ c.name }} ({{ c.email }})
-                                    </option>
-                                </select>
-                            </div>
-
-                            <!-- Tipo de Venta y Cuotas (CU6) -->
-                            <div class="pt-3 border-t border-[var(--border-color)] grid grid-cols-2 gap-3">
+                    <div v-else class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        <div
+                            v-for="credit in creditosPendientes"
+                            :key="credit.id"
+                            class="p-5 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10 transition cursor-pointer flex flex-col justify-between"
+                            @click="viewCreditDetails(credit)"
+                        >
+                            <div class="flex justify-between items-start">
                                 <div>
-                                    <InputLabel value="Modalidad" class="text-xs" />
-                                    <select
-                                        v-model="saleForm.tipo_pago"
-                                        class="mt-1 block w-full rounded-xl border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-primary)] focus:border-indigo-500 focus:ring-indigo-500 shadow-sm text-xs p-2 transition"
-                                    >
-                                        <option value="compra_directa">Compra Directa</option>
-                                        <option value="efectivo">Efectivo</option>
-                                        <option value="qr">Código QR</option>
-                                        <option value="tarjeta">Tarjeta Bancaria</option>
-                                        <option value="credito">A Crédito (Cuotas)</option>
-                                    </select>
+                                    <span class="text-xs font-semibold text-indigo-300 font-mono">Venta #{{ credit.id }}</span>
+                                    <h4 class="text-sm font-bold text-[var(--text-primary)] mt-0.5">{{ credit.cliente?.name || 'Cliente sin nombre' }}</h4>
                                 </div>
-
-                                <div v-if="saleForm.tipo_pago === 'credito'">
-                                    <InputLabel value="Nro. Cuotas" class="text-xs" />
-                                    <select
-                                        v-model="saleForm.nro_cuotas"
-                                        class="mt-1 block w-full rounded-xl border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-primary)] focus:border-indigo-500 focus:ring-indigo-500 shadow-sm text-xs p-2 transition"
-                                    >
-                                        <option :value="2">2 cuotas</option>
-                                        <option :value="3">3 cuotas</option>
-                                        <option :value="4">4 cuotas</option>
-                                        <option :value="6">6 cuotas</option>
-                                        <option :value="12">12 cuotas</option>
-                                    </select>
-                                </div>
+                                <span class="text-xs font-bold bg-amber-500/10 border border-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full">Crédito</span>
                             </div>
-
-                            <!-- Cálculo de Cuotas en Vivo -->
-                            <div v-if="saleForm.tipo_pago === 'credito' && saleForm.detalles.length > 0" class="p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-300">
-                                <span class="font-bold block uppercase tracking-wider text-[10px] text-indigo-400 mb-1">Plan de Cuotas Estimado:</span>
-                                {{ saleForm.nro_cuotas }} cuotas mensuales de <strong class="text-[var(--text-primary)] font-bold text-sm">{{ quotaAmount.toFixed(2) }} Bs</strong>
+                            <div class="flex justify-between items-center mt-4 pt-3 border-t border-white/5">
+                                <span class="text-xs text-[var(--text-secondary)]">{{ credit.venta_cuotas.filter(c => c.estado === 'pendiente').length }} cuotas pend.</span>
+                                <span class="text-sm font-extrabold text-[var(--text-primary)]">{{ Number(credit.monto_final).toFixed(2) }} Bs</span>
                             </div>
-                        </div>
-
-                        <!-- Resumen Contable final -->
-                        <div class="border-t border-[var(--border-color)] pt-4 space-y-4">
-                            <div class="space-y-2 text-xs">
-                                <div class="flex justify-between text-[var(--text-secondary)]">
-                                    <span>Subtotal:</span>
-                                    <span>{{ subtotal.toFixed(2) }} Bs</span>
-                                </div>
-                                <div v-if="discountAmount > 0" class="flex justify-between text-emerald-400 font-semibold">
-                                    <span>Descuento Promoción:</span>
-                                    <span>-{{ discountAmount.toFixed(2) }} Bs</span>
-                                </div>
-                                <div class="flex justify-between text-base font-extrabold text-[var(--text-primary)] border-t border-white/5 pt-2">
-                                    <span>Total a Pagar:</span>
-                                    <span class="text-indigo-300 text-lg">{{ totalFinal.toFixed(2) }} Bs</span>
-                                </div>
-                            </div>
-
-                            <button
-                                class="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white py-3 rounded-2xl font-bold transition shadow-lg text-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                                :disabled="saleForm.detalles.length === 0 || !cajaActiva || saleForm.processing"
-                                @click="handleCheckout"
-                            >
-                                💳 Registrar Venta
-                            </button>
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
 
-        <!-- MODAL: CREAR CLIENTE RÁPIDO -->
-        <DialogModal :show="showClientModal" @close="showClientModal = false">
+        <!-- MODAL ABRIR CAJA -->
+        <DialogModal :show="showOpenModal" @close="showOpenModal = false">
             <template #title>
-                <h3 class="text-lg font-bold text-[var(--text-primary)]">Registrar Cliente Rápido</h3>
+                <h3 class="text-lg font-bold text-[var(--text-primary)]">Abrir Caja</h3>
             </template>
-
             <template #content>
-                <form @submit.prevent="submitRapidClient" class="space-y-4">
+                <form @submit.prevent="submitOpen" class="space-y-4">
                     <div>
-                        <InputLabel for="client_name" value="Nombre Completo" />
-                        <TextInput id="client_name" v-model="clientForm.name" type="text" class="mt-1 block w-full" placeholder="Juan Perez" required />
-                        <InputError :message="clientForm.errors.name" class="mt-2" />
+                        <InputLabel value="Seleccionar Vendedor" />
+                        <TextInput v-model="vendedorSearch" type="text" class="mt-1 w-full text-xs py-1.5" placeholder="Buscar vendedor..." />
+                        <div class="mt-2 space-y-1 max-h-40 overflow-y-auto">
+                            <button
+                                v-for="v in filteredVendedores"
+                                :key="v.id"
+                                type="button"
+                                class="w-full text-left px-3 py-2.5 rounded-xl text-sm font-semibold transition border cursor-pointer"
+                                :class="openForm.vendedor_id === v.id
+                                    ? 'bg-indigo-500/20 border-indigo-400/40 text-indigo-300'
+                                    : 'bg-white/5 border-white/10 text-[var(--text-primary)] hover:bg-white/10'"
+                                @click="openForm.vendedor_id = v.id; vendedorSearch = v.name"
+                            >
+                                {{ v.name }}
+                                <span class="text-[var(--text-secondary)] font-normal ml-2">{{ v.email }}</span>
+                            </button>
+                            <div v-if="filteredVendedores.length === 0" class="text-center py-4 text-xs text-[var(--text-secondary)]">No se encontraron vendedores.</div>
+                        </div>
+                        <InputError :message="openForm.errors.vendedor_id" class="mt-1" />
                     </div>
-
                     <div>
-                        <InputLabel for="client_email" value="Correo Electrónico" />
-                        <TextInput id="client_email" v-model="clientForm.email" type="email" class="mt-1 block w-full" placeholder="juan@gmail.com" required />
-                        <InputError :message="clientForm.errors.email" class="mt-2" />
-                    </div>
-
-                    <div>
-                        <InputLabel for="client_password" value="Contraseña de Cliente (Autogenerada)" />
-                        <TextInput id="client_password" v-model="clientForm.password" type="text" class="mt-1 block w-full font-mono bg-white/5" readonly />
-                        <span class="text-[10px] text-[var(--text-secondary)] block mt-1">El cliente podrá cambiar su contraseña al iniciar sesión en su catálogo.</span>
+                        <InputLabel value="Monto Inicial (Caja Chica)" />
+                        <TextInput v-model="openForm.monto_inicial" type="number" step="0.01" class="mt-1 w-full" placeholder="0.00" required />
+                        <InputError :message="openForm.errors.monto_inicial" class="mt-1" />
                     </div>
                 </form>
             </template>
-
             <template #footer>
                 <div class="flex items-center gap-3">
-                    <SecondaryButton @click="showClientModal = false">
-                        Cancelar
-                    </SecondaryButton>
-                    <PrimaryButton :class="{ 'opacity-25': clientForm.processing }" :disabled="clientForm.processing" @click="submitRapidClient">
-                        Guardar Cliente
+                    <SecondaryButton @click="showOpenModal = false">Cancelar</SecondaryButton>
+                    <PrimaryButton :class="{ 'opacity-25': openForm.processing }" :disabled="openForm.processing || !openForm.vendedor_id" @click="submitOpen">
+                        {{ openForm.processing ? 'Abriendo...' : '🔓 Abrir Caja' }}
                     </PrimaryButton>
                 </div>
             </template>
         </DialogModal>
 
-        <!-- MODAL: SIMULADOR DE PAGOS ELECTRÓNICOS (CU7) -->
-        <DialogModal :show="showPaymentModal" @close="showPaymentModal = false">
+        <!-- MODAL CONFIRMAR CIERRE -->
+        <DialogModal :show="showCloseModal" @close="showCloseModal = false">
             <template #title>
-                <h3 class="text-lg font-bold text-[var(--text-primary)]">
-                    {{ saleForm.tipo_pago === 'qr' ? 'Pago con Código QR' : 'Procesador de Tarjeta' }}
-                </h3>
+                <h3 class="text-lg font-bold text-[var(--text-primary)]">Confirmar Cierre de Caja</h3>
             </template>
-
             <template #content>
-                <!-- Simulador de Pago con QR -->
-                <div v-if="saleForm.tipo_pago === 'qr'" class="flex flex-col items-center space-y-4 py-4 text-center">
-                    <p class="text-sm text-[var(--text-secondary)]">Escanea el código QR desde tu aplicación bancaria para liquidar los <strong class="text-[var(--text-primary)]">{{ totalFinal.toFixed(2) }} Bs</strong>.</p>
-                    <div class="bg-white p-3 rounded-2xl shadow-xl flex items-center justify-center">
-                        <img
-                            :src="`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=CobroLicorVintage:${totalFinal.toFixed(2)}Bs`"
-                            alt="QR de Pago"
-                            class="w-40 h-40"
-                        />
+                <div class="space-y-4 py-2">
+                    <div class="rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 px-4 py-3 text-sm font-semibold flex items-center gap-2">
+                        ⚠️ Estás a punto de cerrar la caja #{{ cajaActiva?.id }}. Verifica los totales antes de confirmar.
                     </div>
-                    <span class="text-[10px] bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 px-3 py-1 rounded-full uppercase font-bold tracking-wider">
-                        Pago en Espera de Confirmación
-                    </span>
-                </div>
 
-                <!-- Simulador de Pago con Tarjeta -->
-                <div v-else class="space-y-4 py-2">
-                    <p class="text-xs text-[var(--text-secondary)]">Simulador de Transacción Bancaria. Introduce datos ficticios para validar.</p>
-                    
-                    <div class="bg-gradient-to-tr from-slate-900 to-indigo-950 border border-white/10 rounded-2xl p-5 shadow-2xl space-y-4">
-                        <div class="flex justify-between items-center text-xs font-semibold uppercase tracking-wider text-indigo-300">
-                            <span>Licor Vintage Premium</span>
-                            <span>💳 Card Link</span>
-                        </div>
-
-                        <div>
-                            <InputLabel value="Número de Tarjeta" class="text-[10px] text-white/50" />
-                            <TextInput type="text" class="w-full text-sm font-mono mt-1" placeholder="4000 1234 5678 9010" />
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <InputLabel value="Vencimiento" class="text-[10px] text-white/50" />
-                                <TextInput type="text" class="w-full text-sm font-mono mt-1" placeholder="MM/AA" />
-                            </div>
-                            <div>
-                                <InputLabel value="CVV" class="text-[10px] text-white/50" />
-                                <TextInput type="password" class="w-full text-sm font-mono mt-1" placeholder="***" />
-                            </div>
-                        </div>
-                    </div>
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="text-[var(--text-secondary)] border-b border-[var(--border-color)]">
+                                <th class="text-left py-2 font-semibold">Tipo</th>
+                                <th class="text-right py-2 font-semibold">Sistema</th>
+                                <th class="text-right py-2 font-semibold">Caja</th>
+                                <th class="text-right py-2 font-semibold">Dif.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="tipo in tiposPago" :key="tipo" class="border-b border-[var(--border-color)]/50">
+                                <td class="py-2 capitalize font-medium">{{ tipo }}</td>
+                                <td class="py-2 text-right font-mono">{{ totalSistemaPorTipo(tipo).toFixed(2) }}</td>
+                                <td class="py-2 text-right font-mono">{{ totalCajaPorTipo(tipo).toFixed(2) }}</td>
+                                <td class="py-2 text-right font-mono font-semibold" :class="diferenciaPorTipo(tipo) >= 0 ? 'text-emerald-400' : 'text-rose-400'">
+                                    {{ diferenciaPorTipo(tipo) >= 0 ? '+' : '' }}{{ diferenciaPorTipo(tipo).toFixed(2) }}
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr class="font-bold border-t-2 border-[var(--border-color)]">
+                                <td class="py-2">Totales</td>
+                                <td class="py-2 text-right font-mono">{{ totalSistemaGlobal.toFixed(2) }}</td>
+                                <td class="py-2 text-right font-mono">{{ totalCajaGlobal.toFixed(2) }}</td>
+                                <td class="py-2 text-right font-mono" :class="diferenciaGlobal >= 0 ? 'text-emerald-400' : 'text-rose-400'">
+                                    {{ diferenciaGlobal >= 0 ? '+' : '' }}{{ diferenciaGlobal.toFixed(2) }}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
                 </div>
             </template>
-
             <template #footer>
                 <div class="flex items-center gap-3">
-                    <SecondaryButton @click="showPaymentModal = false">
-                        Cancelar
-                    </SecondaryButton>
-                    <PrimaryButton :class="{ 'opacity-25': saleForm.processing }" :disabled="saleForm.processing" @click="submitSale">
-                        Confirmar Pago Simulado
-                    </PrimaryButton>
+                    <SecondaryButton @click="showCloseModal = false">Cancelar</SecondaryButton>
+                    <DangerButton :class="{ 'opacity-25': closeForm.processing }" :disabled="closeForm.processing" @click="submitClose">
+                        {{ closeForm.processing ? 'Cerrando...' : '🔒 Sí, Cerrar Caja' }}
+                    </DangerButton>
                 </div>
             </template>
         </DialogModal>
 
-        <!-- MODAL: DETALLES DE CRÉDITO Y COBRO DE CUOTAS (CU6) -->
-        <DialogModal :show="showCreditDetailModal" @close="showCreditDetailModal = false">
+        <!-- MODAL DETALLE COMPROBANTE -->
+        <DialogModal :show="showComprobanteModal" @close="showComprobanteModal = false">
             <template #title>
-                <h3 class="text-lg font-bold text-[var(--text-primary)]">
-                    Detalles de Crédito de Venta #{{ selectedCredit?.id }}
-                </h3>
+                <h3 class="text-lg font-bold text-[var(--text-primary)]">Comprobante #{{ selectedComprobante?.id }}</h3>
             </template>
-
             <template #content>
-                <div v-if="selectedCredit" class="space-y-4 text-sm">
+                <div v-if="selectedComprobante" class="space-y-4 text-sm">
                     <div class="grid grid-cols-2 gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
                         <div>
                             <span class="text-[10px] uppercase font-bold text-[var(--text-secondary)] block">Cliente</span>
-                            <span class="font-bold text-[var(--text-primary)]">{{ selectedCredit.cliente?.name }}</span>
+                            <span class="font-bold text-[var(--text-primary)]">{{ selectedComprobante.cliente?.name || 'Consumidor Final' }}</span>
                         </div>
                         <div>
                             <span class="text-[10px] uppercase font-bold text-[var(--text-secondary)] block">Monto Final</span>
-                            <span class="font-bold text-indigo-300">{{ Number(selectedCredit.monto_final).toFixed(2) }} Bs</span>
+                            <span class="font-bold text-indigo-300">{{ Number(selectedComprobante.monto_final).toFixed(2) }} Bs</span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] uppercase font-bold text-[var(--text-secondary)] block">Tipo Pago</span>
+                            <span class="font-bold text-[var(--text-primary)]">{{ formatTipoPago(selectedComprobante.tipo_pago) }}</span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] uppercase font-bold text-[var(--text-secondary)] block">Fecha</span>
+                            <span class="font-bold text-[var(--text-primary)]">{{ new Date(selectedComprobante.created_at).toLocaleString() }}</span>
                         </div>
                     </div>
 
-                    <h4 class="font-bold text-xs uppercase tracking-wider text-[var(--text-secondary)] mt-4">Plan de Cuotas</h4>
-                    
+                    <h4 class="font-bold text-xs uppercase tracking-wider text-[var(--text-secondary)]">Productos</h4>
+                    <div class="space-y-2">
+                        <div v-for="det in selectedComprobante.detalle_ventas" :key="det.id" class="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/5">
+                            <div>
+                                <span class="font-bold text-xs">{{ det.producto?.nombre || 'Producto #' + det.producto_id }}</span>
+                                <span class="text-[10px] text-[var(--text-secondary)] block">{{ det.cantidad }} x {{ Number(det.precio_u_final).toFixed(2) }} Bs</span>
+                            </div>
+                            <span class="font-bold text-xs">{{ Number(det.subtotal).toFixed(2) }} Bs</span>
+                        </div>
+                    </div>
+
+                    <div v-if="selectedComprobante.cod_descuento" class="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs">
+                        🏷️ Cupón aplicado: {{ selectedComprobante.cod_descuento }}
+                    </div>
+                </div>
+            </template>
+            <template #footer>
+                <SecondaryButton @click="showComprobanteModal = false">Cerrar</SecondaryButton>
+            </template>
+        </DialogModal>
+
+        <!-- MODAL DETALLE CRÉDITO -->
+        <DialogModal :show="showCreditDetailModal" @close="showCreditDetailModal = false">
+            <template #title>
+                <h3 class="text-lg font-bold text-[var(--text-primary)]">Detalles de Crédito - Venta #{{ selectedCredit?.id }}</h3>
+            </template>
+            <template #content>
+                <div v-if="selectedCredit" class="space-y-4 text-sm">
+                    <div class="grid grid-cols-2 gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
+                        <div><span class="text-[10px] uppercase font-bold text-[var(--text-secondary)] block">Cliente</span><span class="font-bold text-[var(--text-primary)]">{{ selectedCredit.cliente?.name }}</span></div>
+                        <div><span class="text-[10px] uppercase font-bold text-[var(--text-secondary)] block">Monto Total</span><span class="font-bold text-indigo-300">{{ Number(selectedCredit.monto_final).toFixed(2) }} Bs</span></div>
+                    </div>
+                    <h4 class="font-bold text-xs uppercase tracking-wider text-[var(--text-secondary)]">Plan de Cuotas</h4>
                     <div class="space-y-2.5">
-                        <div
-                            v-for="cuota in selectedCredit.venta_cuotas"
-                            :key="cuota.id"
-                            class="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/5"
-                        >
+                        <div v-for="cuota in selectedCredit.venta_cuotas" :key="cuota.id" class="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/5">
                             <div>
                                 <span class="font-bold text-xs">Cuota #{{ cuota.nro_cuota }}</span>
-                                <span class="text-xs text-[var(--text-secondary)] block mt-0.5">
-                                    Monto: {{ Number(cuota.sub_monto).toFixed(2) }} Bs
-                                </span>
+                                <span class="text-xs text-[var(--text-secondary)] block mt-0.5">Monto: {{ Number(cuota.sub_monto).toFixed(2) }} Bs</span>
                             </div>
-
                             <div class="flex items-center gap-3">
-                                <span
-                                    v-if="cuota.estado === 'pagado'"
-                                    class="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full"
-                                >
+                                <span v-if="cuota.estado === 'pagado'" class="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">
                                     ✓ Pagada ({{ new Date(cuota.fecha_pago).toLocaleDateString() }})
                                 </span>
                                 <div v-else class="flex items-center gap-2">
-                                    <span class="text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-1 rounded-full">
-                                        Pendiente
-                                    </span>
-                                    <button
-                                        v-if="cajaActiva"
-                                        class="text-xs font-bold bg-indigo-600 hover:bg-indigo-750 text-white px-3 py-1 rounded-lg transition"
-                                        @click="payInstallment(cuota.id)"
-                                    >
-                                        Cobrar
-                                    </button>
+                                    <span class="text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-1 rounded-full">Pendiente</span>
+                                    <button v-if="cajaActiva" class="text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg transition cursor-pointer" @click="payInstallment(cuota.id)">Cobrar</button>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </template>
-
             <template #footer>
-                <div class="flex justify-end">
-                    <SecondaryButton @click="showCreditDetailModal = false">
-                        Cerrar Detalles
-                    </SecondaryButton>
-                </div>
+                <SecondaryButton @click="showCreditDetailModal = false">Cerrar</SecondaryButton>
             </template>
         </DialogModal>
     </AppLayout>

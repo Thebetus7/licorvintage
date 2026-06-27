@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\ActivityLog;
 use App\Models\Producto;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -40,7 +41,7 @@ class ProductoService
                 );
             }
 
-            \App\Models\ActivityLog::create([
+            ActivityLog::create([
                 'event_type' => 'product_created',
                 'user_id' => $user->id,
                 'user_identity' => $user->email,
@@ -75,7 +76,7 @@ class ProductoService
                 );
             }
 
-            \App\Models\ActivityLog::create([
+            ActivityLog::create([
                 'event_type' => 'product_updated',
                 'user_id' => auth()->id(),
                 'user_identity' => auth()->user()?->email ?? 'sistema',

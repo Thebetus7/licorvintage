@@ -19,7 +19,7 @@ class StripeService
         try {
             // Map the card number to a Stripe standard test token to avoid PCI compliance / raw card data errors.
             $cardNumber = str_replace(' ', '', $cardDetails['number'] ?? '');
-            
+
             // Default token is tok_visa (Visa)
             $sourceToken = 'tok_visa';
 
@@ -46,7 +46,7 @@ class StripeService
             }
 
             // Create the charge directly using the mapped test token
-            $amountInCents = (int)round($amount * 100);
+            $amountInCents = (int) round($amount * 100);
 
             $chargeResponse = Http::withoutVerifying()
                 ->withToken($this->secretKey)
@@ -60,6 +60,7 @@ class StripeService
 
             if ($chargeResponse->successful()) {
                 Log::info('Stripe charge successful', ['charge_id' => $chargeResponse->json()['id']]);
+
                 return [
                     'success' => true,
                     'charge_id' => $chargeResponse->json()['id'],
@@ -69,6 +70,7 @@ class StripeService
 
             $error = $chargeResponse->json()['error']['message'] ?? 'Error al procesar el cargo con Stripe.';
             Log::error('Stripe charge failed', ['response' => $chargeResponse->json()]);
+
             return [
                 'success' => false,
                 'message' => $error,
@@ -76,6 +78,7 @@ class StripeService
 
         } catch (\Exception $e) {
             Log::error('Stripe payment exception', ['message' => $e->getMessage()]);
+
             return [
                 'success' => false,
                 'message' => 'Ocurrió un error inesperado al comunicarse con el procesador de pagos.',

@@ -4,14 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Caja\CloseCajaRequest;
 use App\Http\Requests\Caja\OpenCajaRequest;
+use App\Models\ActivityLog;
 use App\Models\AperturaCaja;
-use App\Models\Producto;
 use App\Models\User;
-use App\Models\Promocion;
 use App\Models\Venta;
 use App\Models\VentaCuotas;
 use App\Services\CajaService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -19,40 +19,57 @@ class CajaController extends Controller
 {
     public function index(CajaService $service): Response
     {
+        $user = auth()->user();
+        $isPropietario = $user->hasRole('propietario');
+
+        $cajaActiva = $isPropietario
+            ? $service->activeCajaDelSistema()
+            : $service->activeCaja($user);
+
+        $comprobantes = collect();
+        if ($cajaActiva) {
+            $comprobantes = Venta::with(['detalleVentas.producto', 'cliente', 'metodoPagos'])
+                ->where('user_id', $cajaActiva->user_id)
+                ->whereBetween('created_at', [$cajaActiva->tiempo_apertura, now()])
+                ->orderByDesc('created_at')
+                ->get();
+        }
+
         return Inertia::render('Caja/Index', [
-            'cajaActiva' => $service->activeCaja(auth()->user())?->load('movimientoCajas'),
-            'productos' => Producto::query()
-                ->with('stockActual')
-                ->whereHas('stockActual', fn ($query) => $query->where('stock', '>', 0))
-                ->orderBy('nombre')
-                ->get(),
+            'cajaActiva' => $cajaActiva?->load(['user', 'opener', 'movimientoCajas']),
+            'vendedores' => User::role('vendedor')
+                ->orderBy('name')
+                ->get(['id', 'name', 'email']),
             'clientes' => User::role('cliente')
                 ->orderBy('name')
                 ->get(['id', 'name', 'email']),
-            'promocionesActive' => Promocion::whereDate('fecha_inicio', '<=', today())
-                ->whereDate('fecha_fin', '>=', today())
-                ->orderBy('nombre_promo')
-                ->get(),
-            'creditosPendientes' => Venta::with(['cliente', 'ventaCuotas' => fn($q) => $q->orderBy('nro_cuota')])
+            'creditosPendientes' => Venta::with(['cliente', 'ventaCuotas' => fn ($q) => $q->orderBy('nro_cuota')])
                 ->where('tipo_pago', 'credito')
-                ->whereHas('ventaCuotas', fn($q) => $q->where('estado', 'pendiente'))
+                ->whereHas('ventaCuotas', fn ($q) => $q->where('estado', 'pendiente'))
                 ->orderByDesc('created_at')
                 ->get(),
+            'comprobantes' => $comprobantes,
         ]);
     }
 
     public function open(OpenCajaRequest $request, CajaService $service): RedirectResponse
     {
-        $service->open($request->user(), (float) $request->validated('monto_inicial'));
+        Gate::allowIf(fn ($user) => $user->hasRole('propietario'));
+
+        $service->open(
+            $request->user(),
+            (int) $request->validated('vendedor_id'),
+            (float) $request->validated('monto_inicial')
+        );
 
         return back()->with('success', 'Caja abierta correctamente.');
     }
 
     public function close(CloseCajaRequest $request, AperturaCaja $caja, CajaService $service): RedirectResponse
     {
-        abort_unless($caja->user_id === $request->user()->id || $request->user()->hasRole('propietario'), 403);
+        abort_unless($caja->user_id === $request->user()->id, 403, 'Solo el vendedor asignado puede cerrar esta caja.');
 
-        $service->close($caja, (float) $request->validated('monto_real'));
+        $service->close($caja, $request->validated('totales_caja'));
 
         return back()->with('success', 'Caja cerrada correctamente.');
     }
@@ -80,7 +97,7 @@ class CajaController extends Controller
 
         $caja->increment('monto_sistema', $cuota->sub_monto);
 
-        \App\Models\ActivityLog::create([
+        ActivityLog::create([
             'event_type' => 'caja_movement',
             'user_id' => $user->id,
             'user_identity' => $user->email,

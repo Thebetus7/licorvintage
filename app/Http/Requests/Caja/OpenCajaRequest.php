@@ -15,6 +15,7 @@ class OpenCajaRequest extends FormRequest
     {
         return [
             'monto_inicial' => ['required', 'numeric', 'min:0'],
+            'vendedor_id' => ['required', 'integer', 'exists:users,id'],
         ];
     }
 }

@@ -26,13 +26,11 @@ class AperturaCaja extends Model
         'tiempo_cierre',
         'estado',
         'user_id',
+        'opened_by',
+        'totales_sistema',
+        'totales_caja',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -41,9 +39,12 @@ class AperturaCaja extends Model
             'monto_sistema' => 'double',
             'monto_real' => 'double',
             'diferencia' => 'double',
-            'tiempo_apertura' => 'timestamp',
-            'tiempo_cierre' => 'timestamp',
+            'tiempo_apertura' => 'datetime',
+            'tiempo_cierre' => 'datetime',
             'user_id' => 'integer',
+            'opened_by' => 'integer',
+            'totales_sistema' => 'array',
+            'totales_caja' => 'array',
         ];
     }
 
@@ -52,8 +53,33 @@ class AperturaCaja extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function opener(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'opened_by');
+    }
+
     public function movimientoCajas(): HasMany
     {
         return $this->hasMany(MovimientoCaja::class);
+    }
+
+    public function getTotalesSistemaAttribute($value): array
+    {
+        return array_merge([
+            'efectivo' => 0,
+            'qr' => 0,
+            'tarjeta' => 0,
+            'credito' => 0,
+        ], json_decode($value, true) ?? []);
+    }
+
+    public function getTotalesCajaAttribute($value): array
+    {
+        return array_merge([
+            'efectivo' => 0,
+            'qr' => 0,
+            'tarjeta' => 0,
+            'credito' => 0,
+        ], json_decode($value, true) ?? []);
     }
 }

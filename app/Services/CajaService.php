@@ -2,32 +2,30 @@
 
 namespace App\Services;
 
+use App\Models\ActivityLog;
 use App\Models\AperturaCaja;
 use App\Models\User;
 use Illuminate\Validation\ValidationException;
 
 class CajaService
 {
-    public function open(User $user, float $montoInicial): AperturaCaja
+    public function open(User $opener, int $vendedorId, float $montoInicial): AperturaCaja
     {
-        $activeCaja = $this->activeCaja($user);
+        $vendedor = User::findOrFail($vendedorId);
 
+        $activeCaja = $this->activeCaja($vendedor);
         if ($activeCaja) {
-            \App\Models\ActivityLog::create([
-                'event_type' => 'caja_open_failed',
-                'user_id' => $user->id,
-                'user_identity' => $user->email,
-                'ip_address' => request()->ip(),
-                'user_agent' => request()->userAgent(),
-                'resource_name' => 'Caja',
-                'visited_url' => request()->getRequestUri(),
-                'description' => "Intento fallido de apertura de caja. Motivo: El usuario ya posee una caja abierta activa (Caja #{$activeCaja->id}).",
-            ]);
-
             throw ValidationException::withMessages([
-                'monto_inicial' => 'Ya tienes una caja abierta.',
+                'vendedor_id' => "{$vendedor->name} ya tiene una caja abierta.",
             ]);
         }
+
+        $totalesIniciales = [
+            'efectivo' => 0,
+            'qr' => 0,
+            'tarjeta' => 0,
+            'credito' => 0,
+        ];
 
         $caja = AperturaCaja::create([
             'monto_inicial' => $montoInicial,
@@ -37,33 +35,40 @@ class CajaService
             'tiempo_apertura' => now(),
             'tiempo_cierre' => null,
             'estado' => 'abierta',
-            'user_id' => $user->id,
+            'user_id' => $vendedor->id,
+            'opened_by' => $opener->id,
+            'totales_sistema' => $totalesIniciales,
+            'totales_caja' => null,
         ]);
 
-        \App\Models\ActivityLog::create([
+        ActivityLog::create([
             'event_type' => 'caja_opened',
-            'user_id' => $user->id,
-            'user_identity' => $user->email,
+            'user_id' => $opener->id,
+            'user_identity' => $opener->email,
             'ip_address' => request()->ip(),
             'user_agent' => request()->userAgent(),
             'resource_name' => 'Caja',
             'visited_url' => request()->getRequestUri(),
-            'description' => "Apertura de caja realizada exitosamente (Caja #{$caja->id}) con un monto inicial de {$montoInicial} Bs.",
+            'description' => "Apertura de caja realizada por {$opener->name} para {$vendedor->name} (Caja #{$caja->id}) con monto inicial de {$montoInicial} Bs.",
         ]);
 
         return $caja;
     }
 
-    public function close(AperturaCaja $caja, float $montoReal): AperturaCaja
+    public function close(AperturaCaja $caja, array $totalesCaja): AperturaCaja
     {
+        $montoReal = array_sum($totalesCaja);
+        $diferencia = $montoReal - $caja->monto_sistema;
+
         $caja->update([
+            'totales_caja' => $totalesCaja,
             'monto_real' => $montoReal,
-            'diferencia' => $montoReal - $caja->monto_sistema,
+            'diferencia' => $diferencia,
             'tiempo_cierre' => now(),
             'estado' => 'cerrada',
         ]);
 
-        \App\Models\ActivityLog::create([
+        ActivityLog::create([
             'event_type' => 'caja_closed',
             'user_id' => auth()->id(),
             'user_identity' => auth()->user()?->email ?? 'sistema',
@@ -71,10 +76,10 @@ class CajaService
             'user_agent' => request()->userAgent(),
             'resource_name' => 'Caja',
             'visited_url' => request()->getRequestUri(),
-            'description' => "Cierre de caja realizado (Caja #{$caja->id}). Monto sistema: {$caja->monto_sistema} Bs. Monto real: {$montoReal} Bs. Diferencia: " . ($montoReal - $caja->monto_sistema) . " Bs.",
+            'description' => "Cierre de caja #{$caja->id}. Efectivo: {$totalesCaja['efectivo']} | QR: {$totalesCaja['qr']} | Tarjeta: {$totalesCaja['tarjeta']} | Crédito: {$totalesCaja['credito']}. Diferencia: {$diferencia} Bs.",
         ]);
 
-        return $caja;
+        return $caja->fresh();
     }
 
     public function activeCaja(User $user): ?AperturaCaja
@@ -89,6 +94,15 @@ class CajaService
     public function activeCajaDelSistema(): ?AperturaCaja
     {
         return AperturaCaja::query()
+            ->where('estado', 'abierta')
+            ->latest()
+            ->first();
+    }
+
+    public function cajaAbiertaPorPropietario(User $opener): ?AperturaCaja
+    {
+        return AperturaCaja::query()
+            ->where('opened_by', $opener->id)
             ->where('estado', 'abierta')
             ->latest()
             ->first();

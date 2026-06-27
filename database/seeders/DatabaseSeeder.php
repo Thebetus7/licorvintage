@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use App\Models\Producto;
 use App\Models\MenuItem;
+use App\Models\Producto;
+use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -94,7 +94,7 @@ class DatabaseSeeder extends Seeder
                 'stock' => 12,
                 'min' => 3,
                 'max' => 30,
-            ]
+            ],
         ];
 
         foreach ($bebidas as $bebida) {

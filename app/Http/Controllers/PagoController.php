@@ -27,7 +27,7 @@ class PagoController extends Controller
 
         $qrData = $pagofacil->generateQR($params);
 
-        if (!$qrData) {
+        if (! $qrData) {
             return response()->json([
                 'error' => true,
                 'message' => 'No se pudo generar el código QR. Intente nuevamente.',
@@ -40,16 +40,15 @@ class PagoController extends Controller
         ]);
     }
 
-
     public function callback(Request $request)
     {
         Log::info('Callback PagoFacil', $request->all());
 
         return response()->json([
-            'error'   => 0,
-            'status'  => 1,
+            'error' => 0,
+            'status' => 1,
             'message' => 'Pago procesado correctamente',
-            'values'  => true,
+            'values' => true,
         ], 200);
     }
 }

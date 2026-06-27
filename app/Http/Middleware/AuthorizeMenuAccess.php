@@ -2,10 +2,10 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\MenuItem;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
-use App\Models\MenuItem;
 
 class AuthorizeMenuAccess
 {
@@ -16,7 +16,7 @@ class AuthorizeMenuAccess
     {
         $user = auth()->user();
 
-        if (!$user) {
+        if (! $user) {
             abort(401);
         }
 
@@ -28,7 +28,7 @@ class AuthorizeMenuAccess
         // Si no se especifica el recurso, lo inferimos de la ruta actual
         $routeName = $resource ?: ($request->route() ? $request->route()->getName() : null);
 
-        if (!$routeName) {
+        if (! $routeName) {
             abort(403, 'Acceso denegado: Ruta no identificada.');
         }
 
@@ -36,14 +36,14 @@ class AuthorizeMenuAccess
         $menuItem = MenuItem::all()->first(function ($item) use ($routeName) {
             $itemRouteParts = explode('.', $item->route_name);
             $currentRouteParts = explode('.', $routeName);
-            
+
             $itemRouteRoot = $itemRouteParts[0] ?? null;
             $currentRouteRoot = $currentRouteParts[0] ?? null;
-            
+
             return $itemRouteRoot && $itemRouteRoot === $currentRouteRoot;
         });
 
-        if (!$menuItem) {
+        if (! $menuItem) {
             // Si la ruta no es un ítem de menú controlado por la matriz, se permite el paso
             return $next($request);
         }
@@ -51,7 +51,7 @@ class AuthorizeMenuAccess
         // 1. Validar acceso individual (columna menus del usuario)
         $individualMenus = $user->menus ?: [];
         $hasIndividualAccess = false;
-        
+
         if (in_array($menuItem->id, $individualMenus) || in_array($menuItem->route_name, $individualMenus)) {
             $hasIndividualAccess = true;
         }
