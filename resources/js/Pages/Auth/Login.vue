@@ -30,6 +30,11 @@ const fillCliente = () => {
     form.password = '123456789';
 };
 
+const fillVendedor = () => {
+    form.email = 'vendedor@gmail.com';
+    form.password = '123456789';
+};
+
 const submit = () => {
     form.transform(data => ({
         ...data,
@@ -91,6 +96,9 @@ const submit = () => {
                 <div class="flex flex-col gap-2 me-auto">
                     <SecondaryButton type="button" @click="fillAdmin">
                         Llenar Admin
+                    </SecondaryButton>
+                    <SecondaryButton type="button" @click="fillVendedor">
+                        Llenar Vendedor
                     </SecondaryButton>
                     <SecondaryButton type="button" @click="fillCliente">
                         Llenar Cliente

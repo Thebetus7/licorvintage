@@ -48,6 +48,10 @@ Route::middleware([
             return redirect()->route('cliente.productos');
         }
 
+        if (auth()->user()->hasRole('vendedor')) {
+            return redirect()->route('caja.index');
+        }
+
         // Ventas de hoy
         $ventasHoy = Venta::whereDate('created_at', today())->sum('monto_final');
 

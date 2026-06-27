@@ -43,6 +43,15 @@ class DatabaseSeeder extends Seeder
 
         $cliente->syncRoles(['cliente']);
 
+        $vendedor = User::updateOrCreate([
+            'email' => 'vendedor@gmail.com',
+        ], [
+            'name' => 'UsuarioVendedor',
+            'password' => Hash::make('123456789'),
+        ]);
+
+        $vendedor->syncRoles(['vendedor']);
+
         $bebidas = [
             [
                 'nombre' => 'Fernet Branca',
@@ -89,7 +98,9 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($bebidas as $bebida) {
-            $producto = Producto::create([
+            $producto = Producto::updateOrCreate([
+                'codigo_barra' => $bebida['codigo_barra'],
+            ], [
                 'nombre' => $bebida['nombre'],
                 'mililitros' => $bebida['mililitros'],
                 'precio_venta' => $bebida['precio_venta'],
@@ -97,11 +108,12 @@ class DatabaseSeeder extends Seeder
                 'costo_promedio' => $bebida['costo_promedio'],
                 'descripcion' => $bebida['descripcion'],
                 'imagen' => $bebida['imagen'],
-                'codigo_barra' => $bebida['codigo_barra'],
                 'publicado' => $bebida['publicado'],
             ]);
 
-            $producto->stockActual()->create([
+            $producto->stockActual()->updateOrCreate([
+                'producto_id' => $producto->id,
+            ], [
                 'stock' => $bebida['stock'],
                 'min' => $bebida['min'],
                 'max' => $bebida['max'],
@@ -109,11 +121,11 @@ class DatabaseSeeder extends Seeder
         }
 
         $menus = [
-            ['label' => 'Dashboard', 'route_name' => 'dashboard', 'roles' => ['propietario', 'vendedor', 'cliente']],
-            ['label' => 'Productos', 'route_name' => 'productos.index', 'roles' => ['propietario', 'vendedor']],
-            ['label' => 'Compras', 'route_name' => 'compras.index', 'roles' => ['propietario', 'vendedor']],
+            ['label' => 'Dashboard', 'route_name' => 'dashboard', 'roles' => ['propietario', 'cliente']],
+            ['label' => 'Productos', 'route_name' => 'productos.index', 'roles' => ['propietario']],
+            ['label' => 'Compras', 'route_name' => 'compras.index', 'roles' => ['propietario']],
             ['label' => 'Caja', 'route_name' => 'caja.index', 'roles' => ['propietario', 'vendedor']],
-            ['label' => 'Promociones', 'route_name' => 'promociones.index', 'roles' => ['propietario', 'vendedor']],
+            ['label' => 'Promociones', 'route_name' => 'promociones.index', 'roles' => ['propietario']],
             ['label' => 'Inventario', 'route_name' => 'inventario.index', 'roles' => ['propietario']],
             ['label' => 'Usuarios', 'route_name' => 'usuarios.index', 'roles' => ['propietario']],
             ['label' => 'Seguridad', 'route_name' => 'security.index', 'roles' => ['propietario']],
@@ -121,7 +133,12 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($menus as $menu) {
-            MenuItem::create($menu);
+            MenuItem::updateOrCreate([
+                'route_name' => $menu['route_name'],
+            ], [
+                'label' => $menu['label'],
+                'roles' => $menu['roles'],
+            ]);
         }
     }
 }
