@@ -44,6 +44,13 @@ const qrImage = ref(null);
 const qrLoading = ref(false);
 const qrTransactionId = ref(null);
 const qrFormat = ref('png');
+const qrAmount = ref(0);
+const qrPaid = ref(false);
+const qrChecking = ref(false);
+const qrCheckStatus = ref('');
+
+const tarjetaAmount = ref(0);
+const tarjetaPaid = ref(false);
 
 const showConfirmModal = ref(false);
 const showNewClientModal = ref(false);
@@ -120,10 +127,8 @@ const canFinalizar = computed(() => {
         const recibido = parseFloat(montoRecibido.value) || 0;
         if (recibido < totalFinal.value) return false;
     }
-    if (paymentMethod.value === 'qr') return true;
-    if (paymentMethod.value === 'tarjeta') {
-        if (!cardData.value.number || !cardData.value.expiry || !cardData.value.cvc) return false;
-    }
+    if (paymentMethod.value === 'qr') return qrPaid.value;
+    if (paymentMethod.value === 'tarjeta') return tarjetaPaid.value;
     if (paymentMethod.value === 'credito' && nroCuotas.value < 2) return false;
     return true;
 });
@@ -198,23 +203,13 @@ function handleBarcodeScanned(code) {
 
 async function handlePagar() {
     if (!canFinalizar.value) return;
-
-    if (paymentMethod.value === 'qr') {
-        await handleQRPayment();
-        return;
-    }
-
-    if (paymentMethod.value === 'tarjeta') {
-        await handleCardPayment();
-        return;
-    }
-
     showConfirmModal.value = true;
 }
 
 async function handleQRPayment() {
     qrLoading.value = true;
     processingQr.value = true;
+    qrPaid.value = false;
     try {
         const details = cart.value.map((item, i) => ({
             serial: i + 1,
@@ -225,14 +220,13 @@ async function handleQRPayment() {
             total: item.subtotal,
         }));
         const resp = await window.axios.post(route('pago.qr.generar'), {
-            monto: totalFinal.value,
+            monto: parseFloat(qrAmount.value || totalFinal.value),
             orderDetail: details,
         });
         if (resp.data?.error === false && resp.data?.data?.qrBase64) {
             qrImage.value = resp.data.data.qrBase64;
             qrTransactionId.value = resp.data.data.transactionId ?? null;
             qrFormat.value = resp.data.data.qrFormat || 'png';
-            showConfirmModal.value = true;
         } else {
             qrErrorMessage.value = resp.data?.message || 'Error al generar el codigo QR. Intente nuevamente.';
             showQrErrorModal.value = true;
@@ -246,68 +240,56 @@ async function handleQRPayment() {
     }
 }
 
-async function handleCardPayment() {
-    processingCard.value = true;
-    showConfirmModal.value = true;
-}
-
-function handleConfirmQRPayment() {
+async function handleCheckQRPayment() {
     if (!qrTransactionId.value) return;
 
-    // QR local (fallback): no polling necesario, guardar directo
     if (String(qrTransactionId.value).startsWith('local_')) {
-        submitSale();
+        qrPaid.value = true;
         return;
     }
 
-    pollingActive.value = true;
-    pollingStatus.value = 'Esperando confirmacion del pago...';
-    let elapsed = 0;
-    const interval = 3000;
-    const maxTime = 90000;
-
+    qrChecking.value = true;
+    qrCheckStatus.value = 'Verificando pago...';
     const terminalErrorStates = ['Cancelado', 'Rechazado', 'Fallido', 'Expirado', 'Anulado'];
 
-    pollingInterval = setInterval(async () => {
-        elapsed += interval;
-        if (elapsed >= maxTime) {
-            clearInterval(pollingInterval);
-            pollingInterval = null;
-            pollingActive.value = false;
-            qrErrorMessage.value = 'Tiempo de espera agotado (1:30 min). El cliente no completo el pago.';
-            showQrErrorModal.value = true;
-            return;
-        }
-        pollingStatus.value = `Verificando pago... (${Math.floor(elapsed / 1000)}s)`;
-        try {
-            const resp = await window.axios.post(route('pago.qr.checkStatus'), {
-                transactionId: qrTransactionId.value,
-            });
-            if (resp.data?.error === false && resp.data?.data) {
-                const statusDesc = resp.data.data.paymentStatusDescription || '';
-                const statusCode = resp.data.data.paymentStatus;
+    try {
+        const resp = await window.axios.post(route('pago.qr.checkStatus'), {
+            transactionId: qrTransactionId.value,
+        });
+        if (resp.data?.error === false && resp.data?.data) {
+            const statusDesc = resp.data.data.paymentStatusDescription || '';
+            const statusCode = resp.data.data.paymentStatus;
 
-                if (statusDesc === 'Pagado' || statusCode === 2) {
-                    clearInterval(pollingInterval);
-                    pollingInterval = null;
-                    pollingStatus.value = 'Pago confirmado. Guardando venta...';
-                    submitSale();
-                    return;
-                }
-
-                if (terminalErrorStates.includes(statusDesc)) {
-                    clearInterval(pollingInterval);
-                    pollingInterval = null;
-                    pollingActive.value = false;
-                    qrErrorMessage.value = `El pago fue ${statusDesc.toLowerCase()} por el cliente.`;
-                    showQrErrorModal.value = true;
-                    return;
-                }
+            if (statusDesc === 'Pagado' || statusCode === 2) {
+                qrPaid.value = true;
+                qrCheckStatus.value = '';
+                qrChecking.value = false;
+                return;
             }
-        } catch {
-            // ignore network errors, keep polling
+
+            if (terminalErrorStates.includes(statusDesc)) {
+                qrErrorMessage.value = `El pago fue ${statusDesc.toLowerCase()} por el cliente.`;
+                showQrErrorModal.value = true;
+                qrChecking.value = false;
+                return;
+            }
+
+            qrCheckStatus.value = 'Aún no pagado. Escanea el QR e intenta de nuevo.';
+        } else {
+            qrCheckStatus.value = 'Error al consultar el pago.';
         }
-    }, interval);
+    } catch {
+        qrCheckStatus.value = 'Error de conexión.';
+    }
+}
+
+async function handleCardPayment() {
+    processingCard.value = true;
+    tarjetaPaid.value = false;
+    // Simular pago con tarjeta - el cargo real se hace en el backend al enviar la venta
+    await new Promise(r => setTimeout(r, 500));
+    tarjetaPaid.value = true;
+    processingCard.value = false;
 }
 
 function submitSale() {
@@ -364,12 +346,27 @@ function resetForm() {
     paymentMethod.value = 'efectivo';
     montoRecibido.value = '';
     promoCode.value = '';
+    promoCode.value = '';
     promoApplied.value = null;
     promoError.value = '';
+    paymentMethod.value = 'efectivo';
+    montoRecibido.value = '';
     cardData.value = { number: '', expiry: '', cvc: '' };
     nroCuotas.value = 2;
     qrImage.value = null;
     qrTransactionId.value = null;
+    qrAmount.value = 0;
+    qrPaid.value = false;
+    qrChecking.value = false;
+    qrCheckStatus.value = '';
+    tarjetaAmount.value = 0;
+    tarjetaPaid.value = false;
+    pollingActive.value = false;
+    pollingStatus.value = '';
+    if (pollingInterval) {
+        clearInterval(pollingInterval);
+        pollingInterval = null;
+    }
 }
 
 function closeSuccessModal() {
@@ -611,7 +608,7 @@ function focusClienteInput(el) {
                         :class="paymentMethod === metodo
                             ? 'bg-amber-600 text-white shadow-lg shadow-amber-600/30'
                             : 'bg-stone-700 text-stone-300 hover:bg-stone-600'"
-                        @click="paymentMethod = metodo"
+                        @click="paymentMethod = metodo; qrPaid = false; tarjetaPaid = false; qrImage = null"
                     >
                         <template v-if="metodo === 'efectivo'">Efectivo</template>
                         <template v-else-if="metodo === 'qr'">QR</template>
@@ -635,13 +632,70 @@ function focusClienteInput(el) {
                 </div>
 
                 <!-- QR -->
-                <div v-if="paymentMethod === 'qr'" class="text-sm text-stone-400">
-                    Se generara un codigo QR para el pago.
+                <div v-if="paymentMethod === 'qr'" class="space-y-3">
+                    <div class="flex items-center gap-4">
+                        <div>
+                            <label class="mb-1 block text-xs text-stone-400">Monto QR</label>
+                            <TextInput v-model.number="qrAmount" type="number" min="0" step="0.01" class="w-40" :placeholder="totalFinal.toFixed(2)" />
+                        </div>
+                        <div v-if="!qrPaid && !qrImage" class="mt-5">
+                            <PrimaryButton type="button" :disabled="qrLoading" @click="handleQRPayment">
+                                {{ qrLoading ? 'Generando...' : 'Generar QR' }}
+                            </PrimaryButton>
+                        </div>
+                    </div>
+
+                    <!-- QR Image -->
+                    <div v-if="qrImage && !qrPaid" class="space-y-3">
+                        <div class="flex justify-center">
+                            <img :src="`data:image/${qrFormat};base64,${qrImage}`" class="h-48 w-48 rounded-lg border border-white/10" alt="QR">
+                        </div>
+                        <div v-if="qrChecking" class="flex items-center justify-center gap-2 text-sm text-amber-400">
+                            <div class="h-4 w-4 animate-spin rounded-full border-2 border-amber-400 border-t-transparent"></div>
+                            {{ qrCheckStatus }}
+                        </div>
+                        <div v-else class="flex justify-center">
+                            <PrimaryButton type="button" :disabled="qrChecking" @click="handleCheckQRPayment">
+                                {{ qrChecking ? 'Verificando...' : 'Verificar pago' }}
+                            </PrimaryButton>
+                        </div>
+                    </div>
+
+                    <!-- QR Paid status -->
+                    <div v-if="qrPaid" class="flex items-center gap-2 text-sm text-emerald-400 font-semibold">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Pagado — Bs {{ parseFloat(qrAmount || totalFinal).toFixed(2) }}
+                    </div>
                 </div>
 
                 <!-- Tarjeta -->
-                <div v-if="paymentMethod === 'tarjeta'" class="text-sm text-stone-400">
-                    Complete los datos de la tarjeta en la confirmación.
+                <div v-if="paymentMethod === 'tarjeta'" class="space-y-3">
+                    <div class="flex items-center gap-4">
+                        <div>
+                            <label class="mb-1 block text-xs text-stone-400">Monto tarjeta</label>
+                            <TextInput v-model.number="tarjetaAmount" type="number" min="0" step="0.01" class="w-40" :placeholder="totalFinal.toFixed(2)" />
+                        </div>
+                    </div>
+
+                    <!-- Card Form (solo si hay monto > 0) -->
+                    <div v-if="(parseFloat(tarjetaAmount) || 0) > 0 && !tarjetaPaid">
+                        <CreditCardForm v-model="cardData" />
+                        <div class="mt-3 flex justify-end">
+                            <PrimaryButton type="button" :disabled="processingCard || !cardData.number" @click="handleCardPayment">
+                                {{ processingCard ? 'Procesando...' : 'Pagar con tarjeta' }}
+                            </PrimaryButton>
+                        </div>
+                    </div>
+
+                    <!-- Tarjeta Paid status -->
+                    <div v-if="tarjetaPaid" class="flex items-center gap-2 text-sm text-emerald-400 font-semibold">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Pagado — Bs {{ parseFloat(tarjetaAmount || totalFinal).toFixed(2) }}
+                    </div>
                 </div>
 
                 <!-- Credito -->
@@ -670,14 +724,10 @@ function focusClienteInput(el) {
                     <PrimaryButton
                         type="button"
                         class="px-8 py-3 text-lg"
+                        :disabled="!canFinalizar"
                         @click="handlePagar"
                     >
-                        <template v-if="paymentMethod === 'qr' && qrLoading">
-                            Generando QR...
-                        </template>
-                        <template v-else>
-                            {{ paymentMethod === 'qr' ? 'Generar QR' : 'Finalizar Venta' }}
-                        </template>
+                        {{ submitting ? 'Procesando...' : 'Finalizar Venta' }}
                     </PrimaryButton>
                 </div>
             </div>
@@ -738,37 +788,22 @@ function focusClienteInput(el) {
                             <span class="font-mono text-amber-200">Bs {{ totalFinal.toFixed(2) }}</span>
                         </div>
                         <div class="mt-1 text-xs text-stone-400">
-                            Pago: {{ paymentMethod }}
+                            <div class="font-semibold text-stone-300">Pago: {{ paymentMethod === 'efectivo' ? 'Efectivo' : paymentMethod === 'qr' ? 'QR' : paymentMethod === 'tarjeta' ? 'Tarjeta' : 'Credito' }}</div>
                             <template v-if="paymentMethod === 'credito'"> — {{ nroCuotas }} cuotas de Bs {{ cuotaMonto.toFixed(2) }}</template>
-                            <template v-if="paymentMethod === 'efectivo'"> — Recibido: Bs {{ (parseFloat(montoRecibido) || 0).toFixed(2) }}</template>
+                            <template v-if="paymentMethod === 'efectivo'"> — Recibido: Bs {{ (parseFloat(montoRecibido) || 0).toFixed(2) }}{{ parseFloat(montoRecibido) >= totalFinal ? ' — Cambio: Bs ' + cambio.toFixed(2) : '' }}</template>
+                            <template v-if="paymentMethod === 'qr'"> — Bs {{ parseFloat(qrAmount || totalFinal).toFixed(2) }} ✓ Pagado</template>
+                            <template v-if="paymentMethod === 'tarjeta'"> — Bs {{ parseFloat(tarjetaAmount || totalFinal).toFixed(2) }} ✓ Pagado</template>
                         </div>
-                    </div>
-
-                    <!-- QR image -->
-                    <div v-if="qrImage" class="flex justify-center">
-                        <img :src="`data:image/${qrFormat};base64,${qrImage}`" class="h-48 w-48 rounded-lg" alt="QR de pago">
-                    </div>
-
-                    <!-- Card form -->
-                    <div v-if="paymentMethod === 'tarjeta'" class="pt-2">
-                        <CreditCardForm v-model="cardData" />
                     </div>
                 </div>
             </template>
             <template #footer>
-                <div v-if="pollingActive" class="flex items-center justify-center gap-2 py-2">
-                    <svg class="h-5 w-5 animate-spin text-amber-400" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-                    </svg>
-                    <span class="text-sm font-semibold text-stone-300">{{ pollingStatus }}</span>
-                </div>
-                <div v-else class="flex justify-end gap-2">
+                <div class="flex justify-end gap-2">
                     <SecondaryButton @click="showConfirmModal = false">Cancelar</SecondaryButton>
                     <PrimaryButton
                         type="button"
                         :disabled="submitting"
-                        @click="qrImage ? handleConfirmQRPayment() : submitSale()"
+                        @click="submitSale()"
                     >
                         {{ submitting ? 'Procesando...' : (qrImage ? 'Confirmar pago QR' : 'Confirmar venta') }}
                     </PrimaryButton>
