@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Caja\CloseCajaRequest;
 use App\Http\Requests\Caja\OpenCajaRequest;
-use App\Models\ActivityLog;
 use App\Models\AperturaCaja;
 use App\Models\User;
 use App\Models\Venta;
@@ -79,37 +78,19 @@ class CajaController extends Controller
     /**
      * Pay a specific credit installment.
      */
-    public function payInstallment(VentaCuotas $cuota, CajaService $service): RedirectResponse
+    public function payInstallment(Request $request, VentaCuotas $cuota, CajaService $service): RedirectResponse
     {
+        $validated = $request->validate([
+            'payment_method' => 'required|in:efectivo,qr,tarjeta',
+        ]);
+
         $user = auth()->user();
         $caja = $service->activeCaja($user);
 
         abort_unless($caja, 403, 'Debes tener una caja abierta para cobrar cuotas.');
 
-        $cuota->update([
-            'estado' => 'pagado',
-            'fecha_pago' => now(),
-        ]);
+        $service->registrarPagoCuota($cuota, $user, $caja, $validated['payment_method']);
 
-        $caja->movimientoCajas()->create([
-            'monto' => $cuota->sub_monto,
-            'tipo' => 'ingreso',
-            'detalle' => "Cobro Cuota #{$cuota->nro_cuota} de Venta #{$cuota->venta_id}",
-        ]);
-
-        $caja->increment('monto_sistema', $cuota->sub_monto);
-
-        ActivityLog::create([
-            'event_type' => 'caja_movement',
-            'user_id' => $user->id,
-            'user_identity' => $user->email,
-            'ip_address' => request()->ip(),
-            'user_agent' => request()->userAgent(),
-            'resource_name' => 'Caja',
-            'visited_url' => request()->getRequestUri(),
-            'description' => "Cobro de cuota realizado: Ingreso de {$cuota->sub_monto} Bs por la cuota #{$cuota->nro_cuota} de la venta #{$cuota->venta_id} en la caja activa (Caja #{$caja->id}).",
-        ]);
-
-        return back()->with('success', "Cuota #{$cuota->nro_cuota} cobrada correctamente.");
+        return back()->with('success', "Cuota #{$cuota->nro_cuota} cobrada correctamente ({$validated['payment_method']}).");
     }
 }

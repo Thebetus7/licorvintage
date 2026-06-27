@@ -23,6 +23,32 @@ const page = usePage();
 const user = computed(() => page.props.auth.user);
 const isPropietario = computed(() => page.props.auth.roles?.includes('propietario'));
 
+const filteredCreditos = computed(() => {
+    let list = [...props.creditosPendientes];
+    const q = creditoSearch.value.toLowerCase().trim();
+    if (q) {
+        list = list.filter(c =>
+            c.cliente?.name?.toLowerCase().includes(q) ||
+            c.cliente?.ci?.toLowerCase().includes(q)
+        );
+    }
+    const from = creditoFrom.value;
+    if (from) {
+        list = list.filter(c => c.created_at?.startsWith(from) || new Date(c.created_at) >= new Date(from));
+    }
+    const to = creditoTo.value;
+    if (to) {
+        list = list.filter(c => c.created_at?.startsWith(to) || new Date(c.created_at) <= new Date(to + 'T23:59:59'));
+    }
+    list.sort((a, b) => {
+        const aPend = a.venta_cuotas?.filter(c => c.estado === 'pendiente').length || 0;
+        const bPend = b.venta_cuotas?.filter(c => c.estado === 'pendiente').length || 0;
+        if (aPend !== bPend) return bPend - aPend;
+        return new Date(b.created_at) - new Date(a.created_at);
+    });
+    return list;
+});
+
 const activeTab = ref(page.props.ziggy?.query?.tab || 'caja');
 const showOpenModal = ref(false);
 const showCloseModal = ref(false);
@@ -34,6 +60,21 @@ const historialFrom = ref(props.filters?.from || '');
 const historialTo = ref(props.filters?.to || '');
 const selectedApertura = ref(null);
 const showAperturaModal = ref(false);
+const creditoSearch = ref('');
+const creditoFrom = ref('');
+const creditoTo = ref('');
+const selectedCuota = ref(null);
+const showPagoCuotaModal = ref(false);
+const pagoCuotaMethod = ref('efectivo');
+const pagoCuotaQrImage = ref(null);
+const pagoCuotaQrTransactionId = ref(null);
+const pagoCuotaQrFormat = ref('png');
+const pagoCuotaQrLoading = ref(false);
+const pagoCuotaPollingActive = ref(false);
+const pagoCuotaPollingStatus = ref('');
+const pagoCuotaPollingInterval = ref(null);
+const pagoCuotaQrError = ref('');
+const showPagoCuotaQrError = ref(false);
 
 const openForm = useForm({ monto_inicial: 0, vendedor_id: '' });
 const closeForm = useForm({
@@ -102,21 +143,145 @@ const submitClose = () => {
     });
 };
 
-const payInstallment = (cuotaId) => {
-    installmentForm.post(route('caja.cuotas.pagar', cuotaId), {
-        preserveScroll: true,
-        onSuccess: () => {
-            if (selectedCredit.value) {
-                const creditId = selectedCredit.value.id;
-                const updated = props.creditosPendientes.find(c => c.id === creditId);
-                if (updated) selectedCredit.value = updated;
-                else showCreditDetailModal.value = false;
-            }
-        }
-    });
+const cobrarCuota = (cuota) => {
+    selectedCuota.value = cuota;
+    pagoCuotaMethod.value = 'efectivo';
+    pagoCuotaQrImage.value = null;
+    pagoCuotaQrTransactionId.value = null;
+    pagoCuotaQrLoading.value = false;
+    pagoCuotaPollingActive.value = false;
+    pagoCuotaPollingStatus.value = '';
+    showPagoCuotaQrError.value = false;
+    pagoCuotaQrError.value = '';
+    if (pagoCuotaPollingInterval.value) {
+        clearInterval(pagoCuotaPollingInterval.value);
+        pagoCuotaPollingInterval.value = null;
+    }
+    showPagoCuotaModal.value = true;
 };
 
-const installmentForm = useForm({});
+const confirmPagoCuota = () => {
+    if (!selectedCuota.value) return;
+
+    if (pagoCuotaMethod.value === 'qr') {
+        generatePagoCuotaQR();
+        return;
+    }
+
+    submitPagoCuota(pagoCuotaMethod.value);
+};
+
+const generatePagoCuotaQR = async () => {
+    if (!selectedCuota.value) return;
+    pagoCuotaQrLoading.value = true;
+    pagoCuotaQrImage.value = null;
+    pagoCuotaQrTransactionId.value = null;
+    pagoCuotaQrError.value = '';
+    showPagoCuotaQrError.value = false;
+
+    try {
+        const monto = Number(selectedCuota.value.sub_monto || 0);
+        const detail = [{
+            serial: 1,
+            product: `Cuota #${selectedCuota.value.nro_cuota} - Venta #${selectedCuota.value.venta_id}`,
+            quantity: 1,
+            price: monto,
+            discount: 0,
+            total: monto,
+        }];
+        const resp = await window.axios.post(route('pago.qr.generar'), {
+            monto: monto,
+            orderDetail: detail,
+        });
+        if (resp.data?.error === false && resp.data?.data?.qrBase64) {
+            pagoCuotaQrImage.value = resp.data.data.qrBase64;
+            pagoCuotaQrTransactionId.value = resp.data.data.transactionId ?? null;
+            pagoCuotaQrFormat.value = resp.data.data.qrFormat || 'png';
+        } else {
+            pagoCuotaQrError.value = resp.data?.message || 'Error al generar el codigo QR. Intente nuevamente.';
+            showPagoCuotaQrError.value = true;
+        }
+    } catch {
+        pagoCuotaQrError.value = 'Error de conexion al generar el codigo QR.';
+        showPagoCuotaQrError.value = true;
+    } finally {
+        pagoCuotaQrLoading.value = false;
+    }
+};
+
+const handleConfirmCuotaQRPayment = () => {
+    if (!pagoCuotaQrTransactionId.value) return;
+
+    if (String(pagoCuotaQrTransactionId.value).startsWith('local_')) {
+        submitPagoCuota('qr');
+        return;
+    }
+
+    pagoCuotaPollingActive.value = true;
+    pagoCuotaPollingStatus.value = 'Esperando confirmacion del pago...';
+    let elapsed = 0;
+    const interval = 3000;
+    const maxTime = 90000;
+    const terminalErrorStates = ['Cancelado', 'Rechazado', 'Fallido', 'Expirado', 'Anulado'];
+
+    pagoCuotaPollingInterval.value = setInterval(async () => {
+        elapsed += interval;
+        if (elapsed >= maxTime) {
+            clearInterval(pagoCuotaPollingInterval.value);
+            pagoCuotaPollingInterval.value = null;
+            pagoCuotaPollingActive.value = false;
+            pagoCuotaQrError.value = 'Tiempo de espera agotado (1:30 min). El cliente no completo el pago.';
+            showPagoCuotaQrError.value = true;
+            return;
+        }
+        pagoCuotaPollingStatus.value = `Verificando pago... (${Math.floor(elapsed / 1000)}s)`;
+        try {
+            const resp = await window.axios.post(route('pago.qr.checkStatus'), {
+                transactionId: pagoCuotaQrTransactionId.value,
+            });
+            if (resp.data?.error === false && resp.data?.data) {
+                const statusDesc = resp.data.data.paymentStatusDescription || '';
+                const statusCode = resp.data.data.paymentStatus;
+
+                if (statusDesc === 'Pagado' || statusCode === 2) {
+                    clearInterval(pagoCuotaPollingInterval.value);
+                    pagoCuotaPollingInterval.value = null;
+                    pagoCuotaPollingStatus.value = 'Pago confirmado. Procesando...';
+                    submitPagoCuota('qr');
+                    return;
+                }
+
+                if (terminalErrorStates.includes(statusDesc)) {
+                    clearInterval(pagoCuotaPollingInterval.value);
+                    pagoCuotaPollingInterval.value = null;
+                    pagoCuotaPollingActive.value = false;
+                    pagoCuotaQrError.value = `El pago fue ${statusDesc.toLowerCase()} por el cliente.`;
+                    showPagoCuotaQrError.value = true;
+                    return;
+                }
+            }
+        } catch {
+            // ignore network errors, keep polling
+        }
+    }, interval);
+};
+
+const submitPagoCuota = (metodo) => {
+    if (!selectedCuota.value) return;
+    const form = useForm({ payment_method: metodo });
+    form.post(route('caja.cuotas.pagar', selectedCuota.value.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            showPagoCuotaModal.value = false;
+            showCreditDetailModal.value = false;
+            selectedCuota.value = null;
+            selectedCredit.value = null;
+        },
+        onFinish: () => {
+            router.reload({ only: ['creditosPendientes'] });
+        },
+    });
+};
 
 const viewCreditDetails = (credit) => {
     selectedCredit.value = credit;
@@ -393,29 +558,75 @@ const filterHistorial = () => {
                     <h3 class="font-bold text-[var(--text-primary)] mb-1">Créditos Vigentes</h3>
                     <p class="text-xs text-[var(--text-secondary)] mb-4">Ventas a crédito con cuotas por cobrar.</p>
 
-                    <div v-if="creditosPendientes.length === 0" class="text-center py-12 text-sm text-[var(--text-secondary)]">
+                    <!-- Filters -->
+                    <div class="flex flex-wrap items-end gap-3 mb-4">
+                        <div>
+                            <label class="block text-[10px] uppercase font-bold text-[var(--text-secondary)] mb-1">Buscar cliente</label>
+                            <input
+                                v-model="creditoSearch"
+                                type="text"
+                                class="rounded-lg border border-[var(--border-color)] bg-transparent px-3 py-1.5 text-sm text-[var(--text-primary)] w-48"
+                                placeholder="Nombre o CI..."
+                            />
+                        </div>
+                        <div>
+                            <label class="block text-[10px] uppercase font-bold text-[var(--text-secondary)] mb-1">Desde</label>
+                            <input
+                                v-model="creditoFrom"
+                                type="date"
+                                class="rounded-lg border border-[var(--border-color)] bg-transparent px-3 py-1.5 text-sm text-[var(--text-primary)]"
+                            />
+                        </div>
+                        <div>
+                            <label class="block text-[10px] uppercase font-bold text-[var(--text-secondary)] mb-1">Hasta</label>
+                            <input
+                                v-model="creditoTo"
+                                type="date"
+                                class="rounded-lg border border-[var(--border-color)] bg-transparent px-3 py-1.5 text-sm text-[var(--text-primary)]"
+                            />
+                        </div>
+                    </div>
+
+                    <div v-if="filteredCreditos.length === 0" class="text-center py-12 text-sm text-[var(--text-secondary)]">
                         No hay créditos pendientes en el sistema.
                     </div>
 
-                    <div v-else class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        <div
-                            v-for="credit in creditosPendientes"
-                            :key="credit.id"
-                            class="p-5 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10 transition cursor-pointer flex flex-col justify-between"
-                            @click="viewCreditDetails(credit)"
-                        >
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <span class="text-xs font-semibold text-indigo-300 font-mono">Venta #{{ credit.id }}</span>
-                                    <h4 class="text-sm font-bold text-[var(--text-primary)] mt-0.5">{{ credit.cliente?.name || 'Cliente sin nombre' }}</h4>
-                                </div>
-                                <span class="text-xs font-bold bg-amber-500/10 border border-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full">Crédito</span>
-                            </div>
-                            <div class="flex justify-between items-center mt-4 pt-3 border-t border-white/5">
-                                <span class="text-xs text-[var(--text-secondary)]">{{ credit.venta_cuotas.filter(c => c.estado === 'pendiente').length }} cuotas pend.</span>
-                                <span class="text-sm font-extrabold text-[var(--text-primary)]">{{ Number(credit.monto_final).toFixed(2) }} Bs</span>
-                            </div>
-                        </div>
+                    <div v-else class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="text-[var(--text-secondary)] border-b border-[var(--border-color)] text-left">
+                                    <th class="py-3 pr-2 font-semibold">#</th>
+                                    <th class="py-3 px-2 font-semibold">Cliente</th>
+                                    <th class="py-3 px-2 font-semibold">CI</th>
+                                    <th class="py-3 px-2 font-semibold text-right">Total</th>
+                                    <th class="py-3 px-2 font-semibold text-center">Cuotas</th>
+                                    <th class="py-3 px-2 font-semibold text-center">Pagadas</th>
+                                    <th class="py-3 px-2 font-semibold text-center">Pendientes</th>
+                                    <th class="py-3 px-2 font-semibold">Fecha</th>
+                                    <th class="py-3 pl-2 font-semibold text-center">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="credit in filteredCreditos" :key="credit.id" class="border-b border-[var(--border-color)]/50 hover:bg-white/5 transition">
+                                    <td class="py-3 pr-2 font-mono font-bold text-indigo-300">#{{ credit.id }}</td>
+                                    <td class="py-3 px-2">{{ credit.cliente?.name || '—' }}</td>
+                                    <td class="py-3 px-2 text-xs text-[var(--text-secondary)]">{{ credit.cliente?.ci || '—' }}</td>
+                                    <td class="py-3 px-2 text-right font-mono font-semibold">{{ Number(credit.monto_final).toFixed(2) }}</td>
+                                    <td class="py-3 px-2 text-center font-mono">{{ credit.venta_cuotas?.length || 0 }}</td>
+                                    <td class="py-3 px-2 text-center font-mono text-emerald-400">{{ credit.venta_cuotas?.filter(c => c.estado === 'pagado').length || 0 }}</td>
+                                    <td class="py-3 px-2 text-center font-mono text-amber-400">{{ credit.venta_cuotas?.filter(c => c.estado === 'pendiente').length || 0 }}</td>
+                                    <td class="py-3 px-2 text-xs">{{ credit.created_at ? new Date(credit.created_at).toLocaleDateString() : '—' }}</td>
+                                    <td class="py-3 pl-2 text-center">
+                                        <button
+                                            class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded-lg text-xs font-semibold transition cursor-pointer"
+                                            @click="viewCreditDetails(credit)"
+                                        >
+                                            Ver detalles
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -594,6 +805,87 @@ const filterHistorial = () => {
             </template>
         </DialogModal>
 
+        <!-- MODAL SELECCIONAR MÉTODO DE PAGO PARA CUOTA -->
+        <DialogModal :show="showPagoCuotaModal" max-width="sm" @close="showPagoCuotaModal = false">
+            <template #title>
+                <h3 class="text-lg font-bold text-[var(--text-primary)]">Cobrar Cuota #{{ selectedCuota?.nro_cuota }}</h3>
+            </template>
+            <template #content>
+                <!-- QR LOADING -->
+                <div v-if="pagoCuotaQrLoading" class="flex flex-col items-center justify-center py-8 gap-3">
+                    <div class="h-10 w-10 animate-spin rounded-full border-4 border-indigo-400 border-t-transparent"></div>
+                    <p class="text-sm text-[var(--text-secondary)]">Generando código QR...</p>
+                </div>
+
+                <!-- QR FLOW: show QR image + polling -->
+                <div v-else-if="pagoCuotaQrImage" class="space-y-4 py-2">
+                    <p class="text-sm text-[var(--text-secondary)]">
+                        Monto: <strong class="text-[var(--text-primary)]">{{ Number(selectedCuota?.sub_monto || 0).toFixed(2) }} Bs</strong>
+                    </p>
+                    <div class="flex justify-center">
+                        <img :src="`data:image/${pagoCuotaQrFormat};base64,${pagoCuotaQrImage}`"
+                             alt="QR de pago"
+                             class="w-56 h-56 rounded-2xl border-2 border-white/10" />
+                    </div>
+                    <div v-if="pagoCuotaPollingActive" class="text-center space-y-2">
+                        <div class="h-8 w-8 mx-auto animate-spin rounded-full border-4 border-emerald-400 border-t-transparent"></div>
+                        <p class="text-sm text-[var(--text-secondary)]">{{ pagoCuotaPollingStatus }}</p>
+                    </div>
+                    <div v-else class="text-center">
+                        <p class="text-xs text-[var(--text-secondary)]">Escanea el código QR para pagar</p>
+                    </div>
+                </div>
+
+                <!-- QR ERROR -->
+                <div v-else-if="showPagoCuotaQrError" class="py-4">
+                    <div class="rounded-xl bg-rose-500/10 border border-rose-500/30 p-4 text-sm text-rose-300">
+                        {{ pagoCuotaQrError }}
+                    </div>
+                </div>
+
+                <!-- SELECT PAYMENT METHOD (default) -->
+                <div v-else class="space-y-4 py-2">
+                    <p class="text-sm text-[var(--text-secondary)]">
+                        Monto a cobrar: <strong class="text-[var(--text-primary)]">{{ Number(selectedCuota?.sub_monto || 0).toFixed(2) }} Bs</strong>
+                    </p>
+                    <div>
+                        <label class="mb-2 block text-xs font-semibold text-[var(--text-secondary)]">Método de pago</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button
+                                v-for="met in [
+                                    { value: 'efectivo', label: 'Efectivo', icon: '💵' },
+                                    { value: 'qr', label: 'QR', icon: '📱' },
+                                    { value: 'tarjeta', label: 'Tarjeta', icon: '💳' },
+                                ]"
+                                :key="met.value"
+                                type="button"
+                                class="flex flex-col items-center gap-1 rounded-xl border-2 p-4 text-sm font-semibold transition cursor-pointer"
+                                :class="pagoCuotaMethod === met.value
+                                    ? 'border-indigo-400 bg-indigo-500/10 text-indigo-300'
+                                    : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-white/5'"
+                                @click="pagoCuotaMethod = met.value"
+                            >
+                                <span class="text-xl">{{ met.icon }}</span>
+                                {{ met.label }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </template>
+            <template #footer>
+                <div v-if="pagoCuotaQrImage" class="flex justify-end gap-2">
+                    <SecondaryButton v-if="!pagoCuotaPollingActive" @click="cobrarCuota(selectedCuota)">Cancelar</SecondaryButton>
+                    <PrimaryButton v-if="!pagoCuotaPollingActive" type="button" @click="handleConfirmCuotaQRPayment">Ya pagué — Confirmar</PrimaryButton>
+                </div>
+                <div v-else class="flex justify-end gap-2">
+                    <SecondaryButton @click="showPagoCuotaModal = false">Cancelar</SecondaryButton>
+                    <PrimaryButton :disabled="pagoCuotaQrLoading" type="button" @click="confirmPagoCuota">
+                        {{ pagoCuotaMethod === 'qr' ? 'Generar QR' : 'Confirmar cobro' }}
+                    </PrimaryButton>
+                </div>
+            </template>
+        </DialogModal>
+
         <!-- MODAL DETALLE CRÉDITO -->
         <DialogModal :show="showCreditDetailModal" @close="showCreditDetailModal = false">
             <template #title>
@@ -618,7 +910,7 @@ const filterHistorial = () => {
                                 </span>
                                 <div v-else class="flex items-center gap-2">
                                     <span class="text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-1 rounded-full">Pendiente</span>
-                                    <button v-if="cajaActiva" class="text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg transition cursor-pointer" @click="payInstallment(cuota.id)">Cobrar</button>
+                                    <button v-if="cajaActiva" class="text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg transition cursor-pointer" @click="cobrarCuota(cuota)">Cobrar</button>
                                 </div>
                             </div>
                         </div>

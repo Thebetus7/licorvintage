@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\ActivityLog;
 use App\Models\AperturaCaja;
 use App\Models\User;
+use App\Models\VentaCuotas;
 use Illuminate\Validation\ValidationException;
 
 class CajaService
@@ -106,5 +107,47 @@ class CajaService
             ->where('estado', 'abierta')
             ->latest()
             ->first();
+    }
+
+    public function registrarPagoCuota(
+        VentaCuotas $cuota,
+        User $user,
+        AperturaCaja $caja,
+        string $paymentMethod
+    ): void {
+        $cuota->update([
+            'estado' => 'pagado',
+            'fecha_pago' => now(),
+        ]);
+
+        $mapa = [
+            'efectivo' => 'efectivo',
+            'qr' => 'qr',
+            'tarjeta' => 'tarjeta',
+        ];
+        $clave = $mapa[$paymentMethod] ?? 'efectivo';
+
+        $caja->movimientoCajas()->create([
+            'monto' => $cuota->sub_monto,
+            'tipo' => 'ingreso_'.$paymentMethod,
+            'detalle' => "Cobro Cuota #{$cuota->nro_cuota} de Venta #{$cuota->venta_id} ({$paymentMethod})",
+        ]);
+
+        $caja->increment('monto_sistema', $cuota->sub_monto);
+
+        $totales = $caja->totales_sistema;
+        $totales[$clave] = ($totales[$clave] ?? 0) + $cuota->sub_monto;
+        $caja->updateQuietly(['totales_sistema' => $totales]);
+
+        ActivityLog::create([
+            'event_type' => 'caja_movement',
+            'user_id' => $user->id,
+            'user_identity' => $user->email,
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+            'resource_name' => 'Caja',
+            'visited_url' => request()->getRequestUri(),
+            'description' => "Cobro de cuota realizado: {$cuota->sub_monto} Bs via {$paymentMethod} por la cuota #{$cuota->nro_cuota} de la venta #{$cuota->venta_id} en la caja activa (Caja #{$caja->id}).",
+        ]);
     }
 }

@@ -384,8 +384,9 @@ class LicorModulesTest extends TestCase
         $montoCuota = $cuota->sub_monto;
 
         // Pay the installment
-        $this->actingAs($seller)->post(route('caja.cuotas.pagar', $cuota))
-            ->assertSessionHasNoErrors();
+        $this->actingAs($seller)->post(route('caja.cuotas.pagar', $cuota), [
+            'payment_method' => 'efectivo',
+        ])->assertSessionHasNoErrors();
 
         $caja->refresh();
         $this->assertEquals(200.0 + $montoCuota, $caja->monto_sistema);
@@ -395,7 +396,7 @@ class LicorModulesTest extends TestCase
         ]);
         $this->assertDatabaseHas('movimiento_cajas', [
             'apertura_caja_id' => $caja->id,
-            'tipo' => 'ingreso',
+            'tipo' => 'ingreso_efectivo',
             'monto' => $montoCuota,
         ]);
     }
