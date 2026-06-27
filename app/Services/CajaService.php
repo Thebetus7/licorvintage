@@ -113,7 +113,8 @@ class CajaService
         VentaCuotas $cuota,
         User $user,
         AperturaCaja $caja,
-        string $paymentMethod
+        string $paymentMethod,
+        ?string $chargeId = null
     ): void {
         $cuota->update([
             'estado' => 'pagado',
@@ -127,10 +128,15 @@ class CajaService
         ];
         $clave = $mapa[$paymentMethod] ?? 'efectivo';
 
+        $detalle = "Cobro Cuota #{$cuota->nro_cuota} de Venta #{$cuota->venta_id} ({$paymentMethod})";
+        if ($chargeId) {
+            $detalle .= " - Charge: {$chargeId}";
+        }
+
         $caja->movimientoCajas()->create([
             'monto' => $cuota->sub_monto,
             'tipo' => 'ingreso_'.$paymentMethod,
-            'detalle' => "Cobro Cuota #{$cuota->nro_cuota} de Venta #{$cuota->venta_id} ({$paymentMethod})",
+            'detalle' => $detalle,
         ]);
 
         $caja->increment('monto_sistema', $cuota->sub_monto);

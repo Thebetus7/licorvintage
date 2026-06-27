@@ -10,6 +10,7 @@ import SecondaryButton from '@/Components/SecondaryButton.vue';
 import DangerButton from '@/Components/DangerButton.vue';
 import DialogModal from '@/Components/DialogModal.vue';
 import BarcodeScannerModal from '@/Pages/Productos/Partials/BarcodeScannerModal.vue';
+import CreditCardForm from '@/Components/CreditCardForm.vue';
 
 const props = defineProps({
     cajaActiva: Object,
@@ -36,9 +37,7 @@ const promoCode = ref('');
 const promoApplied = ref(null);
 const promoError = ref('');
 
-const cardNumber = ref('');
-const cardExpiry = ref('');
-const cardCvc = ref('');
+const cardData = ref({ number: '', expiry: '', cvc: '' });
 const nroCuotas = ref(2);
 
 const qrImage = ref(null);
@@ -123,7 +122,7 @@ const canFinalizar = computed(() => {
     }
     if (paymentMethod.value === 'qr') return true;
     if (paymentMethod.value === 'tarjeta') {
-        if (!cardNumber.value || !cardExpiry.value || !cardCvc.value) return false;
+        if (!cardData.value.number || !cardData.value.expiry || !cardData.value.cvc) return false;
     }
     if (paymentMethod.value === 'credito' && nroCuotas.value < 2) return false;
     return true;
@@ -325,9 +324,9 @@ function submitSale() {
         })),
         codigo_promo: promoApplied.value ? promoApplied.value.codigo_promo : null,
         nro_cuotas: paymentMethod.value === 'credito' ? nroCuotas.value : null,
-        card_number: paymentMethod.value === 'tarjeta' ? cardNumber.value : null,
-        card_expiry: paymentMethod.value === 'tarjeta' ? cardExpiry.value : null,
-        card_cvc: paymentMethod.value === 'tarjeta' ? cardCvc.value : null,
+        card_number: paymentMethod.value === 'tarjeta' ? cardData.value.number : null,
+        card_expiry: paymentMethod.value === 'tarjeta' ? cardData.value.expiry : null,
+        card_cvc: paymentMethod.value === 'tarjeta' ? cardData.value.cvc : null,
         qr_transaction_id: paymentMethod.value === 'qr' ? qrTransactionId.value : null,
     });
 
@@ -367,9 +366,7 @@ function resetForm() {
     promoCode.value = '';
     promoApplied.value = null;
     promoError.value = '';
-    cardNumber.value = '';
-    cardExpiry.value = '';
-    cardCvc.value = '';
+    cardData.value = { number: '', expiry: '', cvc: '' };
     nroCuotas.value = 2;
     qrImage.value = null;
     qrTransactionId.value = null;
@@ -643,23 +640,8 @@ function focusClienteInput(el) {
                 </div>
 
                 <!-- Tarjeta -->
-                <div v-if="paymentMethod === 'tarjeta'" class="space-y-2">
-                    <div class="flex gap-2">
-                        <div class="flex-1">
-                            <label class="mb-1 block text-xs text-stone-400">Numero de tarjeta</label>
-                            <TextInput v-model="cardNumber" type="text" class="w-full" placeholder="4242 4242 4242 4242" />
-                        </div>
-                    </div>
-                    <div class="flex gap-2">
-                        <div>
-                            <label class="mb-1 block text-xs text-stone-400">Vencimiento</label>
-                            <TextInput v-model="cardExpiry" type="text" class="w-28" placeholder="MM/AA" />
-                        </div>
-                        <div>
-                            <label class="mb-1 block text-xs text-stone-400">CVC</label>
-                            <TextInput v-model="cardCvc" type="text" class="w-24" placeholder="123" />
-                        </div>
-                    </div>
+                <div v-if="paymentMethod === 'tarjeta'" class="text-sm text-stone-400">
+                    Complete los datos de la tarjeta en la confirmación.
                 </div>
 
                 <!-- Credito -->
@@ -765,6 +747,11 @@ function focusClienteInput(el) {
                     <!-- QR image -->
                     <div v-if="qrImage" class="flex justify-center">
                         <img :src="`data:image/${qrFormat};base64,${qrImage}`" class="h-48 w-48 rounded-lg" alt="QR de pago">
+                    </div>
+
+                    <!-- Card form -->
+                    <div v-if="paymentMethod === 'tarjeta'" class="pt-2">
+                        <CreditCardForm v-model="cardData" />
                     </div>
                 </div>
             </template>

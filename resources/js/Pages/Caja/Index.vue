@@ -9,6 +9,7 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
 import DangerButton from '@/Components/DangerButton.vue';
 import DialogModal from '@/Components/DialogModal.vue';
+import CreditCardForm from '@/Components/CreditCardForm.vue';
 
 const props = defineProps({
     cajaActiva: Object,
@@ -66,6 +67,9 @@ const creditoTo = ref('');
 const selectedCuota = ref(null);
 const showPagoCuotaModal = ref(false);
 const pagoCuotaMethod = ref('efectivo');
+const pagoCuotaCardData = ref({ number: '', expiry: '', cvc: '' });
+const pagoCuotaCardProcessing = ref(false);
+const pagoCuotaCardError = ref('');
 const pagoCuotaQrImage = ref(null);
 const pagoCuotaQrTransactionId = ref(null);
 const pagoCuotaQrFormat = ref('png');
@@ -153,6 +157,9 @@ const cobrarCuota = (cuota) => {
     pagoCuotaPollingStatus.value = '';
     showPagoCuotaQrError.value = false;
     pagoCuotaQrError.value = '';
+    pagoCuotaCardData.value = { number: '', expiry: '', cvc: '' };
+    pagoCuotaCardProcessing.value = false;
+    pagoCuotaCardError.value = '';
     if (pagoCuotaPollingInterval.value) {
         clearInterval(pagoCuotaPollingInterval.value);
         pagoCuotaPollingInterval.value = null;
@@ -168,7 +175,54 @@ const confirmPagoCuota = () => {
         return;
     }
 
+    if (pagoCuotaMethod.value === 'tarjeta') {
+        pagoCuotaCardError.value = '';
+        if (!pagoCuotaCardData.value.number || pagoCuotaCardData.value.number.length < 13) {
+            pagoCuotaCardError.value = 'Número de tarjeta inválido.';
+            return;
+        }
+        if (!pagoCuotaCardData.value.expiry || pagoCuotaCardData.value.expiry.length < 4) {
+            pagoCuotaCardError.value = 'Fecha de vencimiento inválida.';
+            return;
+        }
+        if (!pagoCuotaCardData.value.cvc || pagoCuotaCardData.value.cvc.length < 3) {
+            pagoCuotaCardError.value = 'CVC inválido.';
+            return;
+        }
+        submitPagoCuotaTarjeta();
+        return;
+    }
+
     submitPagoCuota(pagoCuotaMethod.value);
+};
+
+const submitPagoCuotaTarjeta = async () => {
+    if (!selectedCuota.value) return;
+    pagoCuotaCardProcessing.value = true;
+    pagoCuotaCardError.value = '';
+
+    const form = useForm({
+        payment_method: 'tarjeta',
+        card_number: pagoCuotaCardData.value.number,
+        card_expiry: pagoCuotaCardData.value.expiry,
+        card_cvc: pagoCuotaCardData.value.cvc,
+    });
+    form.post(route('caja.cuotas.pagar', selectedCuota.value.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            showPagoCuotaModal.value = false;
+            showCreditDetailModal.value = false;
+            selectedCuota.value = null;
+            selectedCredit.value = null;
+        },
+        onError: (errors) => {
+            pagoCuotaCardError.value = Object.values(errors).join(', ');
+        },
+        onFinish: () => {
+            pagoCuotaCardProcessing.value = false;
+            router.reload({ only: ['creditosPendientes'] });
+        },
+    });
 };
 
 const generatePagoCuotaQR = async () => {
@@ -868,6 +922,18 @@ const filterHistorial = () => {
                                 <span class="text-xl">{{ met.icon }}</span>
                                 {{ met.label }}
                             </button>
+                        </div>
+                    </div>
+
+                    <!-- CARD FORM when Tarjeta is selected -->
+                    <div v-if="pagoCuotaMethod === 'tarjeta'" class="pt-2">
+                        <CreditCardForm v-model="pagoCuotaCardData" />
+                        <div v-if="pagoCuotaCardError" class="mt-3 rounded-xl bg-rose-500/10 border border-rose-500/30 p-3 text-xs text-rose-300">
+                            {{ pagoCuotaCardError }}
+                        </div>
+                        <div v-if="pagoCuotaCardProcessing" class="mt-3 flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+                            <div class="h-4 w-4 animate-spin rounded-full border-2 border-indigo-400 border-t-transparent"></div>
+                            Procesando pago con tarjeta...
                         </div>
                     </div>
                 </div>

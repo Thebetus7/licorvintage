@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Venta;
 use App\Models\VentaCuotas;
 use App\Services\CajaService;
+use App\Services\StripeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -78,10 +79,13 @@ class CajaController extends Controller
     /**
      * Pay a specific credit installment.
      */
-    public function payInstallment(Request $request, VentaCuotas $cuota, CajaService $service): RedirectResponse
+    public function payInstallment(Request $request, VentaCuotas $cuota, CajaService $service, StripeService $stripe): RedirectResponse
     {
         $validated = $request->validate([
             'payment_method' => 'required|in:efectivo,qr,tarjeta',
+            'card_number' => 'required_if:payment_method,tarjeta|nullable|string',
+            'card_expiry' => 'required_if:payment_method,tarjeta|nullable|string',
+            'card_cvc' => 'required_if:payment_method,tarjeta|nullable|string',
         ]);
 
         $user = auth()->user();
@@ -89,8 +93,31 @@ class CajaController extends Controller
 
         abort_unless($caja, 403, 'Debes tener una caja abierta para cobrar cuotas.');
 
-        $service->registrarPagoCuota($cuota, $user, $caja, $validated['payment_method']);
+        if ($validated['payment_method'] === 'tarjeta') {
+            $description = "Cuota #{$cuota->nro_cuota} - Venta #{$cuota->venta_id} - Licor Vintage";
+            $chargeResult = $stripe->chargeWithCard(
+                (float) $cuota->sub_monto,
+                [
+                    'number' => $validated['card_number'],
+                    'expiry' => $validated['card_expiry'],
+                    'cvc' => $validated['card_cvc'],
+                ],
+                $description
+            );
 
-        return back()->with('success', "Cuota #{$cuota->nro_cuota} cobrada correctamente ({$validated['payment_method']}).");
+            if (! $chargeResult['success']) {
+                return back()->withErrors(['stripe' => $chargeResult['message']]);
+            }
+
+            $service->registrarPagoCuota($cuota, $user, $caja, 'tarjeta', $chargeResult['charge_id'] ?? null);
+
+            $msg = "Cuota #{$cuota->nro_cuota} cobrada correctamente (tarjeta, Charge: {$chargeResult['charge_id']}).";
+        } else {
+            $service->registrarPagoCuota($cuota, $user, $caja, $validated['payment_method']);
+
+            $msg = "Cuota #{$cuota->nro_cuota} cobrada correctamente ({$validated['payment_method']}).";
+        }
+
+        return back()->with('success', $msg);
     }
 }

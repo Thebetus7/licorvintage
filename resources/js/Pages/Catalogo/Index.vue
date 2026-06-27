@@ -9,6 +9,7 @@ import InputError from '@/Components/InputError.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
 import DialogModal from '@/Components/DialogModal.vue';
+import CreditCardForm from '@/Components/CreditCardForm.vue';
 
 const props = defineProps({
     productos: Array,
@@ -45,6 +46,8 @@ const saleForm = useForm({
     card_expiry: '',
     card_cvc: '',
 });
+
+const cardData = ref({ number: '', expiry: '', cvc: '' });
 
 // Lógica de Carrito
 const addToCart = (productData) => {
@@ -184,19 +187,6 @@ const closePaymentModal = () => {
         qrError.value = '';
     }
 };
-
-// Formatear fecha de expiración automáticamente (MM/AA)
-const formatExpiry = (event) => {
-    let input = event.target.value;
-    let clearValue = input.replace(/\D/g, ''); // Solo dígitos
-    
-    if (clearValue.length > 2) {
-        saleForm.card_expiry = clearValue.substring(0, 2) + '/' + clearValue.substring(2, 4);
-    } else {
-        saleForm.card_expiry = clearValue;
-    }
-};
-
 // Confirmar pago QR con polling
 const handleConfirmQRPayment = () => {
     if (!qrData.value?.transactionId) return;
@@ -258,6 +248,11 @@ const handleConfirmQRPayment = () => {
 
 // Confirmar pago y finalizar compra
 const submitSale = () => {
+    if (saleForm.tipo_pago === 'tarjeta') {
+        saleForm.card_number = cardData.value.number;
+        saleForm.card_expiry = cardData.value.expiry;
+        saleForm.card_cvc = cardData.value.cvc;
+    }
     saleForm.monto_pagado = totalFinal.value;
     saleForm.post(route('ventas.store'), {
         preserveScroll: true,
@@ -265,6 +260,7 @@ const submitSale = () => {
             showSuccessModal.value = true;
             cart.value = [];
             saleForm.reset();
+            cardData.value = { number: '', expiry: '', cvc: '' };
             qrData.value = null;
             qrPollingActive.value = false;
             qrPollingStatus.value = '';
@@ -557,30 +553,7 @@ const submitSale = () => {
 
                 <!-- Tarjeta -->
                 <div v-else class="space-y-4 py-2">
-                    <p class="text-xs text-[var(--text-secondary)]">Simulador de Transacción Bancaria. Introduce datos ficticios para validar.</p>
-                    
-                    <div class="bg-gradient-to-tr from-slate-900 to-indigo-950 border border-white/10 rounded-2xl p-5 shadow-2xl space-y-4">
-                        <div class="flex justify-between items-center text-xs font-semibold uppercase tracking-wider text-indigo-300">
-                            <span>Licor Vintage Premium</span>
-                            <span>💳 Card Link</span>
-                        </div>
-
-                        <div>
-                            <InputLabel value="Número de Tarjeta" class="text-[10px] text-white/50" />
-                            <TextInput type="text" v-model="saleForm.card_number" class="w-full text-sm font-mono mt-1" placeholder="4000 1234 5678 9010" required />
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <InputLabel value="Vencimiento" class="text-[10px] text-white/50" />
-                                <TextInput type="text" v-model="saleForm.card_expiry" @input="formatExpiry" maxlength="5" class="w-full text-sm font-mono mt-1" placeholder="MM/AA" required />
-                            </div>
-                            <div>
-                                <InputLabel value="CVV" class="text-[10px] text-white/50" />
-                                <TextInput type="password" v-model="saleForm.card_cvc" class="w-full text-sm font-mono mt-1" placeholder="***" required />
-                            </div>
-                        </div>
-                    </div>
+                    <CreditCardForm v-model="cardData" />
                 </div>
             </template>
 
