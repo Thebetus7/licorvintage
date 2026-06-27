@@ -29,6 +29,8 @@ class DatabaseSeeder extends Seeder
             'email' => 'admin@gmail.com',
         ], [
             'name' => 'Propietario',
+            'ci' => '12345678',
+            'phone' => '70000001',
             'password' => Hash::make('123456789'),
         ]);
 
@@ -38,6 +40,8 @@ class DatabaseSeeder extends Seeder
             'email' => 'cliente@gmail.com',
         ], [
             'name' => 'UsuarioCliente',
+            'ci' => '87654321',
+            'phone' => '70000002',
             'password' => Hash::make('123456789'),
         ]);
 
@@ -121,11 +125,12 @@ class DatabaseSeeder extends Seeder
         }
 
         $menus = [
-            ['label' => 'Dashboard', 'route_name' => 'dashboard', 'roles' => ['propietario', 'cliente']],
-            ['label' => 'Productos', 'route_name' => 'productos.index', 'roles' => ['propietario']],
-            ['label' => 'Compras', 'route_name' => 'compras.index', 'roles' => ['propietario']],
+            ['label' => 'Dashboard', 'route_name' => 'dashboard', 'roles' => ['propietario', 'vendedor', 'cliente']],
+            ['label' => 'Productos', 'route_name' => 'productos.index', 'roles' => ['propietario', 'vendedor']],
+            ['label' => 'Compras', 'route_name' => 'compras.index', 'roles' => ['propietario', 'vendedor']],
+            ['label' => 'Ventas', 'route_name' => 'ventas.index', 'roles' => ['propietario', 'vendedor']],
             ['label' => 'Caja', 'route_name' => 'caja.index', 'roles' => ['propietario', 'vendedor']],
-            ['label' => 'Promociones', 'route_name' => 'promociones.index', 'roles' => ['propietario']],
+            ['label' => 'Promociones', 'route_name' => 'promociones.index', 'roles' => ['propietario', 'vendedor']],
             ['label' => 'Inventario', 'route_name' => 'inventario.index', 'roles' => ['propietario']],
             ['label' => 'Usuarios', 'route_name' => 'usuarios.index', 'roles' => ['propietario']],
             ['label' => 'Seguridad', 'route_name' => 'security.index', 'roles' => ['propietario']],

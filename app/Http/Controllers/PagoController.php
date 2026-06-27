@@ -17,6 +17,8 @@ class PagoController extends Controller
             'orderDetail.*.product' => 'required|string',
             'orderDetail.*.quantity' => 'required|integer|min:1',
             'orderDetail.*.price' => 'required|numeric|min:0',
+            'orderDetail.*.discount' => 'nullable|numeric|min:0',
+            'orderDetail.*.serial' => 'nullable|integer|min:1',
             'orderDetail.*.total' => 'required|numeric|min:0',
         ]);
 

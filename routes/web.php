@@ -105,6 +105,8 @@ Route::middleware([
 
         Route::resource('proveedores', ProveedorController::class)->except(['create', 'show', 'edit']);
 
+        Route::get('/ventas', [VentaController::class, 'index'])->name('ventas.index');
+
         Route::get('/caja', [CajaController::class, 'index'])->name('caja.index');
         Route::post('/caja/open', [CajaController::class, 'open'])->name('caja.open');
         Route::put('/caja/{caja}/close', [CajaController::class, 'close'])->name('caja.close');

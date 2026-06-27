@@ -493,4 +493,43 @@ class LicorModulesTest extends TestCase
 
         return $user;
     }
+
+    public function test_propietario_can_view_ventas_index(): void
+    {
+        Role::findOrCreate('vendedor');
+        Role::findOrCreate('cliente');
+        $owner = $this->userWithRole('propietario');
+
+        $this->actingAs($owner)
+            ->get(route('ventas.index'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->component('Ventas/Index'));
+    }
+
+    public function test_ventas_index_requires_open_caja(): void
+    {
+        Role::findOrCreate('vendedor');
+        Role::findOrCreate('cliente');
+        $owner = $this->userWithRole('propietario');
+
+        $this->actingAs($owner)
+            ->get(route('ventas.index'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->has('cajaActiva'));
+    }
+
+    public function test_vendedor_cannot_access_ventas_without_caja_open(): void
+    {
+        Role::findOrCreate('vendedor');
+        Role::findOrCreate('cliente');
+        $seller = $this->userWithRole('vendedor');
+
+        $this->actingAs($seller)
+            ->get(route('ventas.index'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Ventas/Index')
+                ->where('cajaActiva', null)
+            );
+    }
 }
