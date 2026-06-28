@@ -99,7 +99,7 @@ const getStatus = (promo) => {
                     class="rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-4 py-2 text-sm font-semibold transition shadow-lg cursor-pointer flex items-center gap-2"
                     @click="openCreateModal"
                 >
-                    <span>➕ Nueva Promoción</span>
+                    <span>Nueva Promoción</span>
                 </button>
             </div>
         </template>

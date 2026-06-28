@@ -37,10 +37,10 @@ const promoApplied = ref(null);
 const promoError = ref('');
 
 const methodsConfig = [
-    { tipo: 'efectivo', label: 'Efectivo', icon: '💵' },
-    { tipo: 'qr', label: 'QR', icon: '📱' },
-    { tipo: 'tarjeta', label: 'Tarjeta', icon: '💳' },
-    { tipo: 'credito', label: 'Credito', icon: '📋' },
+    { tipo: 'efectivo', label: 'Efectivo', icon: '' },
+    { tipo: 'qr', label: 'QR', icon: '' },
+    { tipo: 'tarjeta', label: 'Tarjeta', icon: '' },
+    { tipo: 'credito', label: 'Credito', icon: '' },
 ];
 
 const paymentMethods = ref(

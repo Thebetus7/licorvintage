@@ -112,7 +112,7 @@ const resetFont = () => {
         >
             <div class="flex items-center justify-between border-b border-[var(--border-color)] pb-3 mb-4">
                 <h3 class="text-base font-bold tracking-wide flex items-center gap-2">
-                    <span>⚙️</span> Accesibilidad y Temas
+                    Accesibilidad y Temas
                 </h3>
                 <button @click="isOpen = false" class="text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-sm cursor-pointer">
                     ✕
@@ -130,21 +130,21 @@ const resetFont = () => {
                         class="px-2 py-2 text-xs font-medium rounded-lg border transition cursor-pointer"
                         :class="theme === 'adults' ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'border-[var(--border-color)] bg-stone-900 hover:bg-stone-800 text-[var(--text-secondary)]'"
                     >
-                        🍷 Adultos
+                        Adultos
                     </button>
                     <button
                         @click="theme = 'youth'"
                         class="px-2 py-2 text-xs font-medium rounded-lg border transition cursor-pointer"
                         :class="theme === 'youth' ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'border-[var(--border-color)] bg-stone-900 hover:bg-stone-800 text-[var(--text-secondary)]'"
                     >
-                        ⚡ Jóvenes
+                        Jóvenes
                     </button>
                     <button
                         @click="theme = 'kids'"
                         class="px-2 py-2 text-xs font-medium rounded-lg border transition cursor-pointer"
                         :class="theme === 'kids' ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'border-[var(--border-color)] bg-stone-900 hover:bg-stone-800 text-[var(--text-secondary)]'"
                     >
-                        🎈 Niños
+                        Niños
                     </button>
                 </div>
             </div>
@@ -160,14 +160,14 @@ const resetFont = () => {
                         class="px-2 py-2 text-xs font-medium rounded-lg border transition cursor-pointer"
                         :class="mode === 'light' ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'border-[var(--border-color)] bg-stone-900 hover:bg-stone-800 text-[var(--text-secondary)]'"
                     >
-                        ☀️ Día
+                        Día
                     </button>
                     <button
                         @click="mode = 'dark'"
                         class="px-2 py-2 text-xs font-medium rounded-lg border transition cursor-pointer"
                         :class="mode === 'dark' ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'border-[var(--border-color)] bg-stone-900 hover:bg-stone-800 text-[var(--text-secondary)]'"
                     >
-                        🌙 Noche
+                        Noche
                     </button>
                     <button
                         @click="mode = 'auto'"
@@ -175,7 +175,7 @@ const resetFont = () => {
                         :class="mode === 'auto' ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'border-[var(--border-color)] bg-stone-900 hover:bg-stone-800 text-[var(--text-secondary)]'"
                         title="Modifica automáticamente según tu horario local"
                     >
-                        🕒 Auto
+                        Auto
                     </button>
                 </div>
             </div>

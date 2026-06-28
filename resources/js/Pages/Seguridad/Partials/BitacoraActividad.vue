@@ -35,35 +35,35 @@ const getEventBadgeClass = (type) => {
 const getEventLabel = (type) => {
     switch (type) {
         case 'login_success':
-            return '🔑 Sesión Iniciada';
+            return 'Sesión Iniciada';
         case 'login_failed':
-            return '⚠️ Intento Fallido';
+            return 'Intento Fallido';
         case 'resource_access':
-            return '📂 Acceso a Recurso';
+            return 'Acceso a Recurso';
         case 'product_created':
-            return '📦 Producto Creado';
+            return 'Producto Creado';
         case 'product_updated':
-            return '📦 Producto Editado';
+            return 'Producto Editado';
         case 'product_deleted':
-            return '🗑️ Producto Eliminado';
+            return 'Producto Eliminado';
         case 'purchase_created':
-            return '📥 Compra Registrada';
+            return 'Compra Registrada';
         case 'purchase_updated':
-            return '📥 Compra Editada';
+            return 'Compra Editada';
         case 'purchase_deleted':
-            return '🗑️ Compra Revertida';
+            return 'Compra Revertida';
         case 'caja_opened':
-            return '💵 Caja Abierta';
+            return 'Caja Abierta';
         case 'caja_closed':
-            return '🔒 Caja Cerrada';
+            return 'Caja Cerrada';
         case 'caja_open_failed':
-            return '🚨 Fallo Apertura';
+            return 'Fallo Apertura';
         case 'caja_movement':
-            return '💸 Movimiento Caja';
+            return 'Movimiento Caja';
         case 'sale_created':
-            return '🛒 Venta Registrada';
+            return 'Venta Registrada';
         case 'sale_failed':
-            return '❌ Venta Fallida';
+            return 'Venta Fallida';
         default:
             return type.replace('_', ' ').toUpperCase();
     }
@@ -101,8 +101,10 @@ const cleanAgent = (userAgent) => {
                         <p class="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Logins Exitosos</p>
                         <h4 class="text-3xl font-extrabold text-emerald-400 mt-2">{{ stats.total_logins }}</h4>
                     </div>
-                    <div class="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 text-xl">
-                        ✔️
+                    <div class="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
                     </div>
                 </div>
             </div>
@@ -113,8 +115,10 @@ const cleanAgent = (userAgent) => {
                         <p class="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Logins Fallidos</p>
                         <h4 class="text-3xl font-extrabold text-rose-400 mt-2">{{ stats.failed_logins }}</h4>
                     </div>
-                    <div class="h-12 w-12 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-400 text-xl">
-                        🚨
+                    <div class="h-12 w-12 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-400">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0-10.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.75c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.75h-.152c-3.196 0-6.1-1.249-8.25-3.286zm0 13.036h.008v.008H12v-.008z" />
+                        </svg>
                     </div>
                 </div>
             </div>
@@ -125,8 +129,10 @@ const cleanAgent = (userAgent) => {
                         <p class="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Direcciones IP Únicas</p>
                         <h4 class="text-3xl font-extrabold text-amber-400 mt-2">{{ stats.unique_ips }}</h4>
                     </div>
-                    <div class="h-12 w-12 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400 text-xl">
-                        🌐
+                    <div class="h-12 w-12 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-.778.099-1.533.284-2.253" />
+                        </svg>
                     </div>
                 </div>
             </div>
@@ -189,7 +195,7 @@ const cleanAgent = (userAgent) => {
                         </tr>
                         <tr v-if="activityLogs.data.length === 0">
                             <td colspan="6" class="px-6 py-8 text-center text-stone-500">
-                                📭 No hay registros en la bitácora aún.
+                                No hay registros en la bitácora aún.
                             </td>
                         </tr>
                     </tbody>

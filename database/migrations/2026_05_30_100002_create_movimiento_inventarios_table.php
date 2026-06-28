@@ -26,7 +26,6 @@ return new class extends Migration
             $table->decimal('saldo_costo_promedio', 12, 2);
             $table->nullableMorphs('referencia');
             $table->string('motivo')->nullable();
-            $table->foreignId('user_id')->constrained()->restrictOnDelete();
             $table->timestamps();
             $table->softDeletes();
         });

@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id();
             $table->string('codigo_lote')->nullable()->unique();
             $table->foreignId('producto_id')->constrained('productos')->onDelete('cascade');
-            $table->foreignId('compra_id')->nullable()->constrained('compras')->onDelete('set null');
             $table->foreignId('proveedor_id')->nullable()->constrained('proveedors')->onDelete('set null');
             $table->integer('cantidad_inicial');
             $table->integer('cantidad_actual');

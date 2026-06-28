@@ -383,9 +383,9 @@ const filterHistorial = () => {
             <div class="flex gap-2 border-b border-[var(--border-color)] pb-3">
                 <button
                     v-for="tab in [
-                        { key: 'caja', label: '💵 Caja' },
-                        { key: 'historial', label: '📋 Historial' },
-                        { key: 'creditos', label: '💳 Créditos' },
+                        { key: 'caja', label: 'Caja' },
+                        { key: 'historial', label: 'Historial' },
+                        { key: 'creditos', label: 'Créditos' },
                     ]"
                     :key="tab.key"
                     :class="['px-5 py-2.5 text-sm font-bold rounded-xl transition', activeTab === tab.key ? 'bg-[var(--accent)] text-white shadow-lg' : 'text-[var(--text-secondary)] hover:bg-white/5']"
@@ -401,7 +401,6 @@ const filterHistorial = () => {
                 <!-- Sin caja abierta -->
                 <template v-if="!cajaActiva">
                     <div class="rounded-3xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/40 p-8 shadow-xl backdrop-blur-md text-center max-w-lg mx-auto">
-                        <div class="text-5xl mb-4">🔒</div>
                         <h3 class="text-lg font-bold text-[var(--text-primary)] mb-2">Caja Cerrada</h3>
                         <p class="text-sm text-[var(--text-secondary)] mb-6">No hay ninguna caja abierta en el sistema.</p>
 
@@ -411,7 +410,7 @@ const filterHistorial = () => {
                                 class="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-8 py-3 rounded-xl font-bold transition shadow-lg text-sm cursor-pointer"
                                 @click="showOpenModal = true"
                             >
-                                🔓 Abrir Caja
+                                Abrir Caja
                             </button>
                         </template>
                         <p v-else class="text-xs text-[var(--text-secondary)]">Espera a que el propietario abra una caja para ti.</p>
@@ -506,7 +505,7 @@ const filterHistorial = () => {
                                     :disabled="closeForm.processing"
                                     @click="confirmClose"
                                 >
-                                    🔒 Cerrar Caja & Arquear
+                                    Cerrar Caja & Arquear
                                 </button>
                             </div>
                         </div>
@@ -725,7 +724,7 @@ const filterHistorial = () => {
                 <div class="flex items-center gap-3">
                     <SecondaryButton @click="showOpenModal = false">Cancelar</SecondaryButton>
                     <PrimaryButton :class="{ 'opacity-25': openForm.processing }" :disabled="openForm.processing || !openForm.vendedor_id" @click="submitOpen">
-                        {{ openForm.processing ? 'Abriendo...' : '🔓 Abrir Caja' }}
+                        {{ openForm.processing ? 'Abriendo...' : 'Abrir Caja' }}
                     </PrimaryButton>
                 </div>
             </template>
@@ -739,7 +738,7 @@ const filterHistorial = () => {
             <template #content>
                 <div class="space-y-4 py-2">
                     <div class="rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 px-4 py-3 text-sm font-semibold flex items-center gap-2">
-                        ⚠️ Estás a punto de cerrar la caja #{{ cajaActiva?.id }}. Verifica los totales antes de confirmar.
+                        Estás a punto de cerrar la caja #{{ cajaActiva?.id }}. Verifica los totales antes de confirmar.
                     </div>
 
                     <table class="w-full text-sm">
@@ -778,7 +777,7 @@ const filterHistorial = () => {
                 <div class="flex items-center gap-3">
                     <SecondaryButton @click="showCloseModal = false">Cancelar</SecondaryButton>
                     <DangerButton :class="{ 'opacity-25': closeForm.processing }" :disabled="closeForm.processing" @click="submitClose">
-                        {{ closeForm.processing ? 'Cerrando...' : '🔒 Sí, Cerrar Caja' }}
+                        {{ closeForm.processing ? 'Cerrando...' : 'Sí, Cerrar Caja' }}
                     </DangerButton>
                 </div>
             </template>
@@ -907,19 +906,18 @@ const filterHistorial = () => {
                         <div class="grid grid-cols-3 gap-2">
                             <button
                                 v-for="met in [
-                                    { value: 'efectivo', label: 'Efectivo', icon: '💵' },
-                                    { value: 'qr', label: 'QR', icon: '📱' },
-                                    { value: 'tarjeta', label: 'Tarjeta', icon: '💳' },
+                                    { value: 'efectivo', label: 'Efectivo' },
+                                    { value: 'qr', label: 'QR' },
+                                    { value: 'tarjeta', label: 'Tarjeta' },
                                 ]"
                                 :key="met.value"
                                 type="button"
-                                class="flex flex-col items-center gap-1 rounded-xl border-2 p-4 text-sm font-semibold transition cursor-pointer"
+                                class="flex flex-col items-center justify-center gap-1 rounded-xl border-2 p-4 text-sm font-semibold transition cursor-pointer h-16"
                                 :class="pagoCuotaMethod === met.value
                                     ? 'border-indigo-400 bg-indigo-500/10 text-indigo-300'
                                     : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-white/5'"
                                 @click="pagoCuotaMethod = met.value"
                             >
-                                <span class="text-xl">{{ met.icon }}</span>
                                 {{ met.label }}
                             </button>
                         </div>

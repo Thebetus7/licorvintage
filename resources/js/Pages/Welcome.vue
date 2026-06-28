@@ -78,7 +78,7 @@ defineProps({
                 <!-- Columna Izquierda: Introducción de la empresa -->
                 <div class="space-y-8 text-left">
                     <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--accent)]/10 border border-[var(--accent)]/20 text-xs font-semibold text-[var(--accent)] tracking-wider uppercase">
-                        ⭐ Licor Vintage • Selecto & Confiable
+                        Licor Vintage • Selecto & Confiable
                     </div>
                     
                     <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-[var(--text-primary)] leading-tight">
@@ -154,7 +154,11 @@ defineProps({
             <!-- Sección de características minimalista -->
             <div class="grid gap-6 md:grid-cols-3 w-full mt-24">
                 <div class="p-6 rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/30 backdrop-blur-sm hover:border-[var(--accent)]/40 transition duration-300">
-                    <div class="h-10 w-10 rounded-lg bg-[var(--accent)]/10 flex items-center justify-center text-[var(--accent)] mb-4 font-bold text-lg">📦</div>
+                    <div class="h-10 w-10 rounded-lg bg-[var(--accent)]/10 flex items-center justify-center text-[var(--accent)] mb-4">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
+                        </svg>
+                    </div>
                     <h3 class="text-lg font-semibold text-[var(--text-primary)] mb-2">Control de Inventario</h3>
                     <p class="text-[var(--text-secondary)] text-sm leading-relaxed">
                         Controla stock mínimo, máximo, realiza ajustes de inventario de forma rápida y visualiza los movimientos de mercancía (Kardex).
@@ -162,7 +166,11 @@ defineProps({
                 </div>
                 
                 <div class="p-6 rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/30 backdrop-blur-sm hover:border-[var(--accent)]/40 transition duration-300">
-                    <div class="h-10 w-10 rounded-lg bg-[var(--accent)]/10 flex items-center justify-center text-[var(--accent)] mb-4 font-bold text-lg">💰</div>
+                    <div class="h-10 w-10 rounded-lg bg-[var(--accent)]/10 flex items-center justify-center text-[var(--accent)] mb-4">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.214.139a4.865 4.865 0 005.572 0 4.865 4.865 0 000-6.79a4.865 4.865 0 00-5.572 0l-.214.138A4.865 4.865 0 009 13.5H9z" />
+                        </svg>
+                    </div>
                     <h3 class="text-lg font-semibold text-[var(--text-primary)] mb-2">Gestión de Caja</h3>
                     <p class="text-[var(--text-secondary)] text-sm leading-relaxed">
                         Aperturas, cierres de caja detallados y registro transparente de todos los movimientos de dinero diarios.
@@ -170,7 +178,11 @@ defineProps({
                 </div>
 
                 <div class="p-6 rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/30 backdrop-blur-sm hover:border-[var(--accent)]/40 transition duration-300">
-                    <div class="h-10 w-10 rounded-lg bg-[var(--accent)]/10 flex items-center justify-center text-[var(--accent)] mb-4 font-bold text-lg">🍷</div>
+                    <div class="h-10 w-10 rounded-lg bg-[var(--accent)]/10 flex items-center justify-center text-[var(--accent)] mb-4">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15M9 12l3 3m0 0l3-3m-3 3V2.25" />
+                        </svg>
+                    </div>
                     <h3 class="text-lg font-semibold text-[var(--text-primary)] mb-2">Catálogo Online</h3>
                     <p class="text-[var(--text-secondary)] text-sm leading-relaxed">
                         Ofrece a tus clientes una experiencia de compra fluida mediante un catálogo virtual de bebidas con stock real actualizado.

@@ -74,7 +74,7 @@ const formatDateShort = (dateString) => {
                 v-else 
                 class="h-60 flex flex-col items-center justify-center text-stone-500 text-sm"
             >
-                📊 No hay datos de visitas registrados para mostrar.
+                No hay datos de visitas registrados para mostrar.
             </div>
         </div>
 
@@ -102,7 +102,9 @@ const formatDateShort = (dateString) => {
                         <div class="relative flex space-x-3">
                             <div>
                                 <span class="h-8 w-8 rounded-lg bg-[var(--accent)]/10 border border-[var(--accent)]/30 flex items-center justify-center text-sm">
-                                    📂
+                                    <svg class="w-4 h-4 text-[var(--accent)]" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121 12v.75m-18 0A2.25 2.25 0 005.25 15h13.5A2.25 2.25 0 0021 12.75m-18 0V6a2.25 2.25 0 012.25-2.25h5.379a2.25 2.25 0 011.614.686l1.838 1.839A2.25 2.25 0 0013.738 7.5H19.5A2.25 2.25 0 0121 9.75v3" />
+                                    </svg>
                                 </span>
                             </div>
                             <div class="flex-1 min-w-0 pt-1.5 flex justify-between gap-4 text-xs">
@@ -130,7 +132,7 @@ const formatDateShort = (dateString) => {
                 v-else 
                 class="h-60 flex flex-col items-center justify-center text-stone-500 text-sm"
             >
-                ⏳ Esperando visitas para registrar en tiempo real...
+                Esperando visitas para registrar en tiempo real...
             </div>
         </div>
     </div>

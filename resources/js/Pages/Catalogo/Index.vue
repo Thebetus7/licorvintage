@@ -566,7 +566,7 @@ const submitPagoCuota = () => {
                     class="relative rounded-2xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-5 py-3 font-semibold transition shadow-lg cursor-pointer flex items-center gap-2"
                     @click="showDrawer = true"
                 >
-                    <span>🛒 Carrito</span>
+                    <span>Carrito</span>
                     <span v-if="totalItems > 0" class="absolute -top-2 -right-2 bg-indigo-600 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center border border-white/20 shadow-md">
                         {{ totalItems }}
                     </span>
@@ -603,9 +603,8 @@ const submitPagoCuota = () => {
             <!-- Tab: Mis Creditos -->
             <div v-if="activeTab === 'creditos'" class="space-y-4">
                 <div v-if="cuotasPendientes.length === 0" class="text-center py-16 text-[var(--text-secondary)]">
-                    <div class="text-5xl mb-4">📋</div>
-                    <h3 class="text-lg font-bold text-[var(--text-primary)] mb-2">No tienes creditos pendientes</h3>
-                    <p class="text-sm">Todas tus cuotas estan al dia.</p>
+                    <h3 class="text-lg font-bold text-[var(--text-primary)] mb-2">No tienes créditos pendientes</h3>
+                    <p class="text-sm">Todas tus cuotas están al día.</p>
                 </div>
 
                 <div v-for="venta in filteredCreditos" :key="venta.id" class="rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -680,7 +679,6 @@ const submitPagoCuota = () => {
                 </div>
 
                 <div v-else-if="comprobantes.length === 0" class="text-center py-16 text-white/50">
-                    <div class="text-5xl mb-4">📄</div>
                     <h3 class="text-lg font-bold text-white mb-2">No hay comprobantes</h3>
                     <p class="text-sm">No se encontraron compras en este rango de fechas.</p>
                 </div>
@@ -748,9 +746,8 @@ const submitPagoCuota = () => {
                 </div>
 
                 <div v-else-if="misPedidos.length === 0" class="text-center py-16 text-white/50">
-                    <div class="text-5xl mb-4">📦</div>
                     <h3 class="text-lg font-bold text-white mb-2">No tienes pedidos activos</h3>
-                    <p class="text-sm">Tus pedidos apareceran aqui despues de comprar.</p>
+                    <p class="text-sm">Tus pedidos aparecerán aquí después de comprar.</p>
                 </div>
 
                 <div v-else class="space-y-3">
@@ -911,50 +908,6 @@ const submitPagoCuota = () => {
                                     ✕ Cupón no válido o expirado
                                 </div>
                             </div>
-
-                            <!-- Modalidad y Método de Pago -->
-                            <div>
-                                <InputLabel value="Método de Pago" class="text-xs text-white/70" />
-                                <div class="grid grid-cols-2 gap-2 mt-1">
-                                    <button
-                                        v-for="opt in [
-                                            { value: 'qr', label: 'Código QR', icon: '📱' },
-                                            { value: 'tarjeta', label: 'Tarjeta', icon: '💳' },
-                                            { value: 'efectivo', label: 'Efectivo', icon: '💵' },
-                                            { value: 'credito', label: 'Crédito', icon: '📋' },
-                                        ]"
-                                        :key="opt.value"
-                                        class="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition border cursor-pointer"
-                                        :class="saleForm.tipo_pago === opt.value
-                                            ? 'bg-indigo-500/20 border-indigo-400/40 text-indigo-300'
-                                            : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10'"
-                                        @click="saleForm.tipo_pago = opt.value"
-                                    >
-                                        <span>{{ opt.icon }}</span>
-                                        {{ opt.label }}
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div v-if="saleForm.tipo_pago === 'credito'">
-                                <InputLabel value="Nro. Cuotas" class="text-xs text-white/70" />
-                                <select
-                                    v-model="saleForm.nro_cuotas"
-                                    class="mt-1 block w-full rounded-xl border-white/10 bg-slate-900 text-white focus:border-indigo-500 focus:ring-indigo-500 shadow-sm text-xs p-2 transition"
-                                >
-                                    <option :value="2">2 cuotas</option>
-                                    <option :value="3">3 cuotas</option>
-                                    <option :value="4">4 cuotas</option>
-                                    <option :value="6">6 cuotas</option>
-                                    <option :value="12">12 cuotas</option>
-                                </select>
-                            </div>
-
-                            <!-- Plan de Cuotas Estimado -->
-                            <div v-if="saleForm.tipo_pago === 'credito'" class="p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-300">
-                                <span class="font-bold block uppercase tracking-wider text-[10px] text-indigo-400 mb-1">Plan de Cuotas:</span>
-                                {{ saleForm.nro_cuotas }} cuotas mensuales de <strong class="text-white font-bold text-sm">{{ quotaAmount.toFixed(2) }} Bs</strong>
-                            </div>
                         </div>
                     </div>
 
@@ -980,7 +933,7 @@ const submitPagoCuota = () => {
                             :disabled="cart.length === 0 || saleForm.processing"
                             @click="handleCheckout"
                         >
-                            🛍️ Concretar Compra
+                            Concretar Compra
                         </button>
                     </div>
 
@@ -1003,7 +956,9 @@ const submitPagoCuota = () => {
                             : 'border-white/10 bg-white/5 hover:border-indigo-400/50 hover:bg-indigo-500/5'"
                         @click="saleForm.tipo_pago = 'qr'"
                     >
-                        <span class="text-4xl">📱</span>
+                        <svg class="w-8 h-8 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-6 15h9M7.5 19.5h9" />
+                        </svg>
                         <span class="font-bold text-sm text-[var(--text-primary)]">Código QR</span>
                         <span class="text-[10px] text-[var(--text-secondary)]">Paga con tu app bancaria</span>
                     </button>
@@ -1014,7 +969,9 @@ const submitPagoCuota = () => {
                             : 'border-white/10 bg-white/5 hover:border-indigo-400/50 hover:bg-indigo-500/5'"
                         @click="saleForm.tipo_pago = 'tarjeta'"
                     >
-                        <span class="text-4xl">💳</span>
+                        <svg class="w-8 h-8 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-5.25-6h15a2.25 2.25 0 012.25 2.25v9a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25v-9a2.25 2.25 0 012.25-2.25z" />
+                        </svg>
                         <span class="font-bold text-sm text-[var(--text-primary)]">Tarjeta</span>
                         <span class="text-[10px] text-[var(--text-secondary)]">Débito o Crédito</span>
                     </button>
@@ -1025,7 +982,9 @@ const submitPagoCuota = () => {
                             : 'border-white/10 bg-white/5 hover:border-indigo-400/50 hover:bg-indigo-500/5'"
                         @click="saleForm.tipo_pago = 'credito'"
                     >
-                        <span class="text-4xl">📋</span>
+                        <svg class="w-8 h-8 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                        </svg>
                         <span class="font-bold text-sm text-[var(--text-primary)]">Crédito / Cuotas</span>
                         <span class="text-[10px] text-[var(--text-secondary)]">Paga en cuotas</span>
                     </button>
@@ -1156,7 +1115,7 @@ const submitPagoCuota = () => {
         <DialogModal :show="showSuccessModal" @close="showSuccessModal = false">
             <template #title>
                 <div class="flex items-center gap-2 text-emerald-400 font-bold text-lg">
-                    <span>✨ Compra Exitosa</span>
+                    <span>Compra Exitosa</span>
                 </div>
             </template>
 
@@ -1208,8 +1167,8 @@ const submitPagoCuota = () => {
                 <div class="flex gap-2 mb-4">
                     <button
                         v-for="opt in [
-                            { value: 'qr', label: 'QR', icon: '📱' },
-                            { value: 'tarjeta', label: 'Tarjeta', icon: '💳' },
+                            { value: 'qr', label: 'QR' },
+                            { value: 'tarjeta', label: 'Tarjeta' },
                         ]"
                         :key="opt.value"
                         class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition border cursor-pointer"
@@ -1218,7 +1177,6 @@ const submitPagoCuota = () => {
                             : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10'"
                         @click="pagoCuotaMethod = opt.value; pagoCuotaQrImage = null; pagoCuotaQrTransactionId = null; pagoCuotaQrError = ''; showPagoCuotaQrError = false"
                     >
-                        <span>{{ opt.icon }}</span>
                         {{ opt.label }}
                     </button>
                 </div>
