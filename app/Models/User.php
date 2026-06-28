@@ -36,6 +36,7 @@ class User extends Authenticatable
         'phone',
         'password',
         'menus',
+        'google_id', // Identificador para autenticación externa vía Google SSO
     ];
 
     /**

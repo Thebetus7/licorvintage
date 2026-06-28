@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\AuthorizeMenuAccess;
+use App\Http\Middleware\EnsureProfileIsComplete;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\LogResourceAccess;
 use App\Http\Middleware\LogValidationErrors;
@@ -27,6 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
             LogResourceAccess::class,
             TrackPageViews::class,
             LogValidationErrors::class,
+            EnsureProfileIsComplete::class, // Middleware de perfil completo para clientes SSO
         ]);
 
         $middleware->alias([

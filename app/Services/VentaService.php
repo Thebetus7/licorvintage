@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\ActivityLog;
 use App\Models\AperturaCaja;
-use App\Models\MetodoPago;
 use App\Models\Producto;
 use App\Models\Promocion;
 use App\Models\User;
