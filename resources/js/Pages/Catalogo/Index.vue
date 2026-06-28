@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue';
-import { useForm, Head, usePage } from '@inertiajs/vue3';
+import { useForm, Head, usePage, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import ProductosPublicados from './ProductosPublicados.vue';
 import InputLabel from '@/Components/InputLabel.vue';
@@ -14,6 +14,7 @@ import CreditCardForm from '@/Components/CreditCardForm.vue';
 const props = defineProps({
     productos: Array,
     promocionesActive: Array,
+    creditosPendientes: Array,
 });
 
 const page = usePage();
@@ -48,6 +49,19 @@ const saleForm = useForm({
 });
 
 const cardData = ref({ number: '', expiry: '', cvc: '' });
+
+// Estado Creditos
+const activeTab = ref('productos');
+const showPagoCuotaModal = ref(false);
+const selectedCuota = ref(null);
+const pagoCuotaMethod = ref('qr');
+const pagoCuotaQrImage = ref(null);
+const pagoCuotaQrTransactionId = ref(null);
+const pagoCuotaQrLoading = ref(false);
+const pagoCuotaCardProcessing = ref(false);
+const pagoCuotaCardError = ref('');
+const pagoCuotaQrError = ref('');
+const showPagoCuotaQrError = ref(false);
 
 // Lógica de Carrito
 const addToCart = (productData) => {
@@ -113,6 +127,26 @@ const totalFinal = computed(() => {
 const quotaAmount = computed(() => {
     if (saleForm.nro_cuotas < 2) return 0;
     return totalFinal.value / saleForm.nro_cuotas;
+});
+
+// Computed para creditos
+const filteredCreditos = computed(() => {
+    if (!props.creditosPendientes) return [];
+    return props.creditosPendientes.filter(c =>
+        c.venta_cuotas?.some(cu => cu.estado === 'pendiente')
+    );
+});
+
+const cuotasPendientes = computed(() => {
+    const list = [];
+    filteredCreditos.value.forEach(venta => {
+        venta.venta_cuotas?.forEach(cu => {
+            if (cu.estado === 'pendiente') {
+                list.push({ ...cu, venta });
+            }
+        });
+    });
+    return list;
 });
 
 // Checkout — muestra modal de selección de método
@@ -277,6 +311,117 @@ const submitSale = () => {
         }
     });
 };
+
+// --- Creditos / Cuotas ---
+const abrirPagoCuota = (cuota) => {
+    selectedCuota.value = cuota;
+    pagoCuotaMethod.value = 'qr';
+    pagoCuotaQrImage.value = null;
+    pagoCuotaQrTransactionId.value = null;
+    pagoCuotaQrLoading.value = false;
+    pagoCuotaCardProcessing.value = false;
+    pagoCuotaCardError.value = '';
+    pagoCuotaQrError.value = '';
+    showPagoCuotaQrError.value = false;
+    cardData.value = { number: '', expiry: '', cvc: '' };
+    showPagoCuotaModal.value = true;
+};
+
+const generarPagoCuotaQR = async () => {
+    if (!selectedCuota.value) return;
+    pagoCuotaQrLoading.value = true;
+    pagoCuotaQrImage.value = null;
+    pagoCuotaQrTransactionId.value = null;
+    pagoCuotaQrError.value = '';
+    showPagoCuotaQrError.value = false;
+
+    try {
+        const monto = Number(selectedCuota.value.sub_monto || 0);
+        const detail = [{
+            serial: 1,
+            product: `Cuota #${selectedCuota.value.nro_cuota} - Venta #${selectedCuota.value.venta_id}`,
+            quantity: 1,
+            price: monto,
+            discount: 0,
+            total: monto,
+        }];
+        const resp = await window.axios.post(route('pago.qr.generar'), {
+            monto: monto,
+            orderDetail: detail,
+        });
+        if (resp.data?.error === false && resp.data?.data?.qrBase64) {
+            pagoCuotaQrImage.value = resp.data.data.qrBase64;
+            pagoCuotaQrTransactionId.value = resp.data.data.transactionId ?? null;
+        } else {
+            pagoCuotaQrError.value = resp.data?.message || 'Error al generar el codigo QR.';
+            showPagoCuotaQrError.value = true;
+        }
+    } catch {
+        pagoCuotaQrError.value = 'Error de conexion al generar el codigo QR.';
+        showPagoCuotaQrError.value = true;
+    } finally {
+        pagoCuotaQrLoading.value = false;
+    }
+};
+
+const confirmarPagoCuota = async () => {
+    if (!selectedCuota.value) return;
+
+    if (pagoCuotaMethod.value === 'qr') {
+        if (String(pagoCuotaQrTransactionId.value).startsWith('local_')) {
+            submitPagoCuota();
+            return;
+        }
+        submitPagoCuota();
+        return;
+    }
+
+    if (pagoCuotaMethod.value === 'tarjeta') {
+        pagoCuotaCardError.value = '';
+        if (!cardData.value.number || cardData.value.number.length < 13) {
+            pagoCuotaCardError.value = 'Numero de tarjeta invalido.';
+            return;
+        }
+        if (!cardData.value.expiry || cardData.value.expiry.length < 4) {
+            pagoCuotaCardError.value = 'Fecha de vencimiento invalida.';
+            return;
+        }
+        if (!cardData.value.cvc || cardData.value.cvc.length < 3) {
+            pagoCuotaCardError.value = 'CVC invalido.';
+            return;
+        }
+        submitPagoCuota();
+    }
+};
+
+const submitPagoCuota = () => {
+    if (!selectedCuota.value) return;
+    pagoCuotaCardProcessing.value = true;
+
+    const payload = {
+        payment_method: pagoCuotaMethod.value,
+    };
+    if (pagoCuotaMethod.value === 'tarjeta') {
+        payload.card_number = cardData.value.number;
+        payload.card_expiry = cardData.value.expiry;
+        payload.card_cvc = cardData.value.cvc;
+    }
+
+    window.axios.post(route('cliente.cuotas.pagar', selectedCuota.value.id), payload)
+        .then(() => {
+            showPagoCuotaModal.value = false;
+            selectedCuota.value = null;
+            pagoCuotaQrImage.value = null;
+            pagoCuotaQrTransactionId.value = null;
+            pagoCuotaCardProcessing.value = false;
+            router.reload({ only: ['creditosPendientes'] });
+        })
+        .catch((err) => {
+            const data = err.response?.data;
+            pagoCuotaCardError.value = data?.error || data?.message || 'Error al procesar el pago.';
+            pagoCuotaCardProcessing.value = false;
+        });
+};
 </script>
 
 <template>
@@ -301,8 +446,80 @@ const submitSale = () => {
         </template>
 
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-16">
-            <!-- Listado de Productos -->
-            <ProductosPublicados :productos="productos" @add-to-cart="addToCart" />
+            <!-- Tabs -->
+            <div class="flex gap-2 border-b border-white/10 pb-3 mb-6">
+                <button
+                    v-for="tab in [
+                        { key: 'productos', label: 'Productos' },
+                        { key: 'creditos', label: 'Mis Creditos' },
+                    ]"
+                    :key="tab.key"
+                    class="px-5 py-2.5 text-sm font-bold rounded-xl transition"
+                    :class="activeTab === tab.key
+                        ? 'bg-[var(--accent)] text-white shadow-lg'
+                        : 'text-[var(--text-secondary)] hover:bg-white/5'"
+                    @click="activeTab = tab.key"
+                >
+                    {{ tab.label }}
+                </button>
+            </div>
+
+            <!-- Tab: Productos -->
+            <div v-if="activeTab === 'productos'">
+                <ProductosPublicados :productos="productos" @add-to-cart="addToCart" />
+            </div>
+
+            <!-- Tab: Mis Creditos -->
+            <div v-if="activeTab === 'creditos'" class="space-y-4">
+                <div v-if="cuotasPendientes.length === 0" class="text-center py-16 text-[var(--text-secondary)]">
+                    <div class="text-5xl mb-4">📋</div>
+                    <h3 class="text-lg font-bold text-[var(--text-primary)] mb-2">No tienes creditos pendientes</h3>
+                    <p class="text-sm">Todas tus cuotas estan al dia.</p>
+                </div>
+
+                <div v-for="venta in filteredCreditos" :key="venta.id" class="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <h4 class="text-sm font-bold text-[var(--text-primary)]">Venta #{{ venta.id }}</h4>
+                            <p class="text-xs text-[var(--text-secondary)]">{{ new Date(venta.created_at).toLocaleDateString() }}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-[var(--text-secondary)]">Total</p>
+                            <p class="text-sm font-bold text-indigo-300">Bs {{ Number(venta.monto_final).toFixed(2) }}</p>
+                        </div>
+                    </div>
+
+                    <table class="w-full text-xs">
+                        <thead>
+                            <tr class="text-[var(--text-secondary)] border-b border-white/5">
+                                <th class="text-left py-2">Cuota</th>
+                                <th class="text-right py-2">Monto</th>
+                                <th class="text-right py-2">Estado</th>
+                                <th class="text-right py-2"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="cu in venta.venta_cuotas" :key="cu.id" class="border-b border-white/5">
+                                <td class="py-2 font-medium">#{{ cu.nro_cuota }}</td>
+                                <td class="py-2 text-right font-mono">Bs {{ Number(cu.sub_monto).toFixed(2) }}</td>
+                                <td class="py-2 text-right">
+                                    <span v-if="cu.estado === 'pagado'" class="text-emerald-400 font-semibold">Pagado</span>
+                                    <span v-else class="text-amber-400 font-semibold">Pendiente</span>
+                                </td>
+                                <td class="py-2 text-right">
+                                    <button
+                                        v-if="cu.estado === 'pendiente'"
+                                        class="text-xs bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer"
+                                        @click="abrirPagoCuota(cu)"
+                                    >
+                                        Pagar
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
         <!-- DRAWER DESLIZABLE (CARRITO DE COMPRAS) - DERECHA A IZQUIERDA -->
@@ -632,6 +849,72 @@ const submitSale = () => {
                 <PrimaryButton @click="showSuccessModal = false" class="w-full justify-center">
                     Entendido
                 </PrimaryButton>
+            </template>
+        </DialogModal>
+
+        <!-- MODAL: PAGO DE CUOTA -->
+        <DialogModal :show="showPagoCuotaModal" @close="showPagoCuotaModal = false">
+            <template #title>
+                <h3 class="text-lg font-bold text-[var(--text-primary)]">
+                    Pagar Cuota #{{ selectedCuota?.nro_cuota }} — Bs {{ Number(selectedCuota?.sub_monto || 0).toFixed(2) }}
+                </h3>
+            </template>
+
+            <template #content>
+                <div class="flex gap-2 mb-4">
+                    <button
+                        v-for="opt in [
+                            { value: 'qr', label: 'QR', icon: '📱' },
+                            { value: 'tarjeta', label: 'Tarjeta', icon: '💳' },
+                        ]"
+                        :key="opt.value"
+                        class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition border cursor-pointer"
+                        :class="pagoCuotaMethod === opt.value
+                            ? 'bg-indigo-500/20 border-indigo-400/40 text-indigo-300'
+                            : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10'"
+                        @click="pagoCuotaMethod = opt.value; pagoCuotaQrImage = null; pagoCuotaQrTransactionId = null; pagoCuotaQrError = ''; showPagoCuotaQrError = false"
+                    >
+                        <span>{{ opt.icon }}</span>
+                        {{ opt.label }}
+                    </button>
+                </div>
+
+                <div v-if="pagoCuotaMethod === 'qr'" class="flex flex-col items-center space-y-4 py-2">
+                    <div v-if="pagoCuotaQrLoading" class="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                        <svg class="animate-spin h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                        </svg>
+                        Generando QR...
+                    </div>
+                    <div v-else-if="pagoCuotaQrImage" class="bg-white p-3 rounded-2xl shadow-xl">
+                        <img :src="`data:image/png;base64,${pagoCuotaQrImage}`" alt="QR" class="w-48 h-48">
+                    </div>
+                    <div v-else>
+                        <PrimaryButton type="button" :disabled="pagoCuotaQrLoading" @click="generarPagoCuotaQR">
+                            Generar QR
+                        </PrimaryButton>
+                    </div>
+                    <div v-if="pagoCuotaQrError" class="text-xs text-rose-400">{{ pagoCuotaQrError }}</div>
+                </div>
+
+                <div v-if="pagoCuotaMethod === 'tarjeta'" class="space-y-2">
+                    <CreditCardForm v-model="cardData" />
+                    <div v-if="pagoCuotaCardError" class="text-xs text-rose-400">{{ pagoCuotaCardError }}</div>
+                </div>
+            </template>
+
+            <template #footer>
+                <div class="flex justify-end gap-2">
+                    <SecondaryButton @click="showPagoCuotaModal = false">Cancelar</SecondaryButton>
+                    <PrimaryButton
+                        type="button"
+                        :disabled="pagoCuotaCardProcessing || (pagoCuotaMethod === 'qr' && !pagoCuotaQrImage)"
+                        @click="confirmarPagoCuota"
+                    >
+                        {{ pagoCuotaCardProcessing ? 'Procesando...' : 'Confirmar pago' }}
+                    </PrimaryButton>
+                </div>
             </template>
         </DialogModal>
     </AppLayout>

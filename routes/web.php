@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\CajaController;
+use App\Http\Controllers\ClienteCuotaController;
 use App\Http\Controllers\ClienteProductoController;
 use App\Http\Controllers\CompraController;
 use App\Http\Controllers\InventarioController;
@@ -152,6 +153,7 @@ Route::middleware([
         })->name('caja.clientes.rapido');
 
         Route::get('/cliente/catalogo', ClienteProductoController::class)->name('cliente.productos');
+        Route::post('/cliente/cuotas/{cuota}/pagar', [ClienteCuotaController::class, 'pay'])->name('cliente.cuotas.pagar');
     });
 
     // Ruta de ventas disponible para todos los roles autenticados (clientes incluidos)
