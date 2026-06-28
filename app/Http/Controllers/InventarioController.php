@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Inventario\StoreConteoRequest;
 use App\Http\Requests\Inventario\StoreSalidaRequest;
 use App\Models\MovimientoInventario;
 use App\Models\Producto;
@@ -159,6 +160,38 @@ class InventarioController extends Controller
             'tiposSalida' => \App\Models\TipoSalida::all(),
             'productos' => Producto::query()->orderBy('nombre')->get(['id', 'nombre']),
         ]);
+    }
+
+    public function conteo(): Response
+    {
+        return Inertia::render('Inventario/Conteo', [
+            'productos' => Producto::query()
+                ->with('stockActual')
+                ->orderBy('nombre')
+                ->get(),
+        ]);
+    }
+
+    public function guardarConteo(StoreConteoRequest $request, InventarioService $inventarioService): RedirectResponse
+    {
+        $ajustes = 0;
+        $motivo = $request->validated()['motivo'] ?? 'Ajuste por conteo';
+
+        foreach ($request->validated()['conteos'] as $conteo) {
+            $producto = Producto::query()->findOrFail($conteo['producto_id']);
+            $ajuste = $inventarioService->ajustarPorConteo(
+                $producto,
+                (int) $conteo['stock_fisico'],
+                $request->user(),
+                $motivo
+            );
+
+            if ($ajuste) {
+                $ajustes++;
+            }
+        }
+
+        return back()->with('success', "Conteo guardado. {$ajustes} ajuste(s) aplicado(s) en base a diferencias de stock.");
     }
 
     private function tiposMovimiento(): array

@@ -47,7 +47,6 @@ class InventarioService
             } else {
                 $lote = \App\Models\Lote::create([
                     'producto_id' => $producto->id,
-                    'compra_id' => $referencia instanceof \App\Models\Compra ? $referencia->id : null,
                     'proveedor_id' => $proveedorId,
                     'cantidad_inicial' => $cantidad,
                     'cantidad_actual' => $cantidad,
@@ -67,7 +66,6 @@ class InventarioService
                 'referencia_type' => $referencia ? $referencia->getMorphClass() : null,
                 'referencia_id' => $referencia?->getKey(),
                 'motivo' => $motivo,
-                'user_id' => $user->id,
                 'lote_id' => $lote->id,
             ]);
         });
@@ -107,7 +105,6 @@ class InventarioService
                 'referencia_type' => $referencia ? $referencia->getMorphClass() : null,
                 'referencia_id' => $referencia?->getKey(),
                 'motivo' => $motivo,
-                'user_id' => $user->id,
                 'lote_id' => $loteId,
             ]);
         });

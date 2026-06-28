@@ -911,50 +911,6 @@ const submitPagoCuota = () => {
                                     ✕ Cupón no válido o expirado
                                 </div>
                             </div>
-
-                            <!-- Modalidad y Método de Pago -->
-                            <div>
-                                <InputLabel value="Método de Pago" class="text-xs text-white/70" />
-                                <div class="grid grid-cols-2 gap-2 mt-1">
-                                    <button
-                                        v-for="opt in [
-                                            { value: 'qr', label: 'Código QR', icon: '📱' },
-                                            { value: 'tarjeta', label: 'Tarjeta', icon: '💳' },
-                                            { value: 'efectivo', label: 'Efectivo', icon: '💵' },
-                                            { value: 'credito', label: 'Crédito', icon: '📋' },
-                                        ]"
-                                        :key="opt.value"
-                                        class="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition border cursor-pointer"
-                                        :class="saleForm.tipo_pago === opt.value
-                                            ? 'bg-indigo-500/20 border-indigo-400/40 text-indigo-300'
-                                            : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10'"
-                                        @click="saleForm.tipo_pago = opt.value"
-                                    >
-                                        <span>{{ opt.icon }}</span>
-                                        {{ opt.label }}
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div v-if="saleForm.tipo_pago === 'credito'">
-                                <InputLabel value="Nro. Cuotas" class="text-xs text-white/70" />
-                                <select
-                                    v-model="saleForm.nro_cuotas"
-                                    class="mt-1 block w-full rounded-xl border-white/10 bg-slate-900 text-white focus:border-indigo-500 focus:ring-indigo-500 shadow-sm text-xs p-2 transition"
-                                >
-                                    <option :value="2">2 cuotas</option>
-                                    <option :value="3">3 cuotas</option>
-                                    <option :value="4">4 cuotas</option>
-                                    <option :value="6">6 cuotas</option>
-                                    <option :value="12">12 cuotas</option>
-                                </select>
-                            </div>
-
-                            <!-- Plan de Cuotas Estimado -->
-                            <div v-if="saleForm.tipo_pago === 'credito'" class="p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-300">
-                                <span class="font-bold block uppercase tracking-wider text-[10px] text-indigo-400 mb-1">Plan de Cuotas:</span>
-                                {{ saleForm.nro_cuotas }} cuotas mensuales de <strong class="text-white font-bold text-sm">{{ quotaAmount.toFixed(2) }} Bs</strong>
-                            </div>
                         </div>
                     </div>
 

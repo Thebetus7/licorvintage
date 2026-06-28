@@ -135,6 +135,8 @@ Route::middleware([
             Route::get('/lotes', [InventarioController::class, 'lotes'])->name('lotes');
             Route::get('/salidas', [InventarioController::class, 'salidas'])->name('salidas.index');
             Route::post('/salidas', [InventarioController::class, 'storeSalida'])->name('salidas.store');
+            Route::get('/conteo', [InventarioController::class, 'conteo'])->name('conteo');
+            Route::post('/conteo', [InventarioController::class, 'guardarConteo'])->name('conteo.store');
         });
 
         Route::resource('promociones', PromocionController::class)->except(['create', 'show', 'edit']);

@@ -14,7 +14,6 @@ class Lote extends Model
     protected $fillable = [
         'codigo_lote',
         'producto_id',
-        'compra_id',
         'proveedor_id',
         'cantidad_inicial',
         'cantidad_actual',
@@ -28,7 +27,6 @@ class Lote extends Model
         return [
             'id' => 'integer',
             'producto_id' => 'integer',
-            'compra_id' => 'integer',
             'proveedor_id' => 'integer',
             'cantidad_inicial' => 'integer',
             'cantidad_actual' => 'integer',
@@ -49,11 +47,6 @@ class Lote extends Model
     public function producto(): BelongsTo
     {
         return $this->belongsTo(Producto::class);
-    }
-
-    public function compra(): BelongsTo
-    {
-        return $this->belongsTo(Compra::class);
     }
 
     public function proveedor(): BelongsTo
