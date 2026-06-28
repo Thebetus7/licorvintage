@@ -13,6 +13,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class ClienteProductoController extends Controller
 {
@@ -55,5 +56,32 @@ class ClienteProductoController extends Controller
             ->paginate(10);
 
         return response()->json($ventas);
+    }
+
+    public function pedidos(Request $request): JsonResponse
+    {
+        $user = auth()->user();
+
+        $pedidos = Venta::with(['detalleVentas.producto', 'metodoPagos', 'user'])
+            ->where('cliente_id', $user->id)
+            ->whereNotNull('estado_pedido')
+            ->whereIn('estado_pedido', ['pagado', 'enviado'])
+            ->orderByDesc('created_at')
+            ->paginate(10);
+
+        return response()->json($pedidos);
+    }
+
+    public function completarPedido(Venta $venta): JsonResponse
+    {
+        $user = auth()->user();
+
+        if ($venta->cliente_id !== $user->id) {
+            throw new AccessDeniedHttpException('Este pedido no te pertenece.');
+        }
+
+        $venta->update(['estado_pedido' => 'completado']);
+
+        return response()->json(['success' => true, 'message' => 'Pedido completado.']);
     }
 }

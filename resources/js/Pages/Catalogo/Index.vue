@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useForm, Head, usePage, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import ProductosPublicados from './ProductosPublicados.vue';
@@ -60,6 +60,13 @@ const comprobantesTo = ref(new Date().toISOString().split('T')[0]);
 const showDetalleComprobanteModal = ref(false);
 const selectedComprobante = ref(null);
 const showPagoCuotaModal = ref(false);
+
+// Estado Pedidos
+const misPedidos = ref([]);
+const misPedidosPagination = ref(null);
+const misPedidosLoading = ref(false);
+const showDetallePedidoModal = ref(false);
+const selectedPedido = ref(null);
 const selectedCuota = ref(null);
 const pagoCuotaMethod = ref('qr');
 const pagoCuotaQrImage = ref(null);
@@ -455,6 +462,67 @@ function formatTipoPago(tipo) {
     return map[tipo] || tipo;
 }
 
+function formatEstadoPedido(estado) {
+    const map = { pagado: 'Pagado', enviado: 'Enviado', completado: 'Completado' };
+    return map[estado] || estado;
+}
+
+// --- Mis Pedidos ---
+const cargarMisPedidos = async () => {
+    misPedidosLoading.value = true;
+    try {
+        const resp = await window.axios.get(route('cliente.pedidos'));
+        misPedidos.value = resp.data.data || [];
+        misPedidosPagination.value = {
+            currentPage: resp.data.current_page,
+            lastPage: resp.data.last_page,
+            links: resp.data.links || [],
+        };
+    } catch {
+        misPedidos.value = [];
+        misPedidosPagination.value = null;
+    } finally {
+        misPedidosLoading.value = false;
+    }
+};
+
+const irPaginaMisPedidos = async (url) => {
+    if (!url) return;
+    misPedidosLoading.value = true;
+    try {
+        const resp = await window.axios.get(url);
+        misPedidos.value = resp.data.data || [];
+        misPedidosPagination.value = {
+            currentPage: resp.data.current_page,
+            lastPage: resp.data.last_page,
+            links: resp.data.links || [],
+        };
+    } catch {
+        misPedidos.value = [];
+    } finally {
+        misPedidosLoading.value = false;
+    }
+};
+
+const abrirDetallePedido = (p) => {
+    selectedPedido.value = p;
+    showDetallePedidoModal.value = true;
+};
+
+const completarPedido = async (ventaId) => {
+    try {
+        await window.axios.put(route('cliente.pedidos.completar', ventaId));
+        cargarMisPedidos();
+    } catch {
+        // silent
+    }
+};
+
+watch(activeTab, (val) => {
+    if (val === 'pedidos') cargarMisPedidos();
+    if (val === 'comprobantes') cargarComprobantes();
+});
+
 const submitPagoCuota = () => {
     if (!selectedCuota.value) return;
     pagoCuotaCardProcessing.value = true;
@@ -514,6 +582,7 @@ const submitPagoCuota = () => {
                         { key: 'productos', label: 'Productos' },
                         { key: 'creditos', label: 'Mis Creditos' },
                         { key: 'comprobantes', label: 'Mis Comprobantes' },
+                        { key: 'pedidos', label: 'Mis Pedidos' },
                     ]"
                     :key="tab.key"
                     class="px-5 py-2.5 text-sm font-bold rounded-xl transition"
@@ -661,6 +730,96 @@ const submitPagoCuota = () => {
                             class="px-3 py-1.5 rounded-lg text-sm font-medium transition"
                             :class="link.active ? 'bg-indigo-500 text-white' : 'text-white/60 hover:bg-white/5'"
                             @click="irPaginaComprobantes(link.url)"
+                            v-html="link.label"
+                        />
+                        <span v-else class="px-3 py-1.5 text-sm text-white/40" v-html="link.label" />
+                    </template>
+                </div>
+            </div>
+
+            <!-- Tab: Mis Pedidos -->
+            <div v-if="activeTab === 'pedidos'" class="space-y-4">
+                <div v-if="misPedidosLoading" class="text-center py-12 text-white/60">
+                    <svg class="animate-spin h-8 w-8 mx-auto text-indigo-400" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                    </svg>
+                    <p class="mt-2 text-sm">Cargando pedidos...</p>
+                </div>
+
+                <div v-else-if="misPedidos.length === 0" class="text-center py-16 text-white/50">
+                    <div class="text-5xl mb-4">📦</div>
+                    <h3 class="text-lg font-bold text-white mb-2">No tienes pedidos activos</h3>
+                    <p class="text-sm">Tus pedidos apareceran aqui despues de comprar.</p>
+                </div>
+
+                <div v-else class="space-y-3">
+                    <div v-for="p in misPedidos" :key="p.id" class="rounded-2xl border border-white/10 bg-white/5 p-4">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <h4 class="text-sm font-bold text-white">Pedido #{{ p.id }}</h4>
+                                <p class="text-xs text-white/60">{{ new Date(p.created_at).toLocaleString() }}</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                                    :class="{
+                                        'bg-emerald-500/10 text-emerald-400': p.estado_pedido === 'pagado',
+                                        'bg-sky-500/10 text-sky-400': p.estado_pedido === 'enviado',
+                                    }"
+                                >
+                                    {{ formatEstadoPedido(p.estado_pedido) }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <table class="w-full text-xs mb-3">
+                            <thead>
+                                <tr class="text-white/60 border-b border-white/5">
+                                    <th class="text-left py-2">Producto</th>
+                                    <th class="text-center py-2">Cant</th>
+                                    <th class="text-right py-2">P.U.</th>
+                                    <th class="text-right py-2">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="d in p.detalle_ventas" :key="d.id" class="border-b border-white/5">
+                                    <td class="py-2 text-white">{{ d.producto?.nombre || '—' }}</td>
+                                    <td class="py-2 text-center text-white/60">{{ d.cantidad }}</td>
+                                    <td class="py-2 text-right font-mono text-white/60">Bs {{ Number(d.precio_u_final).toFixed(2) }}</td>
+                                    <td class="py-2 text-right font-mono text-white">Bs {{ Number(d.subtotal).toFixed(2) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <div class="flex justify-between items-center border-t border-white/5 pt-3">
+                            <div class="text-sm font-bold text-indigo-300">Bs {{ Number(p.monto_final).toFixed(2) }}</div>
+                            <div class="flex gap-2">
+                                <button
+                                    class="text-xs bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer"
+                                    @click="abrirDetallePedido(p)"
+                                >
+                                    Ver
+                                </button>
+                                <button
+                                    v-if="p.estado_pedido === 'enviado'"
+                                    class="text-xs bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer"
+                                    @click="completarPedido(p.id)"
+                                >
+                                    Recibido
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="misPedidosPagination && misPedidosPagination.lastPage > 1" class="flex justify-center gap-2">
+                    <template v-for="(link, i) in misPedidosPagination.links" :key="i">
+                        <button
+                            v-if="link.url"
+                            :disabled="link.active"
+                            class="px-3 py-1.5 rounded-lg text-sm font-medium transition"
+                            :class="link.active ? 'bg-indigo-500 text-white' : 'text-white/60 hover:bg-white/5'"
+                            @click="irPaginaMisPedidos(link.url)"
                             v-html="link.label"
                         />
                         <span v-else class="px-3 py-1.5 text-sm text-white/40" v-html="link.label" />
@@ -1194,6 +1353,77 @@ const submitPagoCuota = () => {
             <template #footer>
                 <div class="flex justify-end">
                     <SecondaryButton @click="showDetalleComprobanteModal = false">Cerrar</SecondaryButton>
+                </div>
+            </template>
+        </DialogModal>
+
+        <!-- MODAL: DETALLE PEDIDO -->
+        <DialogModal :show="showDetallePedidoModal" max-width="lg" @close="showDetallePedidoModal = false">
+            <template #title>
+                <div class="flex items-center gap-2 text-white">
+                    <span>Pedido #{{ selectedPedido?.id }}</span>
+                    <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                        :class="{
+                            'bg-emerald-500/10 text-emerald-400': selectedPedido?.estado_pedido === 'pagado',
+                            'bg-sky-500/10 text-sky-400': selectedPedido?.estado_pedido === 'enviado',
+                        }"
+                    >
+                        {{ formatEstadoPedido(selectedPedido?.estado_pedido) }}
+                    </span>
+                </div>
+            </template>
+            <template #content>
+                <div v-if="selectedPedido" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <span class="text-white/60">Fecha:</span>
+                            <p class="font-medium text-white">{{ new Date(selectedPedido.created_at).toLocaleString() }}</p>
+                        </div>
+                        <div>
+                            <span class="text-white/60">Total:</span>
+                            <p class="font-medium text-indigo-300">Bs {{ Number(selectedPedido.monto_final).toFixed(2) }}</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="text-xs font-semibold uppercase text-white/60 mb-2">Productos</h4>
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b border-white/10 text-white/60">
+                                    <th class="text-left py-2 font-semibold">Producto</th>
+                                    <th class="text-center py-2 font-semibold">Cant</th>
+                                    <th class="text-right py-2 font-semibold">P.U.</th>
+                                    <th class="text-right py-2 font-semibold">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="d in selectedPedido.detalle_ventas" :key="d.id" class="border-b border-white/5">
+                                    <td class="py-2 text-white">{{ d.producto?.nombre || '—' }}</td>
+                                    <td class="py-2 text-center text-white/60">{{ d.cantidad }}</td>
+                                    <td class="py-2 text-right font-mono text-white/60">Bs {{ Number(d.precio_u_final).toFixed(2) }}</td>
+                                    <td class="py-2 text-right font-mono text-white">Bs {{ Number(d.subtotal).toFixed(2) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="rounded-lg bg-white/5 p-3 space-y-1 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-white/60">Total</span>
+                            <span class="font-mono text-indigo-300 font-bold">Bs {{ Number(selectedPedido.monto_final).toFixed(2) }}</span>
+                        </div>
+                    </div>
+                </div>
+            </template>
+            <template #footer>
+                <div class="flex justify-end gap-2">
+                    <SecondaryButton @click="showDetallePedidoModal = false">Cerrar</SecondaryButton>
+                    <PrimaryButton
+                        v-if="selectedPedido?.estado_pedido === 'enviado'"
+                        @click="completarPedido(selectedPedido.id); showDetallePedidoModal = false"
+                    >
+                        Marcar como Recibido
+                    </PrimaryButton>
                 </div>
             </template>
         </DialogModal>

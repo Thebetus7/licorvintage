@@ -24,6 +24,7 @@ class Venta extends Model
         'monto_final',
         'nro_cuotas',
         'tipo_pago',
+        'estado_pedido',
         'detalle_promo_id',
         'cliente_id',
         'promocion_id',
@@ -46,6 +47,7 @@ class Venta extends Model
             'cliente_id' => 'integer',
             'promocion_id' => 'integer',
             'user_id' => 'integer',
+            'estado_pedido' => 'string',
         ];
     }
 

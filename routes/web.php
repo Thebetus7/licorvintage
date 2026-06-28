@@ -117,6 +117,8 @@ Route::middleware([
         Route::resource('proveedores', ProveedorController::class)->except(['create', 'show', 'edit']);
 
         Route::get('/ventas', [VentaController::class, 'index'])->name('ventas.index');
+        Route::get('/ventas/pedidos', [VentaController::class, 'pedidos'])->name('ventas.pedidos');
+        Route::put('/ventas/pedidos/{venta}/estado', [VentaController::class, 'updateEstadoPedido'])->name('ventas.pedidos.estado');
         Route::get('/comprobantes', [ComprobanteController::class, 'index'])->name('comprobantes.index');
 
         Route::get('/caja', [CajaController::class, 'index'])->name('caja.index');
@@ -155,6 +157,8 @@ Route::middleware([
 
         Route::get('/cliente/catalogo', ClienteProductoController::class)->name('cliente.productos');
         Route::get('/cliente/comprobantes', [ClienteProductoController::class, 'comprobantes'])->name('cliente.comprobantes');
+        Route::get('/cliente/pedidos', [ClienteProductoController::class, 'pedidos'])->name('cliente.pedidos');
+        Route::put('/cliente/pedidos/{venta}/completar', [ClienteProductoController::class, 'completarPedido'])->name('cliente.pedidos.completar');
         Route::post('/cliente/cuotas/{cuota}/pagar', [ClienteCuotaController::class, 'pay'])->name('cliente.cuotas.pagar');
     });
 

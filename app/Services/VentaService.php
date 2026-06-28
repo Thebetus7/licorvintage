@@ -142,7 +142,7 @@ class VentaService
                 }
             }
 
-            $venta = Venta::create([
+            $ventaData = [
                 'monto_pagado' => $isCredito ? 0 : ($data['monto_pagado'] ?? $totalFinal),
                 'cod_descuento' => $codigoPromoApplied,
                 'monto_original' => $totalOriginal,
@@ -152,7 +152,13 @@ class VentaService
                 'promocion_id' => $promocionId,
                 'cliente_id' => $data['cliente_id'] ?? null,
                 'user_id' => $user->id,
-            ]);
+            ];
+
+            if (isset($data['estado_pedido'])) {
+                $ventaData['estado_pedido'] = $data['estado_pedido'];
+            }
+
+            $venta = Venta::create($ventaData);
 
             foreach ($detalles as $detalle) {
                 $venta->detalleVentas()->create([

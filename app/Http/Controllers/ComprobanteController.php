@@ -11,13 +11,7 @@ class ComprobanteController extends Controller
 {
     public function index(Request $request): Response
     {
-        $user = auth()->user();
-
         $query = Venta::with(['cliente', 'detalleVentas.producto', 'metodoPagos', 'ventaCuotas', 'user']);
-
-        if ($user->hasRole('vendedor')) {
-            $query->where('user_id', $user->id);
-        }
 
         $from = $request->input('from', today()->toDateString());
         $to = $request->input('to', today()->toDateString());

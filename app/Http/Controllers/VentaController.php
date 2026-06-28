@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Producto;
 use App\Models\Promocion;
 use App\Models\User;
+use App\Models\Venta;
 use App\Services\CajaService;
 use App\Services\VentaService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -68,8 +70,37 @@ class VentaController extends Controller
             'detalles.*.cantidad.min' => 'La cantidad mínima por producto es 1.',
         ]);
 
+        if ($user->hasRole('cliente')) {
+            $validated['estado_pedido'] = 'pagado';
+        }
+
         $ventaService->create($validated, $user, $caja);
 
         return back()->with('success', 'Venta registrada correctamente.');
+    }
+
+    public function pedidos(): Response
+    {
+        $user = auth()->user();
+        $today = today()->toDateString();
+
+        $pedidos = Venta::with(['cliente', 'detalleVentas.producto', 'user'])
+            ->whereNotNull('estado_pedido')
+            ->whereDate('created_at', $today)
+            ->orderByDesc('created_at')
+            ->paginate(20);
+
+        return Inertia::render('Ventas/Pedidos', [
+            'pedidos' => $pedidos,
+        ]);
+    }
+
+    public function updateEstadoPedido(Request $request, Venta $venta): RedirectResponse
+    {
+        $request->validate(['estado' => 'required|string|in:enviado']);
+
+        $venta->update(['estado_pedido' => $request->estado]);
+
+        return back()->with('success', 'Pedido actualizado a enviado.');
     }
 }
