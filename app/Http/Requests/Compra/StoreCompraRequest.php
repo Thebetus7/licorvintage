@@ -19,6 +19,7 @@ class StoreCompraRequest extends FormRequest
             'detalles.*.producto_id' => ['required', 'exists:productos,id'],
             'detalles.*.cantidad' => ['required', 'integer', 'min:1'],
             'detalles.*.sub_costo' => ['required', 'numeric', 'min:0'],
+            'detalles.*.fecha_expiracion' => ['required', 'date'],
         ];
     }
 }

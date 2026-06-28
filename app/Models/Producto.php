@@ -58,4 +58,9 @@ class Producto extends Model
     {
         return $this->hasOne(Stock::class);
     }
+
+    public function lotes(): HasMany
+    {
+        return $this->hasMany(Lote::class);
+    }
 }

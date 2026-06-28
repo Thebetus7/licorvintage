@@ -5,8 +5,9 @@ const tabs = [
     { label: 'Resumen', route: 'inventario.index' },
     { label: 'Movimientos', route: 'inventario.movimientos' },
     { label: 'Kardex', route: 'inventario.kardex' },
+    { label: 'Lotes', route: 'inventario.lotes' },
+    { label: 'Salidas', route: 'inventario.salidas.index' },
     { label: 'Valorizacion', route: 'inventario.valorizacion' },
-    { label: 'Conteo', route: 'inventario.conteo' },
 ];
 </script>
 

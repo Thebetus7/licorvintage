@@ -18,22 +18,19 @@ class CompraService
     {
         return DB::transaction(function () use ($data, $user): Compra {
             $detalles = $data['detalles'];
-            $productoId = $detalles[0]['producto_id'];
             $total = collect($detalles)->sum('sub_costo');
 
             $compra = Compra::create([
                 'costo' => $total,
-                'producto_id' => $productoId,
                 'proveedor_id' => $data['proveedor_id'] ?? null,
                 'user_id' => $user->id,
             ]);
 
             foreach ($detalles as $detalle) {
-                $compra->detalleCompras()->create($detalle);
                 $producto = Producto::query()->findOrFail($detalle['producto_id']);
                 $costoUnitario = (float) $detalle['sub_costo'] / (int) $detalle['cantidad'];
 
-                $this->inventarioService->registrarIngreso(
+                $movimiento = $this->inventarioService->registrarIngreso(
                     $producto,
                     (int) $detalle['cantidad'],
                     $costoUnitario,
@@ -41,7 +38,17 @@ class CompraService
                     $compra,
                     $user,
                     "Compra #{$compra->id}",
+                    $detalle['fecha_expiracion'] ?? null,
+                    null,
+                    $compra->proveedor_id
                 );
+
+                $compra->detalleCompras()->create([
+                    'producto_id' => $detalle['producto_id'],
+                    'cantidad' => $detalle['cantidad'],
+                    'sub_costo' => $detalle['sub_costo'],
+                    'lote_id' => $movimiento->lote_id,
+                ]);
             }
 
             ActivityLog::create([
@@ -64,7 +71,6 @@ class CompraService
         return DB::transaction(function () use ($compra, $data, $user): Compra {
             foreach ($compra->detalleCompras as $detalle) {
                 $producto = Producto::query()->findOrFail($detalle->producto_id);
-                $costoUnitario = (float) $detalle->sub_costo / (int) $detalle->cantidad;
 
                 $this->inventarioService->registrarSalida(
                     $producto,
@@ -73,7 +79,12 @@ class CompraService
                     $compra,
                     $user,
                     "Reversión compra #{$compra->id}",
+                    $detalle->lote_id
                 );
+
+                if ($detalle->lote) {
+                    $detalle->lote->delete();
+                }
             }
 
             $compra->detalleCompras()->delete();
@@ -81,16 +92,14 @@ class CompraService
             $detalles = $data['detalles'];
             $compra->update([
                 'costo' => collect($detalles)->sum('sub_costo'),
-                'producto_id' => $detalles[0]['producto_id'],
                 'proveedor_id' => $data['proveedor_id'] ?? null,
             ]);
 
             foreach ($detalles as $detalle) {
-                $compra->detalleCompras()->create($detalle);
                 $producto = Producto::query()->findOrFail($detalle['producto_id']);
                 $costoUnitario = (float) $detalle['sub_costo'] / (int) $detalle['cantidad'];
 
-                $this->inventarioService->registrarIngreso(
+                $movimiento = $this->inventarioService->registrarIngreso(
                     $producto,
                     (int) $detalle['cantidad'],
                     $costoUnitario,
@@ -98,7 +107,17 @@ class CompraService
                     $compra,
                     $user,
                     "Compra #{$compra->id} (actualizada)",
+                    $detalle['fecha_expiracion'] ?? null,
+                    null,
+                    $compra->proveedor_id
                 );
+
+                $compra->detalleCompras()->create([
+                    'producto_id' => $detalle['producto_id'],
+                    'cantidad' => $detalle['cantidad'],
+                    'sub_costo' => $detalle['sub_costo'],
+                    'lote_id' => $movimiento->lote_id,
+                ]);
             }
 
             ActivityLog::create([
@@ -130,7 +149,12 @@ class CompraService
                     $compra,
                     $user,
                     "Eliminación compra #{$compra->id}",
+                    $detalle->lote_id
                 );
+
+                if ($detalle->lote) {
+                    $detalle->lote->delete();
+                }
             }
 
             $compra->detalleCompras()->delete();
@@ -144,7 +168,7 @@ class CompraService
                 'user_agent' => request()->userAgent(),
                 'resource_name' => 'Compras',
                 'visited_url' => request()->getRequestUri(),
-                'description' => "Compra eliminada exitosamente (Compra #{$compraId}). Se revirtió el ingreso de stock.",
+                'description' => "Compra de licores eliminada exitosamente (Compra #{$compraId}). Se revirtió el ingreso de stock.",
             ]);
         });
     }

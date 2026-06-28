@@ -145,5 +145,9 @@ class DatabaseSeeder extends Seeder
                 'roles' => $menu['roles'],
             ]);
         }
+
+        $this->call([
+            TipoSalidaSeeder::class,
+        ]);
     }
 }

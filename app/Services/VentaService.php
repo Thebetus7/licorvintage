@@ -164,13 +164,13 @@ class VentaService
                     'producto_id' => $detalle['producto']->id,
                 ]);
 
-                $this->inventarioService->registrarSalida(
+                $this->inventarioService->descontarStockDeLotes(
                     $detalle['producto'],
                     $detalle['cantidad'],
                     'salida_venta',
                     $venta,
                     $user,
-                    "Venta #{$venta->id}",
+                    "Venta #{$venta->id}"
                 );
             }
 

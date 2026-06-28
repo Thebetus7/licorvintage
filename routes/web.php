@@ -128,10 +128,9 @@ Route::middleware([
             Route::get('/movimientos', [InventarioController::class, 'movimientos'])->name('movimientos');
             Route::get('/kardex', [InventarioController::class, 'kardex'])->name('kardex');
             Route::get('/valorizacion', [InventarioController::class, 'valorizacion'])->name('valorizacion');
-            Route::get('/conteo', [InventarioController::class, 'conteo'])->name('conteo');
-            Route::post('/conteo', [InventarioController::class, 'guardarConteo'])->name('conteo.store');
-            Route::post('/ingreso', [InventarioController::class, 'storeIngreso'])->name('ingreso.store');
-            Route::post('/salida', [InventarioController::class, 'storeSalida'])->name('salida.store');
+            Route::get('/lotes', [InventarioController::class, 'lotes'])->name('lotes');
+            Route::get('/salidas', [InventarioController::class, 'salidas'])->name('salidas.index');
+            Route::post('/salidas', [InventarioController::class, 'storeSalida'])->name('salidas.store');
         });
 
         Route::resource('promociones', PromocionController::class)->except(['create', 'show', 'edit']);

@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\Inventario\StoreConteoRequest;
-use App\Http\Requests\Inventario\StoreIngresoRequest;
 use App\Http\Requests\Inventario\StoreSalidaRequest;
 use App\Models\MovimientoInventario;
 use App\Models\Producto;
@@ -17,6 +15,17 @@ class InventarioController extends Controller
 {
     public function index(InventarioService $inventarioService): Response
     {
+        $totalProximos = \App\Models\Lote::query()
+            ->where('estado', 'activo')
+            ->where('fecha_expiracion', '<=', now()->addDays(30))
+            ->where('fecha_expiracion', '>', now())
+            ->count();
+
+        $totalVencidos = \App\Models\Lote::query()
+            ->where('estado', 'activo')
+            ->where('fecha_expiracion', '<=', now())
+            ->count();
+
         return Inertia::render('Inventario/Index', [
             'valorTotal' => $inventarioService->valorizacionTotal(),
             'productosBajoMinimo' => $inventarioService->productosBajoMinimo(),
@@ -25,6 +34,9 @@ class InventarioController extends Controller
                 ->latest()
                 ->limit(10)
                 ->get(),
+            'totalProximos' => $totalProximos,
+            'totalVencidos' => $totalVencidos,
+            'productos' => Producto::query()->orderBy('nombre')->get(['id', 'nombre']),
         ]);
     }
 
@@ -93,69 +105,60 @@ class InventarioController extends Controller
         ]);
     }
 
-    public function conteo(): Response
+
+
+
+    public function lotes(Request $request): Response
     {
-        return Inertia::render('Inventario/Conteo', [
-            'productos' => Producto::query()
-                ->with('stockActual')
-                ->orderBy('nombre')
-                ->get(),
+        $lotes = \App\Models\Lote::query()
+            ->with('producto')
+            ->when($request->producto_id, fn ($query) => $query->where('producto_id', $request->producto_id))
+            ->when($request->estado, fn ($query) => $query->where('estado', $request->estado))
+            ->orderByRaw('fecha_expiracion ASC NULLS LAST')
+            ->orderBy('id', 'desc')
+            ->paginate(15)
+            ->withQueryString();
+
+        $totalProximos = \App\Models\Lote::query()
+            ->where('estado', 'activo')
+            ->where('fecha_expiracion', '<=', now()->addDays(30))
+            ->where('fecha_expiracion', '>', now())
+            ->count();
+
+        $totalVencidos = \App\Models\Lote::query()
+            ->where('estado', 'activo')
+            ->where('fecha_expiracion', '<=', now())
+            ->count();
+
+        return Inertia::render('Inventario/Lotes', [
+            'lotes' => $lotes,
+            'productos' => Producto::query()->orderBy('nombre')->get(['id', 'nombre']),
+            'filters' => $request->only(['producto_id', 'estado']),
+            'totalProximos' => $totalProximos,
+            'totalVencidos' => $totalVencidos,
         ]);
-    }
-
-    public function storeIngreso(StoreIngresoRequest $request, InventarioService $inventarioService): RedirectResponse
-    {
-        $data = $request->validated();
-        $producto = Producto::query()->findOrFail($data['producto_id']);
-
-        $inventarioService->registrarIngreso(
-            $producto,
-            (int) $data['cantidad'],
-            (float) $data['costo_unitario'],
-            'ingreso_devolucion',
-            null,
-            $request->user(),
-            $data['motivo'] ?? 'Ingreso manual',
-        );
-
-        return back()->with('success', 'Ingreso registrado correctamente.');
     }
 
     public function storeSalida(StoreSalidaRequest $request, InventarioService $inventarioService): RedirectResponse
     {
-        $data = $request->validated();
-        $producto = Producto::query()->findOrFail($data['producto_id']);
+        $inventarioService->registrarNotaSalida($request->validated(), $request->user());
 
-        $inventarioService->registrarSalida(
-            $producto,
-            (int) $data['cantidad'],
-            'salida_merma',
-            null,
-            $request->user(),
-            $data['motivo'],
-        );
-
-        return back()->with('success', 'Salida registrada correctamente.');
+        return back()->with('success', 'Nota de salida registrada correctamente.');
     }
 
-    public function guardarConteo(StoreConteoRequest $request, InventarioService $inventarioService): RedirectResponse
+    public function salidas(Request $request): Response
     {
-        $ajustes = 0;
+        $salidas = \App\Models\NotaSalida::query()
+            ->with(['tipoSalida', 'user', 'detalleSalidas.producto'])
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
 
-        foreach ($request->validated()['conteos'] as $conteo) {
-            $producto = Producto::query()->findOrFail($conteo['producto_id']);
-            $ajuste = $inventarioService->ajustarPorConteo(
-                $producto,
-                (int) $conteo['stock_fisico'],
-                $request->user(),
-            );
-
-            if ($ajuste) {
-                $ajustes++;
-            }
-        }
-
-        return back()->with('success', "Conteo guardado. {$ajustes} ajuste(s) aplicado(s).");
+        return Inertia::render('Inventario/Salidas', [
+            'salidas' => $salidas,
+            'tiposSalida' => \App\Models\TipoSalida::all(),
+            'productos' => Producto::query()->orderBy('nombre')->get(['id', 'nombre']),
+        ]);
     }
 
     private function tiposMovimiento(): array

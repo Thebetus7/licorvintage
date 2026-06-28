@@ -18,7 +18,7 @@ class CompraController extends Controller
     {
         return Inertia::render('Compras/Index', [
             'compras' => Compra::query()
-                ->with(['proveedor', 'detalleCompras.producto'])
+                ->with(['proveedor', 'detalleCompras.producto', 'detalleCompras.lote'])
                 ->latest()
                 ->paginate(15),
             'productos' => Producto::query()

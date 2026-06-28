@@ -38,6 +38,27 @@ const logout = () => {
     router.post(route('logout'));
 };
 
+const flashMessage = ref({
+    text: '',
+    type: '',
+    show: false,
+});
+
+let flashTimeout = null;
+
+watch(() => page.props.flash, (newFlash) => {
+    if (newFlash && (newFlash.success || newFlash.error)) {
+        flashMessage.value.text = newFlash.success || newFlash.error;
+        flashMessage.value.type = newFlash.success ? 'success' : 'error';
+        flashMessage.value.show = true;
+
+        if (flashTimeout) clearTimeout(flashTimeout);
+        flashTimeout = setTimeout(() => {
+            flashMessage.value.show = false;
+        }, 5000);
+    }
+}, { deep: true, immediate: true });
+
 // --- ESTADOS Y LÓGICA DE LA BARRA DE TAREAS MOVIBLE ---
 const navPosition = ref(localStorage.getItem('nav-position') || 'top');
 const isDragging = ref(false);
@@ -303,7 +324,7 @@ watch(() => page.props.errors, (newErrors) => {
                                         <div class="text-xs font-bold text-[var(--text-primary)]">{{ $page.props.auth.user?.name }}</div>
                                         <div class="text-[10px] text-[var(--accent)] font-medium">{{ roles.join(', ') }}</div>
                                     </div>
-                                    <button class="rounded-md bg-stone-900 border border-[var(--border-color)] px-2.5 py-1.5 text-xs font-semibold hover:bg-stone-800 text-[var(--text-primary)] cursor-pointer transition shrink-0" @click="logout">
+                                    <button class="rounded-md bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/30 hover:border-rose-300 dark:hover:border-rose-700/50 px-2.5 py-1.5 text-xs font-semibold hover:bg-rose-100 dark:hover:bg-rose-900/30 text-rose-700 dark:text-rose-400 hover:text-rose-800 dark:hover:text-rose-300 cursor-pointer transition shrink-0" @click="logout">
                                         Salir
                                     </button>
                                 </div>
@@ -386,7 +407,7 @@ watch(() => page.props.errors, (newErrors) => {
                                 <div class="text-xs text-[var(--accent)] truncate">{{ roles.join(', ') }}</div>
                             </div>
 
-                            <button class="w-full rounded-md bg-stone-900 border border-[var(--border-color)] py-2.5 text-sm hover:bg-stone-800 text-[var(--text-primary)] cursor-pointer transition" @click="logout">
+                            <button class="w-full rounded-md bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/30 hover:border-rose-300 dark:hover:border-rose-700/50 py-2.5 text-sm hover:bg-rose-100 dark:hover:bg-rose-900/30 text-rose-700 dark:text-rose-400 hover:text-rose-800 dark:hover:text-rose-300 cursor-pointer transition" @click="logout">
                                 Salir
                             </button>
                         </div>
@@ -397,15 +418,20 @@ watch(() => page.props.errors, (newErrors) => {
                 <!-- Contenido Restante (Con paddings dinámicos coordinados) -->
                 <div :class="contentClasses">
                     <div>
-                        <!-- Mensajes Flash -->
-                        <div v-if="$page.props.flash.success || $page.props.flash.error" class="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8 w-full">
-                            <div
-                                class="rounded-md border px-4 py-3 text-sm shadow-sm"
-                                :class="$page.props.flash.success ? 'border-emerald-200/20 bg-emerald-950/40 text-emerald-300' : 'border-red-200/20 bg-red-950/40 text-red-300'"
-                            >
-                                {{ $page.props.flash.success || $page.props.flash.error }}
-                            </div>
-                        </div>
+                         <!-- Mensajes Flash -->
+                         <div v-if="flashMessage.show" class="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8 w-full">
+                             <div
+                                 class="rounded-md border px-4 py-3 text-sm shadow-sm flex items-center justify-between gap-2 transition-all duration-300"
+                                 :class="flashMessage.type === 'success' ? 'border-emerald-200/20 bg-emerald-950/40 text-emerald-300' : 'border-red-200/20 bg-red-950/40 text-red-300'"
+                             >
+                                 <span>{{ flashMessage.text }}</span>
+                                 <button type="button" @click="flashMessage.show = false" class="text-current opacity-70 hover:opacity-100 transition focus:outline-none">
+                                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                     </svg>
+                                 </button>
+                             </div>
+                         </div>
 
                         <!-- Encabezado de Página -->
                         <header v-if="$slots.header" class="border-b border-[var(--border-color)] bg-[var(--bg-tertiary)]/30 backdrop-blur-md transition-colors duration-300">

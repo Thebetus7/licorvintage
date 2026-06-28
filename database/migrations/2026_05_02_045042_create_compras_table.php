@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('compras', function (Blueprint $table) {
             $table->id();
             $table->decimal('costo', 12, 2);
-            $table->foreignId('producto_id')->constrained('productos')->restrictOnDelete();
             $table->foreignId('proveedor_id')->nullable();
             $table->foreignId('user_id')->constrained()->restrictOnDelete();
             $table->timestamps();

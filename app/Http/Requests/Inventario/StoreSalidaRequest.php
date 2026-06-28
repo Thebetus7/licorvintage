@@ -14,9 +14,11 @@ class StoreSalidaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'producto_id' => ['required', 'exists:productos,id'],
-            'cantidad' => ['required', 'integer', 'min:1'],
-            'motivo' => ['required', 'string', 'max:255'],
+            'tipo_salida_id' => ['required', 'exists:tipo_salidas,id'],
+            'fecha' => ['required', 'date'],
+            'detalles' => ['required', 'array', 'min:1'],
+            'detalles.*.producto_id' => ['required', 'exists:productos,id'],
+            'detalles.*.cantidad' => ['required', 'integer', 'min:1'],
         ];
     }
 }

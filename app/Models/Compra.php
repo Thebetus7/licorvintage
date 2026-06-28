@@ -19,7 +19,6 @@ class Compra extends Model
      */
     protected $fillable = [
         'costo',
-        'producto_id',
         'proveedor_id',
         'user_id',
     ];
@@ -34,15 +33,9 @@ class Compra extends Model
         return [
             'id' => 'integer',
             'costo' => 'double',
-            'producto_id' => 'integer',
             'proveedor_id' => 'integer',
             'user_id' => 'integer',
         ];
-    }
-
-    public function producto(): BelongsTo
-    {
-        return $this->belongsTo(Producto::class);
     }
 
     public function proveedor(): BelongsTo

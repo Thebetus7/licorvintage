@@ -13,22 +13,9 @@ defineProps({
     valorTotal: Number,
     productosBajoMinimo: Number,
     ultimosMovimientos: Array,
-});
-
-const showIngreso = ref(false);
-const showSalida = ref(false);
-
-const ingresoForm = useForm({
-    producto_id: '',
-    cantidad: 1,
-    costo_unitario: 0,
-    motivo: '',
-});
-
-const salidaForm = useForm({
-    producto_id: '',
-    cantidad: 1,
-    motivo: '',
+    totalProximos: Number,
+    totalVencidos: Number,
+    productos: Array,
 });
 
 const tipoLabel = (tipo) => tipo.replace(/_/g, ' ');
@@ -43,12 +30,9 @@ const tipoLabel = (tipo) => tipo.replace(/_/g, ' ');
                     <p class="text-sm text-[var(--text-secondary)]">Movimientos, costo promedio, conteo y valorización.</p>
                 </div>
                 <div class="flex gap-2">
-                    <button @click="showIngreso = true" class="px-4 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[var(--accent)] hover:bg-[var(--accent)]/10 hover:text-[var(--text-primary)] rounded-md font-semibold text-sm transition cursor-pointer">
-                        Registrar ingreso
-                    </button>
-                    <button @click="showSalida = true" class="px-4 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[var(--accent)] hover:bg-[var(--accent)]/10 hover:text-[var(--text-primary)] rounded-md font-semibold text-sm transition cursor-pointer">
-                        Registrar salida
-                    </button>
+                    <Link :href="route('inventario.salidas.index')" class="px-4 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[var(--accent)] hover:bg-[var(--accent)]/10 hover:text-[var(--text-primary)] rounded-md font-semibold text-sm transition cursor-pointer">
+                        Gestionar Salidas / Bajas
+                    </Link>
                 </div>
             </div>
         </template>
@@ -66,8 +50,15 @@ const tipoLabel = (tipo) => tipo.replace(/_/g, ' ');
                     <div class="mt-1 text-2xl font-bold text-[var(--accent)]">{{ productosBajoMinimo }}</div>
                 </div>
                 <div class="rounded-lg border border-[var(--border-color)] bg-[var(--bg-tertiary)]/80 p-5 shadow-sm text-[var(--text-primary)] transition-colors duration-300">
-                    <div class="text-sm text-[var(--text-secondary)]">Últimos movimientos</div>
-                    <div class="mt-1 text-2xl font-bold text-[var(--text-primary)]">{{ ultimosMovimientos.length }}</div>
+                    <div class="text-sm text-[var(--text-secondary)]">Alertas de Vencimiento</div>
+                    <div class="mt-1 flex gap-4 text-sm font-semibold">
+                        <span :class="totalVencidos > 0 ? 'text-rose-400 font-bold' : 'text-[var(--text-secondary)]'">
+                            {{ totalVencidos }} vencidos
+                        </span>
+                        <span :class="totalProximos > 0 ? 'text-amber-400 font-bold' : 'text-[var(--text-secondary)]'">
+                            {{ totalProximos }} por vencer
+                        </span>
+                    </div>
                 </div>
             </div>
 
@@ -97,51 +88,5 @@ const tipoLabel = (tipo) => tipo.replace(/_/g, ' ');
                 </table>
             </div>
         </div>
-
-        <DialogModal :show="showIngreso" @close="showIngreso = false">
-            <template #title>Registrar ingreso</template>
-            <template #content>
-                <form class="grid gap-4" @submit.prevent="ingresoForm.post(route('inventario.ingreso.store'), { preserveScroll: true, onSuccess: () => showIngreso = false })">
-                    <div>
-                        <InputLabel value="ID producto" />
-                        <TextInput v-model="ingresoForm.producto_id" type="number" class="mt-1 w-full" />
-                    </div>
-                    <div>
-                        <InputLabel value="Cantidad" />
-                        <TextInput v-model="ingresoForm.cantidad" type="number" class="mt-1 w-full" />
-                    </div>
-                    <div>
-                        <InputLabel value="Costo unitario" />
-                        <TextInput v-model="ingresoForm.costo_unitario" type="number" step="0.01" class="mt-1 w-full" />
-                    </div>
-                    <div>
-                        <InputLabel value="Motivo" />
-                        <TextInput v-model="ingresoForm.motivo" class="mt-1 w-full" />
-                    </div>
-                    <PrimaryButton :disabled="ingresoForm.processing">Guardar ingreso</PrimaryButton>
-                </form>
-            </template>
-        </DialogModal>
-
-        <DialogModal :show="showSalida" @close="showSalida = false">
-            <template #title>Registrar salida / merma</template>
-            <template #content>
-                <form class="grid gap-4" @submit.prevent="salidaForm.post(route('inventario.salida.store'), { preserveScroll: true, onSuccess: () => showSalida = false })">
-                    <div>
-                        <InputLabel value="ID producto" />
-                        <TextInput v-model="salidaForm.producto_id" type="number" class="mt-1 w-full" />
-                    </div>
-                    <div>
-                        <InputLabel value="Cantidad" />
-                        <TextInput v-model="salidaForm.cantidad" type="number" class="mt-1 w-full" />
-                    </div>
-                    <div>
-                        <InputLabel value="Motivo" />
-                        <TextInput v-model="salidaForm.motivo" class="mt-1 w-full" />
-                    </div>
-                    <PrimaryButton :disabled="salidaForm.processing">Guardar salida</PrimaryButton>
-                </form>
-            </template>
-        </DialogModal>
     </AppLayout>
 </template>
