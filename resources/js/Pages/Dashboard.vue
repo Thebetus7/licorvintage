@@ -39,7 +39,9 @@ defineProps({
                 <!-- Ventas de Hoy -->
                 <div class="relative group rounded-3xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/40 p-6 shadow-xl backdrop-blur-md transition-all duration-300 hover:scale-[1.02] hover:shadow-indigo-500/10">
                     <div class="absolute -top-3 -right-3 h-12 w-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/25 flex items-center justify-center text-xl text-indigo-400 group-hover:scale-110 transition-transform duration-300">
-                        📈
+                        <svg class="w-6 h-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.281m5.94 2.28l-2.28 5.941" />
+                        </svg>
                     </div>
                     <div class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Ventas de Hoy</div>
                     <div class="mt-4 flex items-baseline gap-1">
@@ -54,7 +56,9 @@ defineProps({
                 <!-- Monto en Caja -->
                 <div class="relative group rounded-3xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/40 p-6 shadow-xl backdrop-blur-md transition-all duration-300 hover:scale-[1.02] hover:shadow-emerald-500/10">
                     <div class="absolute -top-3 -right-3 h-12 w-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-xl text-emerald-400 group-hover:scale-110 transition-transform duration-300">
-                        💵
+                        <svg class="w-6 h-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.214.139a4.865 4.865 0 005.572 0 4.865 4.865 0 000-6.79a4.865 4.865 0 00-5.572 0l-.214.138A4.865 4.865 0 009 13.5H9z" />
+                        </svg>
                     </div>
                     <div class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Monto en Caja</div>
                     <div class="mt-4 flex items-baseline gap-1">
@@ -67,7 +71,9 @@ defineProps({
                 <!-- Compras del Mes -->
                 <div class="relative group rounded-3xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/40 p-6 shadow-xl backdrop-blur-md transition-all duration-300 hover:scale-[1.02] hover:shadow-amber-500/10">
                     <div class="absolute -top-3 -right-3 h-12 w-12 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-xl text-amber-400 group-hover:scale-110 transition-transform duration-300">
-                        🛒
+                        <svg class="w-6 h-6 text-amber-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+                        </svg>
                     </div>
                     <div class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Compras del Mes</div>
                     <div class="mt-4 flex items-baseline gap-1">
@@ -80,7 +86,9 @@ defineProps({
                 <!-- Total Productos -->
                 <div class="relative group rounded-3xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/40 p-6 shadow-xl backdrop-blur-md transition-all duration-300 hover:scale-[1.02] hover:shadow-rose-500/10">
                     <div class="absolute -top-3 -right-3 h-12 w-12 rounded-2xl bg-rose-500/10 border border-rose-500/25 flex items-center justify-center text-xl text-rose-400 group-hover:scale-110 transition-transform duration-300">
-                        📦
+                        <svg class="w-6 h-6 text-rose-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
+                        </svg>
                     </div>
                     <div class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Productos Registrados</div>
                     <div class="mt-4 flex items-baseline gap-1">

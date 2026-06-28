@@ -70,7 +70,7 @@ const submit = () => {
                 class="px-5 py-2.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-lg shadow-lg shadow-black/30 transition cursor-pointer"
             >
                 <span v-if="form.processing">Guardando...</span>
-                <span v-else>💾 Guardar Cambios</span>
+                <span v-else>Guardar Cambios</span>
             </PrimaryButton>
         </div>
 
@@ -85,7 +85,7 @@ const submit = () => {
                             :key="role.id" 
                             class="px-6 py-4 text-center"
                         >
-                            👥 {{ role.name }}
+                            {{ role.name }}
                         </th>
                     </tr>
                 </thead>
@@ -131,7 +131,7 @@ const submit = () => {
         </div>
         
         <div class="mt-4 text-xs text-[var(--text-secondary)] bg-stone-900/40 p-3 rounded-lg border border-[var(--border-color)]">
-            💡 <strong>Nota de Seguridad:</strong> El rol <span class="text-[var(--accent)] font-semibold">propietario</span> posee permisos completos irrevocables sobre todo el sistema para evitar bloqueos accidentales. Los accesos individuales definidos en la ficha de cada usuario sobreescriben esta matriz global.
+            <strong>Nota de Seguridad:</strong> El rol <span class="text-[var(--accent)] font-semibold">propietario</span> posee permisos completos irrevocables sobre todo el sistema para evitar bloqueos accidentales. Los accesos individuales definidos en la ficha de cada usuario sobreescriben esta matriz global.
         </div>
     </div>
 </template>

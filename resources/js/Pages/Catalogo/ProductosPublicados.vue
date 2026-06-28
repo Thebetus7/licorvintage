@@ -44,7 +44,6 @@ const triggerAddToCart = (producto) => {
 
 <template>
     <div v-if="!productos || productos.length === 0" class="col-span-full text-center py-20">
-        <div class="text-5xl mb-4">🍷</div>
         <p class="text-[var(--text-secondary)] text-lg">No hay productos disponibles en este momento.</p>
     </div>
 
@@ -127,13 +126,12 @@ const triggerAddToCart = (producto) => {
                         </div>
                     </div>
 
-                    <!-- Botón de Compra / Agregar -->
                     <button
                         type="button"
                         class="add-btn w-full mt-4 text-white text-xs font-bold py-2.5 rounded-xl transition shadow-lg cursor-pointer flex items-center justify-center gap-1.5"
                         @click="triggerAddToCart(producto)"
                     >
-                        <span>🛒 Agregar al Carrito</span>
+                        <span>Agregar al Carrito</span>
                     </button>
                 </div>
             </article>

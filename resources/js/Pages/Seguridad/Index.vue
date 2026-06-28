@@ -51,21 +51,21 @@ const activeTab = ref('matrix'); // matrix, log, stats
                         class="px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-200 cursor-pointer"
                         :class="activeTab === 'matrix' ? 'bg-[var(--accent)] text-white shadow' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
                     >
-                        🧱 Matriz Acceso
+                        Matriz Acceso
                     </button>
                     <button
                         @click="activeTab = 'log'"
                         class="px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-200 cursor-pointer"
                         :class="activeTab === 'log' ? 'bg-[var(--accent)] text-white shadow' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
                     >
-                        📝 Bitácora Actividad
+                        Bitácora Actividad
                     </button>
                     <button
                         @click="activeTab = 'stats'"
                         class="px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-200 cursor-pointer"
                         :class="activeTab === 'stats' ? 'bg-[var(--accent)] text-white shadow' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
                     >
-                        📊 Estadísticas Recursos
+                        Estadísticas Recursos
                     </button>
                 </div>
             </div>
