@@ -3,13 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Venta;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
-use Inertia\Response;
 
 class ComprobanteController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request): JsonResponse
     {
         $query = Venta::with(['cliente', 'detalleVentas.producto', 'metodoPagos', 'ventaCuotas', 'user']);
 
@@ -19,14 +18,8 @@ class ComprobanteController extends Controller
         $query->whereDate('created_at', '>=', $from)
             ->whereDate('created_at', '<=', $to);
 
-        $ventas = $query->orderByDesc('created_at')->paginate(20)->withQueryString();
+        $ventas = $query->orderByDesc('created_at')->paginate(20);
 
-        return Inertia::render('Comprobantes/Index', [
-            'ventas' => $ventas,
-            'filters' => [
-                'from' => $from,
-                'to' => $to,
-            ],
-        ]);
+        return response()->json($ventas);
     }
 }

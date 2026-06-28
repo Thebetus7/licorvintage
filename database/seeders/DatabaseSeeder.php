@@ -129,8 +129,6 @@ class DatabaseSeeder extends Seeder
             ['label' => 'Productos', 'route_name' => 'productos.index', 'roles' => ['propietario', 'vendedor']],
             ['label' => 'Compras', 'route_name' => 'compras.index', 'roles' => ['propietario', 'vendedor']],
             ['label' => 'Ventas', 'route_name' => 'ventas.index', 'roles' => ['propietario', 'vendedor']],
-            ['label' => 'Comprobantes', 'route_name' => 'comprobantes.index', 'roles' => ['propietario', 'vendedor']],
-            ['label' => 'Pedidos', 'route_name' => 'ventas.pedidos', 'roles' => ['propietario', 'vendedor']],
             ['label' => 'Caja', 'route_name' => 'caja.index', 'roles' => ['propietario', 'vendedor']],
             ['label' => 'Promociones', 'route_name' => 'promociones.index', 'roles' => ['propietario', 'vendedor']],
             ['label' => 'Inventario', 'route_name' => 'inventario.index', 'roles' => ['propietario']],

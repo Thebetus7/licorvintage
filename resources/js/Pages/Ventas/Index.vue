@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useForm, Head, usePage, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import InputLabel from '@/Components/InputLabel.vue';
@@ -79,6 +79,125 @@ const lastSale = ref(null);
 const submitting = ref(false);
 const processingQr = ref(false);
 const processingCard = ref(false);
+
+const activeVentaTab = ref('detalle');
+
+// Comprobantes state
+const comprobantes = ref([]);
+const comprobantesPagination = ref(null);
+const comprobantesLoading = ref(false);
+const comprobantesFrom = ref(new Date().toISOString().split('T')[0]);
+const comprobantesTo = ref(new Date().toISOString().split('T')[0]);
+const showDetalleVentaModal = ref(false);
+const selectedVenta = ref(null);
+
+// Pedidos state
+const pedidos = ref([]);
+const pedidosPagination = ref(null);
+const pedidosLoading = ref(false);
+const pedidosFrom = ref(new Date().toISOString().split('T')[0]);
+const pedidosTo = ref(new Date().toISOString().split('T')[0]);
+const showDetallePedidoModal = ref(false);
+const selectedPedido = ref(null);
+
+function formatTipoPago(tipo) {
+    const map = { efectivo: 'Efectivo', qr: 'QR', tarjeta: 'Tarjeta', credito: 'Credito', compra_directa: 'Directo', mixto: 'Mixto' };
+    return map[tipo] || tipo;
+}
+
+function formatEstadoPedido(estado) {
+    const map = { pagado: 'Pagado', enviado: 'Enviado', completado: 'Completado' };
+    return map[estado] || estado;
+}
+
+const cargarComprobantes = async () => {
+    comprobantesLoading.value = true;
+    try {
+        const resp = await window.axios.get(route('comprobantes.index'), {
+            params: { from: comprobantesFrom.value, to: comprobantesTo.value },
+        });
+        comprobantes.value = resp.data.data || [];
+        comprobantesPagination.value = {
+            currentPage: resp.data.current_page,
+            lastPage: resp.data.last_page,
+            links: resp.data.links || [],
+        };
+    } catch {
+        comprobantes.value = [];
+        comprobantesPagination.value = null;
+    } finally {
+        comprobantesLoading.value = false;
+    }
+};
+
+const irPaginaComprobantes = async (url) => {
+    if (!url) return;
+    comprobantesLoading.value = true;
+    try {
+        const resp = await window.axios.get(url);
+        comprobantes.value = resp.data.data || [];
+        comprobantesPagination.value = {
+            currentPage: resp.data.current_page,
+            lastPage: resp.data.last_page,
+            links: resp.data.links || [],
+        };
+    } catch {
+        comprobantes.value = [];
+    } finally {
+        comprobantesLoading.value = false;
+    }
+};
+
+const cargarPedidos = async () => {
+    pedidosLoading.value = true;
+    try {
+        const resp = await window.axios.get(route('ventas.pedidos'), {
+            params: { from: pedidosFrom.value, to: pedidosTo.value },
+        });
+        pedidos.value = resp.data.data || [];
+        pedidosPagination.value = {
+            currentPage: resp.data.current_page,
+            lastPage: resp.data.last_page,
+            links: resp.data.links || [],
+        };
+    } catch {
+        pedidos.value = [];
+        pedidosPagination.value = null;
+    } finally {
+        pedidosLoading.value = false;
+    }
+};
+
+const irPaginaPedidos = async (url) => {
+    if (!url) return;
+    pedidosLoading.value = true;
+    try {
+        const resp = await window.axios.get(url);
+        pedidos.value = resp.data.data || [];
+        pedidosPagination.value = {
+            currentPage: resp.data.current_page,
+            lastPage: resp.data.last_page,
+            links: resp.data.links || [],
+        };
+    } catch {
+        pedidos.value = [];
+    } finally {
+        pedidosLoading.value = false;
+    }
+};
+
+const marcarEnviado = (ventaId) => {
+    router.put(route('ventas.pedidos.estado', ventaId), { estado: 'enviado' }, {
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess: () => cargarPedidos(),
+    });
+};
+
+onMounted(() => {
+    cargarComprobantes();
+    cargarPedidos();
+});
 
 const quickClientForm = useForm({
     name: '',
@@ -508,7 +627,7 @@ function focusClienteInput(el) {
     <AppLayout title="Ventas">
         <template #header>
             <div class="flex items-center justify-between">
-                <h1 class="text-xl font-bold text-amber-200">Punto de Venta</h1>
+                <h1 class="text-xl font-bold text-amber-200">Ventas</h1>
                 <div v-if="cajaActiva" class="text-sm text-emerald-400">
                     Caja #{{ cajaActiva.id }} — {{ cajaActiva.user?.name }}
                 </div>
@@ -518,11 +637,32 @@ function focusClienteInput(el) {
             </div>
         </template>
 
-        <div v-if="!cajaActiva" class="flex items-center justify-center py-20">
-            <p class="text-stone-400">Debe abrir una caja antes de realizar ventas.</p>
-        </div>
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-6 pb-12">
+            <!-- Tabs -->
+            <div class="flex gap-2 border-b border-stone-700/60 pb-3 mb-6">
+                <button
+                    v-for="t in [
+                        { key: 'detalle', label: 'Detalle de Venta' },
+                        { key: 'comprobantes', label: 'Comprobantes' },
+                        { key: 'pedidos', label: 'Pedidos' },
+                    ]"
+                    :key="t.key"
+                    class="px-5 py-2.5 text-sm font-bold rounded-xl transition"
+                    :class="activeVentaTab === t.key
+                        ? 'bg-amber-600 text-white shadow-lg'
+                        : 'text-stone-400 hover:bg-stone-800/50'"
+                    @click="activeVentaTab = t.key"
+                >
+                    {{ t.label }}
+                </button>
+            </div>
 
-        <div v-else class="space-y-6">
+            <div v-if="activeVentaTab === 'detalle'">
+                <div v-if="!cajaActiva" class="flex items-center justify-center py-20">
+                    <p class="text-stone-400">Debe abrir una caja antes de realizar ventas.</p>
+                </div>
+
+                <div v-else class="space-y-6">
 
             <!-- Cliente section -->
             <div class="rounded-lg border border-stone-700/60 bg-stone-800/50 p-4">
@@ -856,6 +996,125 @@ function focusClienteInput(el) {
                     >
                         {{ submitting ? 'Procesando...' : 'Finalizar Venta' }}
                     </PrimaryButton>
+                </div>
+            </div>
+        </div>
+            </div>
+
+            <div v-if="activeVentaTab === 'comprobantes'" class="space-y-4">
+                <div class="flex items-end gap-4 flex-wrap rounded-lg border border-stone-700/60 bg-stone-800/50 p-4">
+                    <div>
+                        <label class="mb-1 block text-xs font-semibold text-stone-400">Desde</label>
+                        <input v-model="comprobantesFrom" type="date" class="rounded-lg border-stone-700 bg-stone-800 text-sm text-stone-200 px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-xs font-semibold text-stone-400">Hasta</label>
+                        <input v-model="comprobantesTo" type="date" class="rounded-lg border-stone-700 bg-stone-800 text-sm text-stone-200 px-3 py-2">
+                    </div>
+                    <button class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition cursor-pointer" :disabled="comprobantesLoading" @click="cargarComprobantes">
+                        {{ comprobantesLoading ? 'Cargando...' : 'Filtrar' }}
+                    </button>
+                </div>
+                <div v-if="comprobantesLoading" class="flex items-center justify-center py-16 text-stone-400">
+                    <svg class="animate-spin h-8 w-8 mr-2 text-amber-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                    Cargando comprobantes...
+                </div>
+                <div v-else-if="comprobantes.length === 0" class="text-center py-16 text-stone-500">No hay ventas en este rango.</div>
+                <div v-else class="overflow-x-auto rounded-lg border border-stone-700/60">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="bg-stone-800/60 text-stone-400">
+                                <th class="text-left py-3 px-4 font-semibold">#</th>
+                                <th class="text-left py-3 px-4 font-semibold">Fecha</th>
+                                <th class="text-left py-3 px-4 font-semibold">Cliente</th>
+                                <th class="text-left py-3 px-4 font-semibold">Vendedor</th>
+                                <th class="text-right py-3 px-4 font-semibold">Total</th>
+                                <th class="text-center py-3 px-4 font-semibold">Pago</th>
+                                <th class="text-center py-3 px-4 font-semibold">Accion</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="v in comprobantes" :key="v.id" class="border-t border-stone-700/60 hover:bg-stone-800/30">
+                                <td class="py-3 px-4 font-mono text-stone-200">{{ v.id }}</td>
+                                <td class="py-3 px-4 text-stone-400">{{ new Date(v.created_at).toLocaleString() }}</td>
+                                <td class="py-3 px-4 text-stone-200">{{ v.cliente?.name || 'Consumidor Final' }}</td>
+                                <td class="py-3 px-4 text-stone-200">{{ v.user?.name || '—' }}</td>
+                                <td class="py-3 px-4 text-right font-mono font-bold text-amber-200">Bs {{ Number(v.monto_final).toFixed(2) }}</td>
+                                <td class="py-3 px-4 text-center">
+                                    <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold" :class="v.tipo_pago === 'credito' ? 'bg-amber-500/10 text-amber-400' : 'bg-emerald-500/10 text-emerald-400'">{{ formatTipoPago(v.tipo_pago) }}</span>
+                                </td>
+                                <td class="py-3 px-4 text-center">
+                                    <button class="text-xs bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer" @click="selectedVenta = v; showDetalleVentaModal = true">Ver</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div v-if="comprobantesPagination && comprobantesPagination.lastPage > 1" class="flex justify-center gap-2">
+                    <template v-for="(link, i) in comprobantesPagination.links" :key="i">
+                        <button v-if="link.url" :disabled="link.active" class="px-3 py-1.5 rounded-lg text-sm font-medium transition" :class="link.active ? 'bg-amber-600 text-white' : 'text-stone-400 hover:bg-stone-800/50'" @click="irPaginaComprobantes(link.url)" v-html="link.label" />
+                        <span v-else class="px-3 py-1.5 text-sm text-stone-600" v-html="link.label" />
+                    </template>
+                </div>
+            </div>
+
+            <div v-if="activeVentaTab === 'pedidos'" class="space-y-4">
+                <div class="flex items-end gap-4 flex-wrap rounded-lg border border-stone-700/60 bg-stone-800/50 p-4">
+                    <div>
+                        <label class="mb-1 block text-xs font-semibold text-stone-400">Desde</label>
+                        <input v-model="pedidosFrom" type="date" class="rounded-lg border-stone-700 bg-stone-800 text-sm text-stone-200 px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-xs font-semibold text-stone-400">Hasta</label>
+                        <input v-model="pedidosTo" type="date" class="rounded-lg border-stone-700 bg-stone-800 text-sm text-stone-200 px-3 py-2">
+                    </div>
+                    <button class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition cursor-pointer" :disabled="pedidosLoading" @click="cargarPedidos">
+                        {{ pedidosLoading ? 'Cargando...' : 'Filtrar' }}
+                    </button>
+                </div>
+                <div v-if="pedidosLoading" class="flex items-center justify-center py-16 text-stone-400">
+                    <svg class="animate-spin h-8 w-8 mr-2 text-amber-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                    Cargando pedidos...
+                </div>
+                <div v-else-if="pedidos.length === 0" class="text-center py-16 text-stone-500">No hay pedidos en este rango.</div>
+                <div v-else class="overflow-x-auto rounded-lg border border-stone-700/60">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="bg-stone-800/60 text-stone-400">
+                                <th class="text-left py-3 px-4 font-semibold">#</th>
+                                <th class="text-left py-3 px-4 font-semibold">Cliente</th>
+                                <th class="text-right py-3 px-4 font-semibold">Total</th>
+                                <th class="text-center py-3 px-4 font-semibold">Pago</th>
+                                <th class="text-center py-3 px-4 font-semibold">Estado</th>
+                                <th class="text-center py-3 px-4 font-semibold">Accion</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="p in pedidos" :key="p.id" class="border-t border-stone-700/60 hover:bg-stone-800/30">
+                                <td class="py-3 px-4 font-mono text-stone-200">{{ p.id }}</td>
+                                <td class="py-3 px-4 text-stone-200">{{ p.cliente?.name || '—' }}</td>
+                                <td class="py-3 px-4 text-right font-mono font-bold text-amber-200">Bs {{ Number(p.monto_final).toFixed(2) }}</td>
+                                <td class="py-3 px-4 text-center">
+                                    <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold" :class="p.tipo_pago === 'credito' ? 'bg-amber-500/10 text-amber-400' : 'bg-emerald-500/10 text-emerald-400'">{{ formatTipoPago(p.tipo_pago) }}</span>
+                                </td>
+                                <td class="py-3 px-4 text-center">
+                                    <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold" :class="{ 'bg-emerald-500/10 text-emerald-400': p.estado_pedido === 'pagado', 'bg-sky-500/10 text-sky-400': p.estado_pedido === 'enviado' }">{{ formatEstadoPedido(p.estado_pedido) }}</span>
+                                </td>
+                                <td class="py-3 px-4 text-center">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <button class="text-xs bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer" @click="selectedPedido = p; showDetallePedidoModal = true">Ver</button>
+                                        <button v-if="p.estado_pedido === 'pagado'" class="text-xs bg-sky-500 hover:bg-sky-600 text-white px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer" @click="marcarEnviado(p.id)">Enviar</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div v-if="pedidosPagination && pedidosPagination.lastPage > 1" class="flex justify-center gap-2">
+                    <template v-for="(link, i) in pedidosPagination.links" :key="i">
+                        <button v-if="link.url" :disabled="link.active" class="px-3 py-1.5 rounded-lg text-sm font-medium transition" :class="link.active ? 'bg-amber-600 text-white' : 'text-stone-400 hover:bg-stone-800/50'" @click="irPaginaPedidos(link.url)" v-html="link.label" />
+                        <span v-else class="px-3 py-1.5 text-sm text-stone-600" v-html="link.label" />
+                    </template>
                 </div>
             </div>
         </div>

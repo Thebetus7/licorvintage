@@ -79,20 +79,20 @@ class VentaController extends Controller
         return back()->with('success', 'Venta registrada correctamente.');
     }
 
-    public function pedidos(): Response
+    public function pedidos(Request $request): JsonResponse
     {
-        $user = auth()->user();
         $today = today()->toDateString();
+        $from = $request->input('from', $today);
+        $to = $request->input('to', $today);
 
         $pedidos = Venta::with(['cliente', 'detalleVentas.producto', 'user'])
             ->whereNotNull('estado_pedido')
-            ->whereDate('created_at', $today)
+            ->whereDate('created_at', '>=', $from)
+            ->whereDate('created_at', '<=', $to)
             ->orderByDesc('created_at')
             ->paginate(20);
 
-        return Inertia::render('Ventas/Pedidos', [
-            'pedidos' => $pedidos,
-        ]);
+        return response()->json($pedidos);
     }
 
     public function updateEstadoPedido(Request $request, Venta $venta): RedirectResponse
