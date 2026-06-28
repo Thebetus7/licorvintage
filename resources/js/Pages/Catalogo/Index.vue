@@ -50,8 +50,15 @@ const saleForm = useForm({
 
 const cardData = ref({ number: '', expiry: '', cvc: '' });
 
-// Estado Creditos
+// Estado Creditos + Comprobantes
 const activeTab = ref('productos');
+const comprobantes = ref([]);
+const comprobantesPagination = ref(null);
+const comprobantesLoading = ref(false);
+const comprobantesFrom = ref(new Date().toISOString().split('T')[0]);
+const comprobantesTo = ref(new Date().toISOString().split('T')[0]);
+const showDetalleComprobanteModal = ref(false);
+const selectedComprobante = ref(null);
 const showPagoCuotaModal = ref(false);
 const selectedCuota = ref(null);
 const pagoCuotaMethod = ref('qr');
@@ -162,9 +169,8 @@ const handleCheckout = () => {
     showPaymentMethodModal.value = true;
 };
 
-// Seleccionar método de pago
+// Seleccionar método de pago (desde modal)
 const selectPaymentMethod = (method) => {
-    saleForm.tipo_pago = method;
     showPaymentMethodModal.value = false;
 
     if (method === 'qr') {
@@ -174,6 +180,12 @@ const selectPaymentMethod = (method) => {
     } else {
         submitSale();
     }
+};
+
+const continuarPago = () => {
+    if (!saleForm.tipo_pago) return;
+    if (saleForm.tipo_pago === 'credito' && saleForm.nro_cuotas < 2) return;
+    selectPaymentMethod(saleForm.tipo_pago);
 };
 
 // Generar QR via backend
@@ -394,6 +406,55 @@ const confirmarPagoCuota = async () => {
     }
 };
 
+// --- Comprobantes ---
+const cargarComprobantes = async () => {
+    comprobantesLoading.value = true;
+    try {
+        const resp = await window.axios.get(route('cliente.comprobantes'), {
+            params: { from: comprobantesFrom.value, to: comprobantesTo.value },
+        });
+        comprobantes.value = resp.data.data || [];
+        comprobantesPagination.value = {
+            currentPage: resp.data.current_page,
+            lastPage: resp.data.last_page,
+            links: resp.data.links || [],
+        };
+    } catch {
+        comprobantes.value = [];
+        comprobantesPagination.value = null;
+    } finally {
+        comprobantesLoading.value = false;
+    }
+};
+
+const irPaginaComprobantes = async (url) => {
+    if (!url) return;
+    comprobantesLoading.value = true;
+    try {
+        const resp = await window.axios.get(url);
+        comprobantes.value = resp.data.data || [];
+        comprobantesPagination.value = {
+            currentPage: resp.data.current_page,
+            lastPage: resp.data.last_page,
+            links: resp.data.links || [],
+        };
+    } catch {
+        comprobantes.value = [];
+    } finally {
+        comprobantesLoading.value = false;
+    }
+};
+
+const abrirDetalleComprobante = (v) => {
+    selectedComprobante.value = v;
+    showDetalleComprobanteModal.value = true;
+};
+
+function formatTipoPago(tipo) {
+    const map = { efectivo: 'Efectivo', qr: 'QR', tarjeta: 'Tarjeta', credito: 'Credito', compra_directa: 'Directo', mixto: 'Mixto' };
+    return map[tipo] || tipo;
+}
+
 const submitPagoCuota = () => {
     if (!selectedCuota.value) return;
     pagoCuotaCardProcessing.value = true;
@@ -452,6 +513,7 @@ const submitPagoCuota = () => {
                     v-for="tab in [
                         { key: 'productos', label: 'Productos' },
                         { key: 'creditos', label: 'Mis Creditos' },
+                        { key: 'comprobantes', label: 'Mis Comprobantes' },
                     ]"
                     :key="tab.key"
                     class="px-5 py-2.5 text-sm font-bold rounded-xl transition"
@@ -518,6 +580,91 @@ const submitPagoCuota = () => {
                             </tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+            <!-- Tab: Mis Comprobantes -->
+            <div v-if="activeTab === 'comprobantes'" class="space-y-4">
+                <div class="flex items-end gap-4 flex-wrap rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <div>
+                        <label class="mb-1 block text-xs font-semibold text-white/60">Desde</label>
+                        <input v-model="comprobantesFrom" type="date" class="rounded-lg border-white/10 bg-slate-900 text-sm text-white px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-xs font-semibold text-white/60">Hasta</label>
+                        <input v-model="comprobantesTo" type="date" class="rounded-lg border-white/10 bg-slate-900 text-sm text-white px-3 py-2">
+                    </div>
+                    <button
+                        class="bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold px-4 py-2 rounded-lg transition cursor-pointer"
+                        @click="cargarComprobantes"
+                        :disabled="comprobantesLoading"
+                    >
+                        {{ comprobantesLoading ? 'Cargando...' : 'Filtrar' }}
+                    </button>
+                </div>
+
+                <div v-if="comprobantesLoading" class="text-center py-12 text-white/60">
+                    <svg class="animate-spin h-8 w-8 mx-auto text-indigo-400" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                    </svg>
+                    <p class="mt-2 text-sm">Cargando comprobantes...</p>
+                </div>
+
+                <div v-else-if="comprobantes.length === 0" class="text-center py-16 text-white/50">
+                    <div class="text-5xl mb-4">📄</div>
+                    <h3 class="text-lg font-bold text-white mb-2">No hay comprobantes</h3>
+                    <p class="text-sm">No se encontraron compras en este rango de fechas.</p>
+                </div>
+
+                <div v-else class="overflow-x-auto rounded-2xl border border-white/10">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="bg-white/5 text-white/60">
+                                <th class="text-left py-3 px-4 font-semibold">#</th>
+                                <th class="text-left py-3 px-4 font-semibold">Fecha</th>
+                                <th class="text-right py-3 px-4 font-semibold">Total</th>
+                                <th class="text-center py-3 px-4 font-semibold">Pago</th>
+                                <th class="text-center py-3 px-4 font-semibold">Accion</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="v in comprobantes" :key="v.id" class="border-t border-white/5 hover:bg-white/5">
+                                <td class="py-3 px-4 font-mono text-white">{{ v.id }}</td>
+                                <td class="py-3 px-4 text-white/60">{{ new Date(v.created_at).toLocaleString() }}</td>
+                                <td class="py-3 px-4 text-right font-mono font-bold text-indigo-300">Bs {{ Number(v.monto_final).toFixed(2) }}</td>
+                                <td class="py-3 px-4 text-center">
+                                    <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                                        :class="v.tipo_pago === 'credito' ? 'bg-amber-500/10 text-amber-400' : 'bg-emerald-500/10 text-emerald-400'"
+                                    >
+                                        {{ formatTipoPago(v.tipo_pago) }}
+                                    </span>
+                                </td>
+                                <td class="py-3 px-4 text-center">
+                                    <button
+                                        class="text-xs bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer"
+                                        @click="abrirDetalleComprobante(v)"
+                                    >
+                                        Ver
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Paginacion -->
+                <div v-if="comprobantesPagination && comprobantesPagination.lastPage > 1" class="flex justify-center gap-2">
+                    <template v-for="(link, i) in comprobantesPagination.links" :key="i">
+                        <button
+                            v-if="link.url"
+                            :disabled="link.active"
+                            class="px-3 py-1.5 rounded-lg text-sm font-medium transition"
+                            :class="link.active ? 'bg-indigo-500 text-white' : 'text-white/60 hover:bg-white/5'"
+                            @click="irPaginaComprobantes(link.url)"
+                            v-html="link.label"
+                        />
+                        <span v-else class="px-3 py-1.5 text-sm text-white/40" v-html="link.label" />
+                    </template>
                 </div>
             </div>
         </div>
@@ -689,13 +836,13 @@ const submitPagoCuota = () => {
             </template>
 
             <template #content>
-                <div class="grid grid-cols-2 gap-4 py-4">
+                <div class="grid grid-cols-3 gap-4 py-4">
                     <button
                         class="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition cursor-pointer"
                         :class="saleForm.tipo_pago === 'qr'
                             ? 'border-indigo-400 bg-indigo-500/10'
                             : 'border-white/10 bg-white/5 hover:border-indigo-400/50 hover:bg-indigo-500/5'"
-                        @click="selectPaymentMethod('qr')"
+                        @click="saleForm.tipo_pago = 'qr'"
                     >
                         <span class="text-4xl">📱</span>
                         <span class="font-bold text-sm text-[var(--text-primary)]">Código QR</span>
@@ -706,17 +853,55 @@ const submitPagoCuota = () => {
                         :class="saleForm.tipo_pago === 'tarjeta'
                             ? 'border-indigo-400 bg-indigo-500/10'
                             : 'border-white/10 bg-white/5 hover:border-indigo-400/50 hover:bg-indigo-500/5'"
-                        @click="selectPaymentMethod('tarjeta')"
+                        @click="saleForm.tipo_pago = 'tarjeta'"
                     >
                         <span class="text-4xl">💳</span>
                         <span class="font-bold text-sm text-[var(--text-primary)]">Tarjeta</span>
                         <span class="text-[10px] text-[var(--text-secondary)]">Débito o Crédito</span>
                     </button>
+                    <button
+                        class="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition cursor-pointer"
+                        :class="saleForm.tipo_pago === 'credito'
+                            ? 'border-indigo-400 bg-indigo-500/10'
+                            : 'border-white/10 bg-white/5 hover:border-indigo-400/50 hover:bg-indigo-500/5'"
+                        @click="saleForm.tipo_pago = 'credito'"
+                    >
+                        <span class="text-4xl">📋</span>
+                        <span class="font-bold text-sm text-[var(--text-primary)]">Crédito / Cuotas</span>
+                        <span class="text-[10px] text-[var(--text-secondary)]">Paga en cuotas</span>
+                    </button>
+                </div>
+
+                <div v-if="saleForm.tipo_pago === 'credito'" class="mt-2 space-y-3">
+                    <div>
+                        <InputLabel value="Nro. Cuotas" class="text-xs text-white/70" />
+                        <select
+                            v-model="saleForm.nro_cuotas"
+                            class="mt-1 block w-full rounded-xl border-white/10 bg-slate-900 text-white focus:border-indigo-500 focus:ring-indigo-500 shadow-sm text-sm p-2 transition"
+                        >
+                            <option value="2">2 cuotas</option>
+                            <option value="3">3 cuotas</option>
+                            <option value="4">4 cuotas</option>
+                            <option value="6">6 cuotas</option>
+                            <option value="12">12 cuotas</option>
+                        </select>
+                    </div>
+                    <div class="p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-sm text-indigo-300 text-center">
+                        <span class="font-bold">{{ saleForm.nro_cuotas }} cuotas</span> de <strong class="text-white">Bs {{ quotaAmount.toFixed(2) }}</strong> cada una
+                    </div>
                 </div>
             </template>
 
             <template #footer>
-                <SecondaryButton @click="showPaymentMethodModal = false">Cancelar</SecondaryButton>
+                <div class="flex justify-end gap-2">
+                    <SecondaryButton @click="showPaymentMethodModal = false">Cancelar</SecondaryButton>
+                    <PrimaryButton
+                        :disabled="!saleForm.tipo_pago || (saleForm.tipo_pago === 'credito' && saleForm.nro_cuotas < 2)"
+                        @click="continuarPago"
+                    >
+                        Continuar
+                    </PrimaryButton>
+                </div>
             </template>
         </DialogModal>
 
@@ -914,6 +1099,101 @@ const submitPagoCuota = () => {
                     >
                         {{ pagoCuotaCardProcessing ? 'Procesando...' : 'Confirmar pago' }}
                     </PrimaryButton>
+                </div>
+            </template>
+        </DialogModal>
+
+        <!-- MODAL: DETALLE COMPROBANTE -->
+        <DialogModal :show="showDetalleComprobanteModal" max-width="lg" @close="showDetalleComprobanteModal = false">
+            <template #title>
+                <div class="flex items-center gap-2 text-white">
+                    <span>Factura #{{ selectedComprobante?.id }}</span>
+                    <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                        :class="selectedComprobante?.tipo_pago === 'credito' ? 'bg-amber-500/10 text-amber-400' : 'bg-emerald-500/10 text-emerald-400'"
+                    >
+                        {{ formatTipoPago(selectedComprobante?.tipo_pago) }}
+                    </span>
+                </div>
+            </template>
+            <template #content>
+                <div v-if="selectedComprobante" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <span class="text-white/60">Fecha:</span>
+                            <p class="font-medium text-white">{{ new Date(selectedComprobante.created_at).toLocaleString() }}</p>
+                        </div>
+                        <div>
+                            <span class="text-white/60">Total:</span>
+                            <p class="font-medium text-indigo-300">Bs {{ Number(selectedComprobante.monto_final).toFixed(2) }}</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="text-xs font-semibold uppercase text-white/60 mb-2">Productos</h4>
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b border-white/10 text-white/60">
+                                    <th class="text-left py-2 font-semibold">Producto</th>
+                                    <th class="text-center py-2 font-semibold">Cant</th>
+                                    <th class="text-right py-2 font-semibold">P.U.</th>
+                                    <th class="text-right py-2 font-semibold">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="d in selectedComprobante.detalle_ventas" :key="d.id" class="border-b border-white/5">
+                                    <td class="py-2 text-white">{{ d.producto?.nombre || '—' }}</td>
+                                    <td class="py-2 text-center text-white/60">{{ d.cantidad }}</td>
+                                    <td class="py-2 text-right font-mono text-white/60">Bs {{ Number(d.precio_u_final).toFixed(2) }}</td>
+                                    <td class="py-2 text-right font-mono text-white">Bs {{ Number(d.subtotal).toFixed(2) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="rounded-lg bg-white/5 p-3 space-y-1 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-white/60">Subtotal</span>
+                            <span class="font-mono text-white">Bs {{ Number(selectedComprobante.monto_original).toFixed(2) }}</span>
+                        </div>
+                        <div v-if="selectedComprobante.cod_descuento" class="flex justify-between">
+                            <span class="text-white/60">Descuento ({{ selectedComprobante.cod_descuento }})</span>
+                            <span class="font-mono text-emerald-400">−Bs {{ (Number(selectedComprobante.monto_original) - Number(selectedComprobante.monto_final)).toFixed(2) }}</span>
+                        </div>
+                        <div class="flex justify-between border-t border-white/10 pt-1 text-base font-bold">
+                            <span class="text-white">Total</span>
+                            <span class="font-mono text-indigo-300">Bs {{ Number(selectedComprobante.monto_final).toFixed(2) }}</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="text-xs font-semibold uppercase text-white/60 mb-2">Metodos de pago</h4>
+                        <div class="space-y-1">
+                            <div v-for="mp in selectedComprobante.metodo_pagos" :key="mp.id" class="flex justify-between text-sm">
+                                <span class="text-white">{{ formatTipoPago(mp.tipo_pago) }}</span>
+                                <span class="font-mono text-white">Bs {{ Number(mp.monto || 0).toFixed(2) }}</span>
+                            </div>
+                            <div v-if="!selectedComprobante.metodo_pagos?.length" class="flex justify-between text-sm">
+                                <span class="text-white">{{ formatTipoPago(selectedComprobante.tipo_pago) }}</span>
+                                <span class="font-mono text-white">Bs {{ Number(selectedComprobante.monto_final).toFixed(2) }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="selectedComprobante.tipo_pago === 'credito' && selectedComprobante.venta_cuotas?.length">
+                        <h4 class="text-xs font-semibold uppercase text-white/60 mb-2">Cuotas</h4>
+                        <div class="space-y-1">
+                            <div v-for="cu in selectedComprobante.venta_cuotas" :key="cu.id" class="flex justify-between text-sm">
+                                <span class="text-white">Cuota #{{ cu.nro_cuota }}</span>
+                                <span class="font-mono text-white">Bs {{ Number(cu.sub_monto).toFixed(2) }}</span>
+                                <span :class="cu.estado === 'pagado' ? 'text-emerald-400' : 'text-amber-400'">{{ cu.estado === 'pagado' ? 'Pagado' : 'Pendiente' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+            <template #footer>
+                <div class="flex justify-end">
+                    <SecondaryButton @click="showDetalleComprobanteModal = false">Cerrar</SecondaryButton>
                 </div>
             </template>
         </DialogModal>

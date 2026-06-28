@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\CajaController;
 use App\Http\Controllers\ClienteCuotaController;
 use App\Http\Controllers\ClienteProductoController;
+use App\Http\Controllers\ComprobanteController;
 use App\Http\Controllers\CompraController;
 use App\Http\Controllers\InventarioController;
 use App\Http\Controllers\PagoController;
@@ -116,6 +117,7 @@ Route::middleware([
         Route::resource('proveedores', ProveedorController::class)->except(['create', 'show', 'edit']);
 
         Route::get('/ventas', [VentaController::class, 'index'])->name('ventas.index');
+        Route::get('/comprobantes', [ComprobanteController::class, 'index'])->name('comprobantes.index');
 
         Route::get('/caja', [CajaController::class, 'index'])->name('caja.index');
         Route::post('/caja/open', [CajaController::class, 'open'])->name('caja.open');
@@ -152,6 +154,7 @@ Route::middleware([
         })->name('caja.clientes.rapido');
 
         Route::get('/cliente/catalogo', ClienteProductoController::class)->name('cliente.productos');
+        Route::get('/cliente/comprobantes', [ClienteProductoController::class, 'comprobantes'])->name('cliente.comprobantes');
         Route::post('/cliente/cuotas/{cuota}/pagar', [ClienteCuotaController::class, 'pay'])->name('cliente.cuotas.pagar');
     });
 

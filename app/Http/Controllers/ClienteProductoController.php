@@ -8,6 +8,7 @@ use App\Models\Venta;
 use App\Models\VentaCuotas;
 use App\Services\CajaService;
 use App\Services\StripeService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -38,5 +39,21 @@ class ClienteProductoController extends Controller
                 ->get(),
             'creditosPendientes' => $creditos,
         ]);
+    }
+
+    public function comprobantes(Request $request): JsonResponse
+    {
+        $user = auth()->user();
+        $from = $request->input('from', today()->toDateString());
+        $to = $request->input('to', today()->toDateString());
+
+        $ventas = Venta::with(['detalleVentas.producto', 'metodoPagos', 'ventaCuotas'])
+            ->where('cliente_id', $user->id)
+            ->whereDate('created_at', '>=', $from)
+            ->whereDate('created_at', '<=', $to)
+            ->orderByDesc('created_at')
+            ->paginate(10);
+
+        return response()->json($ventas);
     }
 }
