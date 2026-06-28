@@ -1317,5 +1317,115 @@ function focusClienteInput(el) {
             @close="showBarcodeScanner = false"
             @scanned="handleBarcodeScanned"
         />
+
+        <!-- Comprobantes Modal -->
+        <DialogModal :show="showDetalleVentaModal" max-width="lg" @close="showDetalleVentaModal = false">
+            <template #title>
+                <div class="flex items-center gap-2 text-stone-200">
+                    <span>Factura #{{ selectedVenta?.id }}</span>
+                    <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold" :class="selectedVenta?.tipo_pago === 'credito' ? 'bg-amber-500/10 text-amber-400' : 'bg-emerald-500/10 text-emerald-400'">{{ formatTipoPago(selectedVenta?.tipo_pago) }}</span>
+                </div>
+            </template>
+            <template #content>
+                <div v-if="selectedVenta" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div><span class="text-stone-400">Fecha:</span><p class="font-medium text-stone-200">{{ new Date(selectedVenta.created_at).toLocaleString() }}</p></div>
+                        <div><span class="text-stone-400">Vendedor:</span><p class="font-medium text-stone-200">{{ selectedVenta.user?.name || '—' }}</p></div>
+                        <div><span class="text-stone-400">Cliente:</span><p class="font-medium text-stone-200">{{ selectedVenta.cliente?.name || 'Consumidor Final' }}</p></div>
+                        <div v-if="selectedVenta.cliente?.ci"><span class="text-stone-400">CI:</span><p class="font-medium text-stone-200">{{ selectedVenta.cliente.ci }}</p></div>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-semibold uppercase text-stone-400 mb-2">Productos</h4>
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b border-stone-700 text-stone-400">
+                                    <th class="text-left py-2 font-semibold">Producto</th>
+                                    <th class="text-center py-2 font-semibold">Cant</th>
+                                    <th class="text-right py-2 font-semibold">P.U.</th>
+                                    <th class="text-right py-2 font-semibold">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="d in selectedVenta.detalle_ventas" :key="d.id" class="border-b border-stone-700/50">
+                                    <td class="py-2 text-stone-200">{{ d.producto?.nombre || '—' }}</td>
+                                    <td class="py-2 text-center text-stone-400">{{ d.cantidad }}</td>
+                                    <td class="py-2 text-right font-mono text-stone-400">Bs {{ Number(d.precio_u_final).toFixed(2) }}</td>
+                                    <td class="py-2 text-right font-mono text-stone-200">Bs {{ Number(d.subtotal).toFixed(2) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="rounded-lg bg-stone-800/50 p-3 space-y-1 text-sm">
+                        <div class="flex justify-between"><span class="text-stone-400">Subtotal</span><span class="font-mono text-stone-200">Bs {{ Number(selectedVenta.monto_original).toFixed(2) }}</span></div>
+                        <div v-if="selectedVenta.cod_descuento" class="flex justify-between"><span class="text-stone-400">Descuento ({{ selectedVenta.cod_descuento }})</span><span class="font-mono text-emerald-400">−Bs {{ (Number(selectedVenta.monto_original) - Number(selectedVenta.monto_final)).toFixed(2) }}</span></div>
+                        <div class="flex justify-between border-t border-stone-700 pt-1 text-base font-bold"><span class="text-stone-200">Total</span><span class="font-mono text-amber-200">Bs {{ Number(selectedVenta.monto_final).toFixed(2) }}</span></div>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-semibold uppercase text-stone-400 mb-2">Metodos de pago</h4>
+                        <div class="space-y-1">
+                            <div v-for="mp in selectedVenta.metodo_pagos" :key="mp.id" class="flex justify-between text-sm"><span class="text-stone-200">{{ formatTipoPago(mp.tipo_pago) }}</span><span class="font-mono text-stone-200">Bs {{ Number(mp.monto || 0).toFixed(2) }}</span></div>
+                            <div v-if="!selectedVenta.metodo_pagos?.length" class="flex justify-between text-sm"><span class="text-stone-200">{{ formatTipoPago(selectedVenta.tipo_pago) }}</span><span class="font-mono text-stone-200">Bs {{ Number(selectedVenta.monto_final).toFixed(2) }}</span></div>
+                        </div>
+                    </div>
+                    <div v-if="selectedVenta.tipo_pago === 'credito' && selectedVenta.venta_cuotas?.length">
+                        <h4 class="text-xs font-semibold uppercase text-stone-400 mb-2">Cuotas</h4>
+                        <div class="space-y-1">
+                            <div v-for="cu in selectedVenta.venta_cuotas" :key="cu.id" class="flex justify-between text-sm"><span class="text-stone-200">Cuota #{{ cu.nro_cuota }}</span><span class="font-mono text-stone-200">Bs {{ Number(cu.sub_monto).toFixed(2) }}</span><span :class="cu.estado === 'pagado' ? 'text-emerald-400' : 'text-amber-400'">{{ cu.estado === 'pagado' ? 'Pagado' : 'Pendiente' }}</span></div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+            <template #footer>
+                <SecondaryButton @click="showDetalleVentaModal = false">Cerrar</SecondaryButton>
+            </template>
+        </DialogModal>
+
+        <!-- Pedidos Modal -->
+        <DialogModal :show="showDetallePedidoModal" max-width="lg" @close="showDetallePedidoModal = false">
+            <template #title>
+                <div class="flex items-center gap-2 text-stone-200">
+                    <span>Pedido #{{ selectedPedido?.id }}</span>
+                    <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold" :class="{ 'bg-emerald-500/10 text-emerald-400': selectedPedido?.estado_pedido === 'pagado', 'bg-sky-500/10 text-sky-400': selectedPedido?.estado_pedido === 'enviado' }">{{ formatEstadoPedido(selectedPedido?.estado_pedido) }}</span>
+                </div>
+            </template>
+            <template #content>
+                <div v-if="selectedPedido" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div><span class="text-stone-400">Cliente:</span><p class="font-medium text-stone-200">{{ selectedPedido.cliente?.name || '—' }}</p></div>
+                        <div><span class="text-stone-400">Fecha:</span><p class="font-medium text-stone-200">{{ new Date(selectedPedido.created_at).toLocaleString() }}</p></div>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-semibold uppercase text-stone-400 mb-2">Productos</h4>
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b border-stone-700 text-stone-400">
+                                    <th class="text-left py-2 font-semibold">Producto</th>
+                                    <th class="text-center py-2 font-semibold">Cant</th>
+                                    <th class="text-right py-2 font-semibold">P.U.</th>
+                                    <th class="text-right py-2 font-semibold">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="d in selectedPedido.detalle_ventas" :key="d.id" class="border-b border-stone-700/50">
+                                    <td class="py-2 text-stone-200">{{ d.producto?.nombre || '—' }}</td>
+                                    <td class="py-2 text-center text-stone-400">{{ d.cantidad }}</td>
+                                    <td class="py-2 text-right font-mono text-stone-400">Bs {{ Number(d.precio_u_final).toFixed(2) }}</td>
+                                    <td class="py-2 text-right font-mono text-stone-200">Bs {{ Number(d.subtotal).toFixed(2) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="rounded-lg bg-stone-800/50 p-3 space-y-1 text-sm">
+                        <div class="flex justify-between"><span class="text-stone-400">Total</span><span class="font-mono text-amber-200 font-bold">Bs {{ Number(selectedPedido.monto_final).toFixed(2) }}</span></div>
+                    </div>
+                </div>
+            </template>
+            <template #footer>
+                <div class="flex justify-end gap-2">
+                    <SecondaryButton @click="showDetallePedidoModal = false">Cerrar</SecondaryButton>
+                    <PrimaryButton v-if="selectedPedido?.estado_pedido === 'pagado'" @click="marcarEnviado(selectedPedido.id); showDetallePedidoModal = false">Marcar como Enviado</PrimaryButton>
+                </div>
+            </template>
+        </DialogModal>
     </AppLayout>
 </template>
