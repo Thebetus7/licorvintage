@@ -39,6 +39,14 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
+            'firebase_config' => [
+                'apiKey' => config('services.firebase.api_key'),
+                'authDomain' => config('services.firebase.auth_domain'),
+                'projectId' => config('services.firebase.project_id'),
+                'storageBucket' => config('services.firebase.storage_bucket'),
+                'messagingSenderId' => config('services.firebase.messaging_sender_id'),
+                'appId' => config('services.firebase.app_id'),
+            ],
             'csrf_token' => fn () => csrf_token(),
             'auth' => [
                 'user' => $request->user()?->loadMissing('roles'),

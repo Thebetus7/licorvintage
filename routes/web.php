@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Auth\GoogleController;
+use App\Http\Controllers\Auth\FirebaseController;
 use App\Http\Controllers\CajaController;
 use App\Http\Controllers\ClienteCuotaController;
 use App\Http\Controllers\ClienteProductoController;
@@ -41,18 +41,17 @@ Route::get('/', function () {
 
 Route::get('/api/search', [SearchController::class, 'quickSearch'])->name('api.search');
 
-// Rutas de autenticación con Google SSO
-Route::get('/auth/google', [GoogleController::class, 'redirectToGoogle'])->name('auth.google');
-Route::get('/auth/google/callback', [GoogleController::class, 'handleGoogleCallback'])->name('auth.google.callback');
+// Rutas de autenticación con Firebase
+Route::post('/auth/firebase', [FirebaseController::class, 'handleFirebaseLogin'])->name('auth.firebase');
 
 Route::middleware([
     'auth:sanctum',
     config('jetstream.auth_session'),
     'verified',
 ])->group(function () {
-    // Completado de perfil para clientes logueados por SSO
-    Route::get('/complete-profile', [GoogleController::class, 'showCompleteProfileForm'])->name('profile.complete');
-    Route::post('/complete-profile', [GoogleController::class, 'storeCompleteProfile'])->name('profile.complete.store');
+    // Completado de perfil para clientes logueados por SSO (Firebase)
+    Route::get('/complete-profile', [FirebaseController::class, 'showCompleteProfileForm'])->name('profile.complete');
+    Route::post('/complete-profile', [FirebaseController::class, 'storeCompleteProfile'])->name('profile.complete.store');
 
     Route::get('/dashboard', function () {
         if (auth()->user()->hasRole('cliente')) {

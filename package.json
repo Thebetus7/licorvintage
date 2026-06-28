@@ -22,6 +22,7 @@
         "vue": "^3.3.13"
     },
     "dependencies": {
+        "firebase": "^12.15.0",
         "html5-qrcode": "^2.3.8"
     }
 }
