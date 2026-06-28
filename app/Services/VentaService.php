@@ -48,7 +48,7 @@ class VentaService
 
             // Procesar promoción si se especifica
             if (! empty($data['codigo_promo'])) {
-                $promocion = Promocion::where('codigo_promo', $data['codigo_promo'])->first();
+                $promocion = Promocion::whereRaw('UPPER(codigo_promo) = ?', [strtoupper($data['codigo_promo'])])->first();
 
                 if (! $promocion) {
                     $this->logFailure($user, "El código de promoción '{$data['codigo_promo']}' no existe");
