@@ -16,7 +16,7 @@ class UserManagementService
             'menus' => $data['menus'] ?? null,
         ]);
 
-        $user->assignRole('vendedor');
+        $user->assignRole($data['role'] ?? 'vendedor');
 
         return $user;
     }

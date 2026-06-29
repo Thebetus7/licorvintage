@@ -28,7 +28,7 @@ class UsuarioController extends Controller
     {
         $service->createVendedor($request->validated());
 
-        return back()->with('success', 'Vendedor creado correctamente.');
+        return back()->with('success', 'Usuario creado correctamente.');
     }
 
     public function update(UpdateUsuarioRequest $request, User $usuario, UserManagementService $service): RedirectResponse
