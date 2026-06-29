@@ -23,6 +23,7 @@ class MovimientoInventario extends Model
         'referencia_id',
         'motivo',
         'lote_id',
+        'user_id',
     ];
 
     protected function casts(): array
@@ -35,12 +36,18 @@ class MovimientoInventario extends Model
             'saldo_cantidad' => 'integer',
             'saldo_costo_promedio' => 'double',
             'lote_id' => 'integer',
+            'user_id' => 'integer',
         ];
     }
 
     public function producto(): BelongsTo
     {
         return $this->belongsTo(Producto::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function referencia(): MorphTo

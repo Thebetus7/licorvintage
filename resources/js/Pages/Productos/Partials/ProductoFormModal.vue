@@ -184,11 +184,11 @@ const close = () => emit('close');
                             <TextInput v-model="form.stock.max" type="number" class="mt-1 block w-full max-w-[7rem]" />
                         </div>
                     </div>
-                    <div v-else class="space-y-3 text-sm text-stone-600">
+                    <div v-else class="space-y-3 text-sm text-[var(--text-secondary)]">
                         <p>
                             Stock actual:
-                            <strong class="text-[#2b1115]">{{ form.stock.stock }}</strong>
-                            <span class="text-xs text-stone-500"> (solo cambia via inventario)</span>
+                            <strong class="text-[var(--accent)]">{{ form.stock.stock }}</strong>
+                            <span class="text-xs text-[var(--text-secondary)] opacity-75"> (solo cambia via inventario)</span>
                         </p>
                         <div class="grid gap-3 sm:grid-cols-2">
                             <div>

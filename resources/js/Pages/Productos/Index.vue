@@ -33,8 +33,8 @@ const closeModal = () => {
         <template #header>
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 class="text-2xl font-semibold text-[#2b1115]">Productos</h1>
-                    <p class="text-sm text-stone-500">Catalogo, codigos de barra, fotos y precios de venta.</p>
+                    <h1 class="text-2xl font-semibold text-[var(--text-primary)]">Productos</h1>
+                    <p class="text-sm text-[var(--text-secondary)]">Catalogo, codigos de barra, fotos y precios de venta.</p>
                 </div>
                 <PrimaryButton @click="openCreate">Crear Producto</PrimaryButton>
             </div>

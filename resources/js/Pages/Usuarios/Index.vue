@@ -44,10 +44,10 @@ const destroy = (user) => {
         <template #header>
             <div class="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                    <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-amber-400 to-[#5a1c24] sm:text-3xl">
+                    <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[var(--accent)] to-[var(--text-primary)] sm:text-3xl">
                         Gestión de Usuarios
                     </h1>
-                    <p class="text-sm text-stone-500 mt-1">
+                    <p class="text-sm text-[var(--text-secondary)] mt-1">
                         Crea y administra los perfiles de vendedores y clientes del negocio.
                     </p>
                 </div>

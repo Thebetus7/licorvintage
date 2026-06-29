@@ -53,52 +53,7 @@ Route::middleware([
     Route::get('/complete-profile', [FirebaseController::class, 'showCompleteProfileForm'])->name('profile.complete');
     Route::post('/complete-profile', [FirebaseController::class, 'storeCompleteProfile'])->name('profile.complete.store');
 
-    Route::get('/dashboard', function () {
-        if (auth()->user()->hasRole('cliente')) {
-            return redirect()->route('cliente.productos');
-        }
-
-        if (auth()->user()->hasRole('vendedor')) {
-            return redirect()->route('caja.index');
-        }
-
-        // Ventas de hoy
-        $ventasHoy = Venta::whereDate('created_at', today())->sum('monto_final');
-
-        // Compras del mes
-        $comprasMes = Compra::whereMonth('created_at', now()->month)
-            ->whereYear('created_at', now()->year)
-            ->sum('costo');
-
-        // Monto actual en caja (última caja abierta)
-        $cajaActiva = AperturaCaja::where('estado', 'abierta')->latest()->first();
-        $montoCaja = $cajaActiva ? $cajaActiva->monto_sistema : 0;
-
-        // Total productos
-        $totalProductos = Producto::count();
-
-        // Top 5 páginas más visitadas
-        $paginasMasVisitadas = PageView::orderByDesc('views_count')->limit(5)->get();
-
-        // Top 5 recursos más accedidos de la bitácora
-        $recursosMasAccedidos = ActivityLog::where('event_type', 'resource_access')
-            ->select('resource_name', DB::raw('count(*) as total'))
-            ->groupBy('resource_name')
-            ->orderByDesc('total')
-            ->limit(5)
-            ->get();
-
-        return Inertia::render('Dashboard', [
-            'stats' => [
-                'ventas_hoy' => (float) $ventasHoy,
-                'compras_mes' => (float) $comprasMes,
-                'monto_caja' => (float) $montoCaja,
-                'total_productos' => $totalProductos,
-            ],
-            'paginas_visitadas' => $paginasMasVisitadas,
-            'recursos_accedidos' => $recursosMasAccedidos,
-        ]);
-    })->name('dashboard');
+    Route::get('/dashboard', \App\Http\Controllers\DashboardController::class)->name('dashboard');
 
     // Módulo de Seguridad (Exclusivo para el Propietario)
     Route::middleware('role:propietario')->group(function () {

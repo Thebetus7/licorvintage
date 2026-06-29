@@ -22,7 +22,9 @@
         "vue": "^3.3.13"
     },
     "dependencies": {
+        "apexcharts": "^5.15.2",
         "firebase": "^12.15.0",
-        "html5-qrcode": "^2.3.8"
+        "html5-qrcode": "^2.3.8",
+        "vue3-apexcharts": "^1.11.1"
     }
 }

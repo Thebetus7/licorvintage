@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use App\Models\AjusteInventario;
+use App\Models\Lote;
 use App\Models\MovimientoInventario;
+use App\Models\NotaSalida;
 use App\Models\Producto;
 use App\Models\Stock;
 use App\Models\User;
@@ -43,9 +45,9 @@ class InventarioService
 
             $lote = null;
             if ($loteId) {
-                $lote = \App\Models\Lote::findOrFail($loteId);
+                $lote = Lote::findOrFail($loteId);
             } else {
-                $lote = \App\Models\Lote::create([
+                $lote = Lote::create([
                     'producto_id' => $producto->id,
                     'proveedor_id' => $proveedorId,
                     'cantidad_inicial' => $cantidad,
@@ -67,6 +69,7 @@ class InventarioService
                 'referencia_id' => $referencia?->getKey(),
                 'motivo' => $motivo,
                 'lote_id' => $lote->id,
+                'user_id' => $user->id,
             ]);
         });
     }
@@ -106,6 +109,7 @@ class InventarioService
                 'referencia_id' => $referencia?->getKey(),
                 'motivo' => $motivo,
                 'lote_id' => $loteId,
+                'user_id' => $user->id,
             ]);
         });
     }
@@ -120,7 +124,7 @@ class InventarioService
     ): void {
         $cantidadRestante = $cantidad;
 
-        $lotes = \App\Models\Lote::query()
+        $lotes = Lote::query()
             ->where('producto_id', $producto->id)
             ->where('cantidad_actual', '>', 0)
             ->where('estado', 'activo')
@@ -136,7 +140,7 @@ class InventarioService
             }
 
             $aDescontar = min($lote->cantidad_actual, $cantidadRestante);
-            
+
             $lote->decrement('cantidad_actual', $aDescontar);
             if ($lote->cantidad_actual <= 0) {
                 $lote->update(['estado' => 'agotado']);
@@ -148,7 +152,7 @@ class InventarioService
                 $tipo,
                 $referencia,
                 $user,
-                $motivo . " (Lote: {$lote->codigo_lote})",
+                $motivo." (Lote: {$lote->codigo_lote})",
                 $lote->id
             );
 
@@ -162,7 +166,7 @@ class InventarioService
                 $tipo,
                 $referencia,
                 $user,
-                $motivo . " (Sin lote disponible)",
+                $motivo.' (Sin lote disponible)',
                 null
             );
         }
@@ -246,10 +250,10 @@ class InventarioService
             ->count();
     }
 
-    public function registrarNotaSalida(array $data, User $user): \App\Models\NotaSalida
+    public function registrarNotaSalida(array $data, User $user): NotaSalida
     {
-        return DB::transaction(function () use ($data, $user): \App\Models\NotaSalida {
-            $notaSalida = \App\Models\NotaSalida::create([
+        return DB::transaction(function () use ($data, $user): NotaSalida {
+            $notaSalida = NotaSalida::create([
                 'tipo_salida_id' => $data['tipo_salida_id'],
                 'fecha' => $data['fecha'],
                 'user_id' => $user->id,
@@ -258,8 +262,8 @@ class InventarioService
             foreach ($data['detalles'] as $detalle) {
                 $producto = Producto::findOrFail($detalle['producto_id']);
                 $cantidadADescontar = (int) $detalle['cantidad'];
-                
-                $lotes = \App\Models\Lote::query()
+
+                $lotes = Lote::query()
                     ->where('producto_id', $producto->id)
                     ->where('cantidad_actual', '>', 0)
                     ->where('estado', 'activo')
@@ -276,7 +280,7 @@ class InventarioService
                     }
 
                     $aDescontar = min($lote->cantidad_actual, $cantidadRestante);
-                    
+
                     $lote->decrement('cantidad_actual', $aDescontar);
                     if ($lote->cantidad_actual <= 0) {
                         $lote->update(['estado' => 'agotado']);

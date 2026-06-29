@@ -153,7 +153,7 @@ const submit = () => {
                           :href="link.url || '#'" 
                           class="px-3 py-1.5 text-xs rounded border transition duration-150"
                           :class="[
-                              link.active ? 'bg-[#2b1115] text-white border-[#2b1115]' : 'bg-[var(--bg-secondary)] text-[var(--text-primary)] border-[var(--border-color)] hover:bg-white/5',
+                              link.active ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'bg-[var(--bg-secondary)] text-[var(--text-primary)] border-[var(--border-color)] hover:bg-white/5',
                               !link.url ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                           ]"
                           v-html="link.label">

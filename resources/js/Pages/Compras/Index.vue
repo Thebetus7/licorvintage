@@ -62,8 +62,8 @@ const deleteProveedor = (proveedor) => {
         <template #header>
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                    <h1 class="text-2xl font-semibold text-[#2b1115]">Compras</h1>
-                    <p class="text-sm text-stone-500">Compras con multiples productos y proveedor opcional.</p>
+                    <h1 class="text-2xl font-semibold text-[var(--text-primary)]">Compras</h1>
+                    <p class="text-sm text-[var(--text-secondary)]">Compras con multiples productos y proveedor opcional.</p>
                 </div>
                 <div class="flex gap-2">
                     <SecondaryButton @click="openProveedor">Proveedores</SecondaryButton>
