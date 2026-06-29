@@ -123,5 +123,8 @@ Route::middleware([
 
     // Pago QR
     Route::post('/pago/qr/generar', [PagoController::class, 'generateQR'])->name('pago.qr.generar');
+
+    // Reportes Generales del Sistema
+    Route::get('/reports/{module}', [App\Http\Controllers\ReportController::class, 'export'])->name('reports.export');
     Route::post('/pago/qr/check-status', [PagoController::class, 'checkStatus'])->name('pago.qr.checkStatus');
 });

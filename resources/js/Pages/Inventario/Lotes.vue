@@ -3,6 +3,7 @@ import { ref, watch } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import InventarioNav from '@/Pages/Inventario/Partials/InventarioNav.vue';
+import ReportModal from '@/Components/ReportModal.vue';
 
 const props = defineProps({
     lotes: Object,
@@ -76,7 +77,7 @@ const getStockProgressColor = (lote) => {
 
             <!-- Resumen de Alertas -->
             <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-6">
-                <div class="rounded-lg border border-[var(--border-color)] bg-[var(--bg-tertiary)]/80 p-5 shadow-sm text-[var(--text-primary)] transition-colors duration-300">
+                <div class="rounded-xl border border-[var(--border-color)] bg-[var(--bg-tertiary)]/80 p-5 shadow-sm text-[var(--text-primary)] transition-colors duration-300">
                     <div class="text-sm text-[var(--text-secondary)]">Lotes Vencidos</div>
                     <div class="mt-1 flex items-baseline gap-2">
                         <span class="text-2xl font-bold" :class="totalVencidos > 0 ? 'text-rose-500' : 'text-[var(--text-primary)]'">
@@ -85,7 +86,7 @@ const getStockProgressColor = (lote) => {
                         <span v-if="totalVencidos > 0" class="text-xs font-semibold px-2 py-0.5 rounded bg-rose-500/15 text-rose-400">Atención requerida</span>
                     </div>
                 </div>
-                <div class="rounded-lg border border-[var(--border-color)] bg-[var(--bg-tertiary)]/80 p-5 shadow-sm text-[var(--text-primary)] transition-colors duration-300">
+                <div class="rounded-xl border border-[var(--border-color)] bg-[var(--bg-tertiary)]/80 p-5 shadow-sm text-[var(--text-primary)] transition-colors duration-300">
                     <div class="text-sm text-[var(--text-secondary)]">Próximos a Vencer (30 días)</div>
                     <div class="mt-1 flex items-baseline gap-2">
                         <span class="text-2xl font-bold" :class="totalProximos > 0 ? 'text-amber-500' : 'text-[var(--text-primary)]'">
@@ -94,29 +95,32 @@ const getStockProgressColor = (lote) => {
                         <span v-if="totalProximos > 0" class="text-xs font-semibold px-2 py-0.5 rounded bg-amber-500/15 text-amber-400">Advertencia</span>
                     </div>
                 </div>
-                <div class="rounded-lg border border-[var(--border-color)] bg-[var(--bg-tertiary)]/80 p-5 shadow-sm text-[var(--text-primary)] transition-colors duration-300 col-span-1 sm:col-span-2 lg:col-span-1">
+                <div class="rounded-xl border border-[var(--border-color)] bg-[var(--bg-tertiary)]/80 p-5 shadow-sm text-[var(--text-primary)] transition-colors duration-300 col-span-1 sm:col-span-2 lg:col-span-1">
                     <div class="text-sm text-[var(--text-secondary)]">Total Lotes Registrados</div>
                     <div class="mt-1 text-2xl font-bold text-[var(--text-primary)]">{{ lotes.total }}</div>
                 </div>
             </div>
 
             <!-- Filtros -->
-            <div class="mb-6 rounded-lg border border-[var(--border-color)] bg-[var(--bg-tertiary)]/50 p-4">
-                <div class="flex flex-wrap items-center gap-4">
+            <div class="mb-6 rounded-xl border border-[var(--border-color)] bg-[var(--bg-tertiary)]/50 p-4">
+                <div class="flex flex-wrap items-end gap-4">
                     <div class="flex-1 min-w-[200px]">
                         <label class="block text-xs font-medium text-[var(--text-secondary)] uppercase mb-1">Filtrar por Producto</label>
-                        <select v-model="filterForm.producto_id" class="w-full rounded-md border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-primary)] text-sm focus:border-[var(--accent)] focus:ring-[var(--accent)]">
-                            <option value="">Todos los productos</option>
-                            <option v-for="prod in productos" :key="prod.id" :value="prod.id">{{ prod.nombre }}</option>
+                        <select v-model="filterForm.producto_id" class="w-full rounded-xl border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-primary)] text-sm focus:border-[var(--accent)] focus:ring-[var(--accent)]">
+                            <option value="" class="bg-[var(--bg-secondary)] text-[var(--text-primary)]">Todos los productos</option>
+                            <option v-for="prod in productos" :key="prod.id" :value="prod.id" class="bg-[var(--bg-secondary)] text-[var(--text-primary)]">{{ prod.nombre }}</option>
                         </select>
                     </div>
                     <div class="w-48">
                         <label class="block text-xs font-medium text-[var(--text-secondary)] uppercase mb-1">Filtrar por Estado</label>
-                        <select v-model="filterForm.estado" class="w-full rounded-md border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-primary)] text-sm focus:border-[var(--accent)] focus:ring-[var(--accent)]">
-                            <option value="">Todos los estados</option>
-                            <option value="activo">Activo</option>
-                            <option value="agotado">Agotado</option>
+                        <select v-model="filterForm.estado" class="w-full rounded-xl border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-primary)] text-sm focus:border-[var(--accent)] focus:ring-[var(--accent)]">
+                            <option value="" class="bg-[var(--bg-secondary)] text-[var(--text-primary)]">Todos los estados</option>
+                            <option value="activo" class="bg-[var(--bg-secondary)] text-[var(--text-primary)]">Activo</option>
+                            <option value="agotado" class="bg-[var(--bg-secondary)] text-[var(--text-primary)]">Agotado</option>
                         </select>
+                    </div>
+                    <div>
+                        <ReportModal module="inventario_lotes" :filters="filterForm" />
                     </div>
                 </div>
             </div>
@@ -180,11 +184,11 @@ const getStockProgressColor = (lote) => {
             </div>
 
             <!-- Paginación -->
-            <div class="mt-6 flex items-center justify-between">
+            <div class="mt-6 flex flex-col sm:flex-row gap-4 items-center justify-between">
                 <div class="text-sm text-[var(--text-secondary)]">
-                    Mostrando {{ lotes.from || 0 }} al {{ lote = lotes.to || 0 }} de {{ lotes.total }} lotes
+                    Mostrando {{ lotes.from || 0 }} al {{ lotes.to || 0 }} de {{ lotes.total }} lotes
                 </div>
-                <div class="flex gap-1">
+                <div class="flex flex-wrap items-center justify-center gap-1">
                     <Link v-for="link in lotes.links" 
                           :key="link.label"
                           :href="link.url || '#'" 

@@ -4,6 +4,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import InventarioNav from '@/Pages/Inventario/Partials/InventarioNav.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
+import ReportModal from '@/Components/ReportModal.vue';
 
 const props = defineProps({
     movimientos: Object,
@@ -27,27 +28,27 @@ const tipoLabel = (tipo) => tipo.replace(/_/g, ' ');
 </script>
 
 <template>
-    <AppLayout title="Movimientos de inventario">
+    <AppLayout title="Movimientos de Inventario">
         <template #header>
-            <h1 class="text-2xl font-semibold text-[var(--text-primary)]">Movimientos de inventario</h1>
+            <h1 class="text-2xl font-semibold text-[var(--text-primary)]">Movimientos de Inventario</h1>
         </template>
 
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <InventarioNav />
 
-            <form class="mb-4 grid gap-3 rounded-lg border border-[var(--border-color)] bg-[var(--bg-tertiary)]/80 p-4 sm:grid-cols-5 text-[var(--text-primary)] transition-colors duration-300" @submit="applyFilters">
+            <form class="mb-4 grid gap-3 rounded-xl border border-[var(--border-color)] bg-[var(--bg-tertiary)]/80 p-4 sm:grid-cols-5 text-[var(--text-primary)] transition-colors duration-300" @submit="applyFilters">
                 <div>
                     <InputLabel value="Producto" />
-                    <select name="producto_id" class="mt-1 w-full rounded-md bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[var(--text-primary)] focus:ring-[var(--accent)] focus:border-[var(--accent)] py-2 px-3 focus:outline-none transition-colors duration-300">
-                        <option value="" class="bg-[#1c0e11] text-stone-200">Todos</option>
-                        <option v-for="p in productos" :key="p.id" :value="p.id" :selected="filters.producto_id == p.id" class="bg-[#1c0e11] text-stone-200">{{ p.nombre }}</option>
+                    <select name="producto_id" class="mt-1 w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[var(--text-primary)] focus:ring-[var(--accent)] focus:border-[var(--accent)] py-2 px-3 focus:outline-none transition-colors duration-300">
+                        <option value="" class="bg-[var(--bg-secondary)] text-[var(--text-primary)]">Todos</option>
+                        <option v-for="p in productos" :key="p.id" :value="p.id" :selected="filters.producto_id == p.id" class="bg-[var(--bg-secondary)] text-[var(--text-primary)]">{{ p.nombre }}</option>
                     </select>
                 </div>
                 <div>
                     <InputLabel value="Tipo" />
-                    <select name="tipo" class="mt-1 w-full rounded-md bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[var(--text-primary)] focus:ring-[var(--accent)] focus:border-[var(--accent)] py-2 px-3 focus:outline-none transition-colors duration-300">
-                        <option value="" class="bg-[#1c0e11] text-stone-200">Todos</option>
-                        <option v-for="tipo in tipos" :key="tipo" :value="tipo" :selected="filters.tipo === tipo" class="bg-[#1c0e11] text-stone-200">{{ tipoLabel(tipo) }}</option>
+                    <select name="tipo" class="mt-1 w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[var(--text-primary)] focus:ring-[var(--accent)] focus:border-[var(--accent)] py-2 px-3 focus:outline-none transition-colors duration-300">
+                        <option value="" class="bg-[var(--bg-secondary)] text-[var(--text-primary)]">Todos</option>
+                        <option v-for="tipo in tipos" :key="tipo" :value="tipo" :selected="filters.tipo === tipo" class="bg-[var(--bg-secondary)] text-[var(--text-primary)]">{{ tipoLabel(tipo) }}</option>
                     </select>
                 </div>
                 <div>
@@ -58,10 +59,11 @@ const tipoLabel = (tipo) => tipo.replace(/_/g, ' ');
                     <InputLabel value="Hasta" />
                     <TextInput name="hasta" type="date" :value="filters.hasta || ''" class="mt-1 w-full" />
                 </div>
-                <div class="flex items-end">
-                    <button type="submit" class="w-full justify-center px-4 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[var(--accent)] hover:bg-[var(--accent)]/10 hover:text-[var(--text-primary)] rounded-md font-semibold text-sm transition cursor-pointer">
+                <div class="flex items-end gap-2">
+                    <button type="submit" class="flex-1 justify-center px-4 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[var(--accent)] hover:bg-[var(--accent)]/10 hover:text-[var(--text-primary)] rounded-xl font-semibold text-sm transition cursor-pointer">
                         Filtrar
                     </button>
+                    <ReportModal module="inventario_movimientos" :filters="filters" />
                 </div>
             </form>
 

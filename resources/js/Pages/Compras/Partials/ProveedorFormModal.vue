@@ -74,7 +74,7 @@ const close = () => emit('close');
         <template #content>
             <div class="space-y-5">
                 <section class="space-y-3">
-                    <h3 class="text-xs font-semibold uppercase tracking-wide text-amber-800">Datos del proveedor</h3>
+                    <h3 class="text-xs font-semibold uppercase tracking-wide text-[var(--accent)]">Datos del proveedor</h3>
                     <div class="grid gap-3">
                         <div>
                             <InputLabel value="Nombre" />
@@ -91,7 +91,7 @@ const close = () => emit('close');
                             <textarea
                                 v-model="form.descripcion"
                                 rows="3"
-                                class="mt-1 block w-full max-w-lg rounded-md border-stone-300 text-sm shadow-sm"
+                                class="mt-1 block w-full max-w-lg rounded-xl border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-primary)] placeholder-[var(--text-secondary)]/50 focus:border-[var(--accent)] focus:ring-[var(--accent)] text-sm shadow-sm p-2.5 focus:outline-none"
                                 placeholder="Notas del proveedor..."
                             />
                             <InputError :message="form.errors.descripcion" class="mt-1" />

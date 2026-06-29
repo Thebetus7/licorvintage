@@ -102,7 +102,7 @@ const handleClose = () => {
 <template>
     <DialogModal :show="show" @close="handleClose">
         <template #title>
-            <span class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-amber-400 to-stone-100">
+            <span class="text-xl font-bold text-[var(--text-primary)]">
                 {{ user ? 'Editar Usuario' : 'Crear Nuevo Usuario' }}
             </span>
         </template>
@@ -129,29 +129,29 @@ const handleClose = () => {
                 
                 <div>
                     <InputLabel for="modal-role" value="Rol de Acceso" />
-                    <select id="modal-role" v-model="form.role" class="mt-1 w-full rounded-md bg-[#241518]/60 border border-stone-800 text-stone-100 focus:border-amber-500 focus:ring-amber-500 py-2 px-3 focus:outline-none">
-                        <option value="propietario" class="bg-[#1c0e11] text-stone-200">Propietario</option>
-                        <option value="vendedor" class="bg-[#1c0e11] text-stone-200">Vendedor</option>
-                        <option value="cliente" class="bg-[#1c0e11] text-stone-200">Cliente</option>
+                    <select id="modal-role" v-model="form.role" class="mt-1 w-full rounded-xl bg-[var(--bg-primary)] border border-[var(--border-color)] text-[var(--text-primary)] focus:border-[var(--accent)] focus:ring-[var(--accent)] py-2.5 px-3 focus:outline-none transition">
+                        <option value="propietario" class="bg-[var(--bg-secondary)] text-[var(--text-primary)]">Propietario</option>
+                        <option value="vendedor" class="bg-[var(--bg-secondary)] text-[var(--text-primary)]">Vendedor</option>
+                        <option value="cliente" class="bg-[var(--bg-secondary)] text-[var(--text-primary)]">Cliente</option>
                     </select>
                     <InputError class="mt-2" :message="form.errors.role" />
                 </div>
 
                 <!-- Sección de Configuración de Accesos del Menú Dinámico -->
-                <div class="mt-4 border-t border-stone-800/80 pt-4">
+                <div class="mt-4 border-t border-[var(--border-color)] pt-4">
                     <InputLabel value="Accesos del Menú Dinámico (BD)" />
-                    <p class="text-xs text-stone-500 mt-0.5 mb-3">Marca las opciones del menú que este usuario tendrá habilitadas.</p>
+                    <p class="text-xs text-[var(--text-secondary)]/80 mt-0.5 mb-3">Marca las opciones del menú que este usuario tendrá habilitadas.</p>
                     <div class="grid grid-cols-2 gap-3">
-                        <label v-for="item in menuItems" :key="item.id" class="flex items-start gap-2.5 cursor-pointer bg-[#241518]/30 border border-stone-800 hover:border-amber-900/35 rounded-lg p-2.5 transition">
+                        <label v-for="item in menuItems" :key="item.id" class="flex items-start gap-2.5 cursor-pointer bg-[var(--bg-primary)]/40 border border-[var(--border-color)] hover:border-[var(--accent)]/40 rounded-xl p-2.5 transition">
                             <input
                                 v-model="form.menus"
                                 type="checkbox"
                                 :value="item.route_name"
-                                class="mt-1 rounded bg-[#241518]/60 border-stone-800 text-amber-600 focus:ring-amber-500 shadow-sm"
+                                class="mt-1 rounded border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--accent)] focus:ring-[var(--accent)] focus:ring-offset-[var(--bg-primary)] shadow-sm"
                             >
                             <div class="flex flex-col">
-                                <span class="text-sm text-stone-300 font-medium select-none">{{ item.label }}</span>
-                                <span class="text-[10px] text-stone-500 font-normal mt-0.5 select-none uppercase">
+                                <span class="text-sm text-[var(--text-primary)] font-medium select-none">{{ item.label }}</span>
+                                <span class="text-[10px] text-[var(--text-secondary)]/80 font-normal mt-0.5 select-none uppercase">
                                     {{ Array.isArray(item.roles) ? item.roles.join(', ') : '' }}
                                 </span>
                             </div>

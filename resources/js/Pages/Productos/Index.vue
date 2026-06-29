@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
+import ReportModal from '@/Components/ReportModal.vue';
 import ProductoFormModal from '@/Pages/Productos/Partials/ProductoFormModal.vue';
 import ProductoList from '@/Pages/Productos/Partials/ProductoList.vue';
 
@@ -36,7 +37,10 @@ const closeModal = () => {
                     <h1 class="text-2xl font-semibold text-[var(--text-primary)]">Productos</h1>
                     <p class="text-sm text-[var(--text-secondary)]">Catalogo, codigos de barra, fotos y precios de venta.</p>
                 </div>
-                <PrimaryButton @click="openCreate">Crear Producto</PrimaryButton>
+                <div class="flex gap-2">
+                    <ReportModal module="productos" />
+                    <PrimaryButton @click="openCreate">Crear Producto</PrimaryButton>
+                </div>
             </div>
         </template>
 

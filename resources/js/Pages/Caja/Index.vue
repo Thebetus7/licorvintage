@@ -10,6 +10,7 @@ import SecondaryButton from '@/Components/SecondaryButton.vue';
 import DangerButton from '@/Components/DangerButton.vue';
 import DialogModal from '@/Components/DialogModal.vue';
 import CreditCardForm from '@/Components/CreditCardForm.vue';
+import ReportModal from '@/Components/ReportModal.vue';
 
 const props = defineProps({
     cajaActiva: Object,

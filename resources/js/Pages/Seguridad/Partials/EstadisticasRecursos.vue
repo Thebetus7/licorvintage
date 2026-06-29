@@ -52,7 +52,7 @@ const formatDateShort = (dateString) => {
                 >
                     <div class="flex items-center justify-between text-sm font-semibold">
                         <span class="text-[var(--text-primary)] flex items-center gap-2">
-                            <span class="text-xs font-mono h-5 w-5 bg-stone-900 border border-[var(--border-color)] rounded flex items-center justify-center text-[var(--accent)]">
+                            <span class="text-xs font-mono h-5 w-5 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded flex items-center justify-center text-[var(--accent)] font-bold">
                                 {{ index + 1 }}
                             </span>
                             {{ item.resource_name }}
@@ -60,8 +60,8 @@ const formatDateShort = (dateString) => {
                         <span class="text-[var(--accent)] font-mono">{{ item.total }} visitas</span>
                     </div>
                     
-                    <!-- Barra de Progreso Grafica -->
-                    <div class="h-3 w-full bg-stone-950/40 rounded-full overflow-hidden border border-[var(--border-color)]">
+                    <!-- Barra de Progreso Grafica (Temática y adaptativa) -->
+                    <div class="h-3 w-full bg-[var(--bg-primary)] rounded-full overflow-hidden border border-[var(--border-color)]">
                         <div 
                             class="h-full bg-gradient-to-r from-[var(--accent)] to-[var(--accent-hover)] rounded-full transition-all duration-1000 ease-out"
                             :style="{ width: `${getPercentage(item.total)}%` }"
@@ -72,7 +72,7 @@ const formatDateShort = (dateString) => {
             
             <div 
                 v-else 
-                class="h-60 flex flex-col items-center justify-center text-stone-500 text-sm"
+                class="h-60 flex flex-col items-center justify-center text-[var(--text-secondary)]/60 text-sm"
             >
                 No hay datos de visitas registrados para mostrar.
             </div>
@@ -115,11 +115,11 @@ const formatDateShort = (dateString) => {
                                     <p class="text-[var(--text-secondary)] mt-0.5">
                                         Accedió a <span class="text-[var(--accent)] font-semibold">{{ log.resource_name }}</span>
                                     </p>
-                                    <p class="text-[10px] font-mono text-stone-500 mt-0.5">
+                                    <p class="text-[10px] font-mono text-stone-500 dark:text-stone-400 mt-0.5">
                                         {{ log.visited_url }}
                                     </p>
                                 </div>
-                                <div class="text-right whitespace-nowrap text-stone-500 text-[10px] font-mono">
+                                <div class="text-right whitespace-nowrap text-stone-500 dark:text-stone-400 text-[10px] font-mono">
                                     {{ formatDateShort(log.created_at) }}
                                 </div>
                             </div>

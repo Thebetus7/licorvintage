@@ -1,4 +1,5 @@
 <script setup>
+import ReportModal from '@/Components/ReportModal.vue';
 import { ref } from 'vue';
 import { Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';

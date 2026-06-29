@@ -13,7 +13,7 @@ const tabs = [
 </script>
 
 <template>
-    <div class="flex flex-wrap gap-2 border-b border-stone-700/60 pb-3 mb-6">
+    <div class="flex flex-wrap gap-2 border-b border-[var(--border-color)] pb-3 mb-6">
         <Link
             v-for="tab in tabs"
             :key="tab.route"
@@ -21,8 +21,8 @@ const tabs = [
             class="px-5 py-2.5 text-sm font-bold rounded-xl transition duration-150 cursor-pointer"
             :class="[
                 route().current(tab.route)
-                    ? 'bg-amber-600 text-white shadow-lg'
-                    : 'text-stone-400 hover:bg-stone-800/50'
+                    ? 'bg-[var(--accent)] text-[var(--bg-primary)] shadow-md'
+                    : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]/80 hover:text-[var(--text-primary)]'
             ]"
         >
             {{ tab.label }}

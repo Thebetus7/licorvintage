@@ -95,12 +95,15 @@ const getStatus = (promo) => {
                     <h1 class="text-2xl font-bold text-[var(--text-primary)]">Gestión de Promociones</h1>
                     <p class="text-sm text-[var(--text-secondary)]">Crea y administra cupones y descuentos globales para ventas.</p>
                 </div>
-                <button
-                    class="rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-4 py-2 text-sm font-semibold transition shadow-lg cursor-pointer flex items-center gap-2"
-                    @click="openCreateModal"
-                >
-                    <span>Nueva Promoción</span>
-                </button>
+                <div class="flex gap-2">
+                    <ReportModal module="promociones" />
+                    <button
+                        class="rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-4 py-2 text-sm font-semibold transition shadow-lg cursor-pointer flex items-center gap-2"
+                        @click="openCreateModal"
+                    >
+                        <span>Nueva Promoción</span>
+                    </button>
+                </div>
             </div>
         </template>
 

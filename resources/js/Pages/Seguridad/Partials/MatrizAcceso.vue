@@ -67,7 +67,7 @@ const submit = () => {
             <PrimaryButton 
                 @click="submit" 
                 :disabled="form.processing"
-                class="px-5 py-2.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold rounded-lg shadow-lg shadow-black/30 transition cursor-pointer"
+                class="px-5 py-2.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-primary)] border-transparent font-semibold rounded-xl shadow-md transition cursor-pointer"
             >
                 <span v-if="form.processing">Guardando...</span>
                 <span v-else>Guardar Cambios</span>
@@ -75,7 +75,7 @@ const submit = () => {
         </div>
 
         <div class="overflow-x-auto rounded-xl border border-[var(--border-color)]">
-            <table class="w-full text-left border-collapse bg-stone-950/20">
+            <table class="w-full text-left border-collapse bg-transparent">
                 <thead>
                     <tr class="border-b border-[var(--border-color)] bg-[var(--bg-secondary)]/50 text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
                         <th class="px-6 py-4">Módulo / Recurso</th>
@@ -93,7 +93,7 @@ const submit = () => {
                     <tr 
                         v-for="item in menuItems" 
                         :key="item.id" 
-                        class="hover:bg-white/5 transition-colors duration-150"
+                        class="hover:bg-[var(--bg-secondary)]/30 border-b border-[var(--border-color)] last:border-0 transition-colors duration-150"
                     >
                         <td class="px-6 py-4 font-semibold text-[var(--text-primary)]">
                             {{ item.label }}
@@ -121,7 +121,7 @@ const submit = () => {
                                 ></div>
                                 <div 
                                     v-else
-                                    class="w-11 h-6 bg-stone-850 rounded-full peer peer-focus:ring-2 peer-focus:ring-[var(--accent)]/55 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-stone-500 after:border-stone-400 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--accent)] peer-checked:after:bg-white"
+                                    class="w-11 h-6 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-full peer peer-focus:ring-2 peer-focus:ring-[var(--accent)]/55 peer-checked:after:translate-x-full peer-checked:after:border-[var(--bg-primary)] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-stone-400 dark:after:bg-stone-500 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--accent)] peer-checked:after:bg-[var(--bg-primary)]"
                                 ></div>
                             </label>
                         </td>
@@ -130,7 +130,7 @@ const submit = () => {
             </table>
         </div>
         
-        <div class="mt-4 text-xs text-[var(--text-secondary)] bg-stone-900/40 p-3 rounded-lg border border-[var(--border-color)]">
+        <div class="mt-4 text-xs text-[var(--text-secondary)] bg-[var(--bg-secondary)]/50 p-3 rounded-xl border border-[var(--border-color)]">
             <strong>Nota de Seguridad:</strong> El rol <span class="text-[var(--accent)] font-semibold">propietario</span> posee permisos completos irrevocables sobre todo el sistema para evitar bloqueos accidentales. Los accesos individuales definidos en la ficha de cada usuario sobreescriben esta matriz global.
         </div>
     </div>

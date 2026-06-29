@@ -117,7 +117,7 @@ const close = () => emit('close');
                 />
 
                 <section class="space-y-3">
-                    <h3 class="text-xs font-semibold uppercase tracking-wide text-amber-800">Identificacion</h3>
+                    <h3 class="text-xs font-semibold uppercase tracking-wide text-[var(--accent)]">Identificacion</h3>
                     <div class="grid gap-3 sm:grid-cols-[1fr_auto]">
                         <div class="sm:col-span-2">
                             <InputLabel value="Nombre" />
@@ -145,7 +145,7 @@ const close = () => emit('close');
                 </section>
 
                 <section class="space-y-3">
-                    <h3 class="text-xs font-semibold uppercase tracking-wide text-amber-800">Precios</h3>
+                    <h3 class="text-xs font-semibold uppercase tracking-wide text-[var(--accent)]">Precios</h3>
                     <div class="grid gap-3 sm:grid-cols-2">
                         <div>
                             <InputLabel value="Costo" />
@@ -159,17 +159,17 @@ const close = () => emit('close');
                 </section>
 
                 <section class="space-y-3">
-                    <h3 class="text-xs font-semibold uppercase tracking-wide text-amber-800">Descripcion</h3>
+                    <h3 class="text-xs font-semibold uppercase tracking-wide text-[var(--accent)]">Descripcion</h3>
                     <textarea
                         v-model="form.descripcion"
                         rows="3"
-                        class="block w-full max-w-lg rounded-md border-stone-300 text-sm shadow-sm"
+                        class="block w-full max-w-lg rounded-xl border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-primary)] placeholder-[var(--text-secondary)]/50 focus:border-[var(--accent)] focus:ring-[var(--accent)] text-sm shadow-sm p-2.5 focus:outline-none"
                         placeholder="Notas del producto..."
                     />
                 </section>
 
                 <section class="space-y-3">
-                    <h3 class="text-xs font-semibold uppercase tracking-wide text-amber-800">Stock</h3>
+                    <h3 class="text-xs font-semibold uppercase tracking-wide text-[var(--accent)]">Stock</h3>
                     <div v-if="!isEditing" class="grid gap-3 sm:grid-cols-3">
                         <div>
                             <InputLabel value="Stock inicial" />
@@ -209,15 +209,15 @@ const close = () => emit('close');
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <button
                     type="button"
-                    class="flex min-w-0 items-center gap-3 rounded-lg border px-3 py-2 text-left transition"
+                    class="flex min-w-0 items-center gap-3 rounded-xl border px-3 py-2 text-left transition"
                     :class="form.publicado
-                        ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
-                        : 'border-stone-300 bg-white text-stone-600'"
+                        ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                        : 'border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-secondary)]'"
                     @click="form.publicado = !form.publicado"
                 >
                     <span
                         class="relative inline-flex h-6 w-11 shrink-0 rounded-full transition"
-                        :class="form.publicado ? 'bg-emerald-500' : 'bg-stone-300'"
+                        :class="form.publicado ? 'bg-emerald-500' : 'bg-stone-300 dark:bg-stone-700'"
                     >
                         <span
                             class="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition"

@@ -143,11 +143,11 @@ const submit = () => {
             </div>
 
             <!-- Paginación -->
-            <div class="mt-6 flex items-center justify-between mb-8">
+            <div class="mt-6 flex flex-col sm:flex-row gap-4 items-center justify-between mb-8">
                 <div class="text-sm text-[var(--text-secondary)]">
                     Mostrando {{ salidas.from || 0 }} al {{ salidas.to || 0 }} de {{ salidas.total }} notas
                 </div>
-                <div class="flex gap-1">
+                <div class="flex flex-wrap items-center justify-center gap-1">
                     <Link v-for="link in salidas.links" 
                           :key="link.label"
                           :href="link.url || '#'" 

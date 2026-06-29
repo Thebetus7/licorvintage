@@ -5,6 +5,9 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import InventarioNav from '@/Pages/Inventario/Partials/InventarioNav.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import InputError from '@/Components/InputError.vue';
+import InputLabel from '@/Components/InputLabel.vue';
+import TextInput from '@/Components/TextInput.vue';
+import ReportModal from '@/Components/ReportModal.vue';
 
 const props = defineProps({
     productos: Array,
@@ -93,48 +96,49 @@ const clearAll = () => {
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <InventarioNav />
 
-            <!-- Acciones y Filtros -->
-            <div class="grid gap-4 md:grid-cols-3 mb-6 items-end bg-[var(--bg-secondary)]/30 border border-[var(--border-color)] p-4 rounded-xl backdrop-blur-md">
+            <!-- Acciones y Filtros (Totalmente adaptados a temas) -->
+            <div class="grid gap-4 md:grid-cols-3 mb-6 items-end bg-[var(--bg-tertiary)]/50 border border-[var(--border-color)] p-4 rounded-xl backdrop-blur-md transition-colors duration-300">
                 <div>
-                    <label for="search_prod" class="block text-xs font-semibold text-stone-300">Buscar Producto</label>
-                    <input
+                    <InputLabel for="search_prod" value="Buscar Producto" />
+                    <TextInput
                         id="search_prod"
                         v-model="search"
                         type="text"
                         placeholder="Nombre o código de barra..."
-                        class="mt-1 block w-full rounded-md border-stone-700 bg-stone-900 text-stone-100 placeholder-stone-500 shadow-sm focus:border-amber-500 focus:ring-amber-500 text-sm px-3 py-2"
+                        class="mt-1 block w-full text-xs"
                     />
                 </div>
                 <div>
-                    <label for="general_motive" class="block text-xs font-semibold text-stone-300">Motivo del Ajuste (General)</label>
-                    <input
+                    <InputLabel for="general_motive" value="Motivo del Ajuste (General)" />
+                    <TextInput
                         id="general_motive"
                         v-model="generalMotive"
                         type="text"
                         placeholder="Ej: Auditoría mensual..."
-                        class="mt-1 block w-full rounded-md border-stone-700 bg-stone-900 text-stone-100 placeholder-stone-500 shadow-sm focus:border-amber-500 focus:ring-amber-500 text-sm px-3 py-2"
+                        class="mt-1 block w-full text-xs"
                     />
                 </div>
-                <div class="flex gap-2 justify-end">
+                <div class="flex flex-wrap gap-2 justify-end">
                     <button 
                         type="button" 
                         @click="prefillAll" 
-                        class="px-3 py-2 text-xs bg-stone-800 border border-stone-700 text-stone-300 hover:bg-stone-700 transition rounded-md font-semibold cursor-pointer"
+                        class="inline-flex items-center justify-center px-3 py-2 bg-[var(--bg-secondary)]/50 border border-[var(--border-color)] hover:bg-[var(--bg-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] rounded-xl font-semibold text-xs text-[var(--text-primary)] uppercase tracking-wider shadow-sm transition cursor-pointer"
                     >
                         Pre-llenar con Sistema
                     </button>
                     <button 
                         type="button" 
                         @click="clearAll" 
-                        class="px-3 py-2 text-xs bg-stone-800 border border-stone-700 text-rose-400 hover:bg-rose-950/20 transition rounded-md font-semibold cursor-pointer"
+                        class="inline-flex items-center justify-center px-3 py-2 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 hover:border-rose-500 text-rose-500 rounded-xl font-semibold text-xs uppercase tracking-wider shadow-sm transition cursor-pointer"
                     >
                         Limpiar Conteos
                     </button>
+                    <ReportModal module="inventario_conteos" :filters="{ search: search }" />
                 </div>
             </div>
 
             <!-- Tabla de Conteo -->
-            <div class="overflow-hidden rounded-lg border border-[var(--border-color)] bg-[var(--bg-tertiary)]/80 shadow-sm mb-6">
+            <div class="overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--bg-tertiary)]/80 shadow-sm mb-6 transition-colors duration-300">
                 <table class="min-w-full divide-y divide-[var(--border-color)] text-sm text-[var(--text-secondary)]">
                     <thead class="bg-[var(--bg-secondary)]/50 text-left text-xs uppercase text-[var(--accent)] font-semibold">
                         <tr>
@@ -153,9 +157,9 @@ const clearAll = () => {
                         <tr v-for="prod in filteredProducts" :key="prod.id" class="hover:bg-white/5 transition-colors">
                             <td class="px-6 py-4">
                                 <div class="font-bold text-[var(--text-primary)]">{{ prod.nombre }}</div>
-                                <div class="text-xs text-stone-400 font-mono">{{ prod.codigo_barra || 'Sin código' }}</div>
+                                <div class="text-xs text-stone-500 dark:text-stone-400 font-mono">{{ prod.codigo_barra || 'Sin código' }}</div>
                             </td>
-                            <td class="px-6 py-4 text-center font-semibold text-stone-200">
+                            <td class="px-6 py-4 text-center font-bold text-[var(--text-primary)]">
                                 {{ prod.stock_actual?.stock ?? 0 }}
                             </td>
                             <td class="px-6 py-4">
@@ -164,18 +168,18 @@ const clearAll = () => {
                                     type="number"
                                     min="0"
                                     placeholder="Sin contar"
-                                    class="w-full text-center rounded-md border-stone-700 bg-stone-900 text-stone-100 placeholder-stone-600 focus:border-amber-500 focus:ring-amber-500 text-sm px-2 py-1.5"
+                                    class="w-full text-center rounded-xl border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-primary)] placeholder-[var(--text-secondary)]/50 focus:border-[var(--accent)] focus:ring-[var(--accent)] text-xs px-2 py-1.5 focus:outline-none"
                                 />
                             </td>
                             <td class="px-6 py-4 text-center">
                                 <span v-if="getDifference(prod) === null" class="text-stone-500">—</span>
-                                <span v-else-if="getDifference(prod) > 0" class="inline-block text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                <span v-else-if="getDifference(prod) > 0" class="inline-block text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                                     +{{ getDifference(prod) }} (Sobrante)
                                 </span>
-                                <span v-else-if="getDifference(prod) < 0" class="inline-block text-xs font-bold px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                                <span v-else-if="getDifference(prod) < 0" class="inline-block text-xs font-bold px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
                                     {{ getDifference(prod) }} (Faltante)
                                 </span>
-                                <span v-else class="inline-block text-xs font-bold px-2.5 py-1 rounded-full bg-stone-500/10 text-stone-400 border border-stone-500/20">
+                                <span v-else class="inline-block text-xs font-bold px-2.5 py-1 rounded-full bg-stone-500/10 text-stone-600 dark:text-stone-400 border border-stone-500/20">
                                     Sin diferencia
                                 </span>
                             </td>
@@ -189,7 +193,7 @@ const clearAll = () => {
                 <PrimaryButton 
                     @click="submitAdjustment"
                     :disabled="form.processing"
-                    class="px-6 py-3 text-sm font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-lg rounded-xl transition cursor-pointer"
+                    class="px-6 py-3 text-sm font-bold bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-primary)] border-transparent shadow-lg rounded-xl transition cursor-pointer"
                 >
                     {{ form.processing ? 'Aplicando Ajustes...' : 'Guardar Conteo y Aplicar Ajustes' }}
                 </PrimaryButton>

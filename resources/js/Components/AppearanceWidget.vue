@@ -105,13 +105,13 @@ const resetFont = () => {
             </svg>
         </button>
 
-        <!-- Panel de configuración visual -->
+        <!-- Panel de configuración visual (Totalmente temático y adaptativo) -->
         <div
             v-if="isOpen"
-            class="absolute bottom-16 right-0 w-80 rounded-2xl border border-[var(--border-color)] bg-stone-950/90 p-5 text-[var(--text-primary)] shadow-2xl backdrop-blur-md transition-all duration-300"
+            class="absolute bottom-16 right-0 w-80 rounded-2xl border border-[var(--border-color)] bg-[var(--bg-secondary)] p-5 text-[var(--text-primary)] shadow-2xl backdrop-blur-md transition-all duration-300"
         >
             <div class="flex items-center justify-between border-b border-[var(--border-color)] pb-3 mb-4">
-                <h3 class="text-base font-bold tracking-wide flex items-center gap-2">
+                <h3 class="text-base font-bold tracking-wide flex items-center gap-2 text-[var(--text-primary)]">
                     Accesibilidad y Temas
                 </h3>
                 <button @click="isOpen = false" class="text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-sm cursor-pointer">
@@ -128,21 +128,21 @@ const resetFont = () => {
                     <button
                         @click="theme = 'adults'"
                         class="px-2 py-2 text-xs font-medium rounded-lg border transition cursor-pointer"
-                        :class="theme === 'adults' ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'border-[var(--border-color)] bg-stone-900 hover:bg-stone-800 text-[var(--text-secondary)]'"
+                        :class="theme === 'adults' ? 'bg-[var(--accent)] text-[var(--bg-primary)] border-[var(--accent)] font-bold' : 'border-[var(--border-color)] bg-[var(--bg-primary)]/50 hover:bg-[var(--bg-primary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
                     >
                         Adultos
                     </button>
                     <button
                         @click="theme = 'youth'"
                         class="px-2 py-2 text-xs font-medium rounded-lg border transition cursor-pointer"
-                        :class="theme === 'youth' ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'border-[var(--border-color)] bg-stone-900 hover:bg-stone-800 text-[var(--text-secondary)]'"
+                        :class="theme === 'youth' ? 'bg-[var(--accent)] text-[var(--bg-primary)] border-[var(--accent)] font-bold' : 'border-[var(--border-color)] bg-[var(--bg-primary)]/50 hover:bg-[var(--bg-primary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
                     >
                         Jóvenes
                     </button>
                     <button
                         @click="theme = 'kids'"
                         class="px-2 py-2 text-xs font-medium rounded-lg border transition cursor-pointer"
-                        :class="theme === 'kids' ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'border-[var(--border-color)] bg-stone-900 hover:bg-stone-800 text-[var(--text-secondary)]'"
+                        :class="theme === 'kids' ? 'bg-[var(--accent)] text-[var(--bg-primary)] border-[var(--accent)] font-bold' : 'border-[var(--border-color)] bg-[var(--bg-primary)]/50 hover:bg-[var(--bg-primary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
                     >
                         Niños
                     </button>
@@ -158,21 +158,21 @@ const resetFont = () => {
                     <button
                         @click="mode = 'light'"
                         class="px-2 py-2 text-xs font-medium rounded-lg border transition cursor-pointer"
-                        :class="mode === 'light' ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'border-[var(--border-color)] bg-stone-900 hover:bg-stone-800 text-[var(--text-secondary)]'"
+                        :class="mode === 'light' ? 'bg-[var(--accent)] text-[var(--bg-primary)] border-[var(--accent)] font-bold' : 'border-[var(--border-color)] bg-[var(--bg-primary)]/50 hover:bg-[var(--bg-primary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
                     >
                         Día
                     </button>
                     <button
                         @click="mode = 'dark'"
                         class="px-2 py-2 text-xs font-medium rounded-lg border transition cursor-pointer"
-                        :class="mode === 'dark' ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'border-[var(--border-color)] bg-stone-900 hover:bg-stone-800 text-[var(--text-secondary)]'"
+                        :class="mode === 'dark' ? 'bg-[var(--accent)] text-[var(--bg-primary)] border-[var(--accent)] font-bold' : 'border-[var(--border-color)] bg-[var(--bg-primary)]/50 hover:bg-[var(--bg-primary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
                     >
                         Noche
                     </button>
                     <button
                         @click="mode = 'auto'"
                         class="px-2 py-2 text-xs font-medium rounded-lg border transition cursor-pointer"
-                        :class="mode === 'auto' ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'border-[var(--border-color)] bg-stone-900 hover:bg-stone-800 text-[var(--text-secondary)]'"
+                        :class="mode === 'auto' ? 'bg-[var(--accent)] text-[var(--bg-primary)] border-[var(--accent)] font-bold' : 'border-[var(--border-color)] bg-[var(--bg-primary)]/50 hover:bg-[var(--bg-primary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
                         title="Modifica automáticamente según tu horario local"
                     >
                         Auto
@@ -184,26 +184,26 @@ const resetFont = () => {
             <div class="mb-4">
                 <label class="block text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-2 flex justify-between items-center">
                     <span>Tamaño de Letra</span>
-                    <span class="text-[var(--accent)] text-xs font-mono">{{ Math.round(fontScale * 100) }}%</span>
+                    <span class="text-[var(--accent)] text-xs font-mono font-bold">{{ Math.round(fontScale * 100) }}%</span>
                 </label>
                 <div class="flex items-center gap-2">
                     <button
                         @click="decreaseFont"
-                        class="flex-1 px-3 py-2 bg-stone-900 border border-[var(--border-color)] hover:bg-stone-800 text-sm font-bold rounded-lg cursor-pointer text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                        class="flex-1 px-3 py-2 bg-[var(--bg-primary)]/50 border border-[var(--border-color)] hover:bg-[var(--bg-primary)] text-sm font-bold rounded-lg cursor-pointer text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition"
                         title="Disminuir texto"
                     >
                         A -
                     </button>
                     <button
                         @click="resetFont"
-                        class="px-3 py-2 bg-stone-900 border border-[var(--border-color)] hover:bg-stone-800 text-xs font-medium rounded-lg cursor-pointer text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                        class="px-3 py-2 bg-[var(--bg-primary)]/50 border border-[var(--border-color)] hover:bg-[var(--bg-primary)] text-xs font-medium rounded-lg cursor-pointer text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition"
                         title="Restablecer al 100%"
                     >
                         Normal
                     </button>
                     <button
                         @click="increaseFont"
-                        class="flex-1 px-3 py-2 bg-stone-900 border border-[var(--border-color)] hover:bg-stone-800 text-sm font-bold rounded-lg cursor-pointer text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                        class="flex-1 px-3 py-2 bg-[var(--bg-primary)]/50 border border-[var(--border-color)] hover:bg-[var(--bg-primary)] text-sm font-bold rounded-lg cursor-pointer text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition"
                         title="Aumentar texto"
                     >
                         A +
@@ -212,7 +212,7 @@ const resetFont = () => {
             </div>
 
             <!-- 4. Alto Contraste -->
-            <div class="flex items-center justify-between pt-2 border-t border-[var(--border-color)]">
+            <div class="flex items-center justify-between pt-3 border-t border-[var(--border-color)]">
                 <span class="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Alto Contraste</span>
                 <label class="relative inline-flex items-center cursor-pointer">
                     <input
@@ -220,7 +220,7 @@ const resetFont = () => {
                         v-model="highContrast"
                         class="sr-only peer"
                     />
-                    <div class="w-11 h-6 bg-stone-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-stone-400 after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--accent)] peer-checked:after:bg-white"></div>
+                    <div class="w-11 h-6 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-stone-400 dark:after:bg-stone-500 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--accent)] peer-checked:after:bg-[var(--bg-primary)]"></div>
                 </label>
             </div>
         </div>

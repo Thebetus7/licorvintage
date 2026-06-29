@@ -146,7 +146,7 @@ const cleanAgent = (userAgent) => {
             </div>
 
             <div class="overflow-x-auto rounded-xl border border-[var(--border-color)]">
-                <table class="w-full text-left border-collapse bg-stone-950/20">
+                <table class="w-full text-left border-collapse bg-transparent">
                     <thead>
                         <tr class="border-b border-[var(--border-color)] bg-[var(--bg-secondary)]/50 text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
                             <th class="px-6 py-4">Fecha y Hora</th>
@@ -161,7 +161,7 @@ const cleanAgent = (userAgent) => {
                         <tr 
                             v-for="log in activityLogs.data" 
                             :key="log.id" 
-                            class="hover:bg-white/5 transition-colors duration-150"
+                            class="hover:bg-[var(--bg-secondary)]/30 border-b border-[var(--border-color)] last:border-0 transition-colors duration-150"
                         >
                             <td class="px-6 py-4 whitespace-nowrap text-xs font-mono">
                                 {{ formatDate(log.created_at) }}
@@ -173,7 +173,7 @@ const cleanAgent = (userAgent) => {
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap font-medium text-[var(--text-primary)]">
                                 {{ log.user_identity }}
-                                <span v-if="log.user" class="text-xs block text-[var(--accent)]">
+                                <span v-if="log.user" class="text-xs block text-[var(--text-secondary)]/80">
                                     (ID: {{ log.user_id }})
                                 </span>
                             </td>
@@ -203,11 +203,11 @@ const cleanAgent = (userAgent) => {
             </div>
 
             <!-- Paginación -->
-            <div v-if="activityLogs.links && activityLogs.links.length > 3" class="mt-6 flex items-center justify-between border-t border-[var(--border-color)] pt-4">
+            <div v-if="activityLogs.links && activityLogs.links.length > 3" class="mt-6 flex flex-col sm:flex-row gap-4 items-center justify-between border-t border-[var(--border-color)] pt-4">
                 <div class="text-xs text-[var(--text-secondary)]">
                     Mostrando {{ activityLogs.from || 0 }} a {{ activityLogs.to || 0 }} de {{ activityLogs.total || 0 }} registros.
                 </div>
-                <div class="flex items-center gap-1">
+                <div class="flex flex-wrap items-center justify-center gap-1">
                     <Link
                         v-for="(link, key) in activityLogs.links"
                         :key="key"
@@ -215,8 +215,8 @@ const cleanAgent = (userAgent) => {
                         :class="[
                             'px-3 py-1.5 rounded-lg border text-xs font-semibold transition cursor-pointer',
                             link.active 
-                                ? 'bg-[var(--accent)] border-[var(--accent)] text-white' 
-                                : 'border-[var(--border-color)] bg-stone-900 text-[var(--text-secondary)] hover:bg-stone-850 hover:text-[var(--text-primary)]',
+                                ? 'bg-[var(--accent)] border-[var(--accent)] text-[var(--bg-primary)]' 
+                                : 'border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)]',
                             !link.url ? 'opacity-40 cursor-not-allowed' : ''
                         ]"
                         v-html="link.label"

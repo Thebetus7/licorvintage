@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
 use App\Models\MenuItem;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -40,6 +41,9 @@ class SecurityController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(15);
 
+        // 5. Todos los usuarios para filtros de reportes
+        $users = User::orderBy('name')->get(['id', 'name']);
+
         return Inertia::render('Seguridad/Index', [
             'menuItems' => $menuItems,
             'roles' => $roles,
@@ -50,6 +54,7 @@ class SecurityController extends Controller
             ],
             'mostVisitedResources' => $mostVisitedResources,
             'activityLogs' => $activityLogs,
+            'users' => $users,
         ]);
     }
 

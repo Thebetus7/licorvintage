@@ -8,6 +8,7 @@ import CompraFormModal from '@/Pages/Compras/Partials/CompraFormModal.vue';
 import CompraList from '@/Pages/Compras/Partials/CompraList.vue';
 import ProveedorFormModal from '@/Pages/Compras/Partials/ProveedorFormModal.vue';
 import ProveedorPanel from '@/Pages/Compras/Partials/ProveedorPanel.vue';
+import ReportModal from '@/Components/ReportModal.vue';
 
 defineProps({
     compras: Object,
@@ -66,6 +67,7 @@ const deleteProveedor = (proveedor) => {
                     <p class="text-sm text-[var(--text-secondary)]">Compras con multiples productos y proveedor opcional.</p>
                 </div>
                 <div class="flex gap-2">
+                    <ReportModal module="compras" :proveedores="proveedores" />
                     <SecondaryButton @click="openProveedor">Proveedores</SecondaryButton>
                     <PrimaryButton @click="openCompra">Nueva Compra</PrimaryButton>
                 </div>

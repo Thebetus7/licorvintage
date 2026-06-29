@@ -184,11 +184,11 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <section class="rounded-lg border border-stone-200 bg-stone-50/60 p-4">
+    <section class="rounded-xl border border-[var(--border-color)] bg-[var(--bg-primary)]/40 p-4">
         <div class="flex flex-wrap items-center justify-between gap-2">
             <div>
                 <InputLabel value="Fotos del producto" />
-                <p class="mt-0.5 text-xs text-stone-500">JPG comprimido, guardado en /public/media/productos</p>
+                <p class="mt-0.5 text-xs text-[var(--text-secondary)]/80">JPG comprimido, guardado en /public/media/productos</p>
             </div>
             <div class="flex flex-wrap gap-2">
                 <SecondaryButton type="button" :disabled="uploading || !canAddMore()" @click="openCamera">
@@ -210,14 +210,14 @@ onBeforeUnmount(() => {
 
         <div v-if="showCamera" class="mt-3 overflow-hidden rounded-lg border border-amber-200 bg-black">
             <video ref="videoRef" autoplay playsinline class="aspect-video w-full object-cover" />
-            <div class="flex gap-2 border-t border-amber-200 bg-white p-2">
+            <div class="flex gap-2 border-t border-[var(--border-color)] bg-[var(--bg-secondary)] p-2">
                 <PrimaryButton type="button" class="flex-1 justify-center" @click="capturePhoto">Capturar</PrimaryButton>
                 <SecondaryButton type="button" class="flex-1 justify-center" @click="stopCamera">Cancelar</SecondaryButton>
             </div>
         </div>
 
         <div v-if="fotos.length" class="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
-            <div v-for="(foto, index) in fotos" :key="`${foto}-${index}`" class="group relative overflow-hidden rounded-md border border-stone-200 bg-white">
+            <div v-for="(foto, index) in fotos" :key="`${foto}-${index}`" class="group relative overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]">
                 <img :src="foto" :alt="`Foto ${index + 1}`" class="aspect-square w-full object-cover">
                 <button
                     type="button"
@@ -232,7 +232,7 @@ onBeforeUnmount(() => {
             </div>
         </div>
 
-        <p v-else class="mt-3 rounded-md border border-dashed border-stone-300 px-3 py-6 text-center text-xs text-stone-500">
+        <p v-else class="mt-3 rounded-xl border border-dashed border-[var(--border-color)] px-3 py-6 text-center text-xs text-[var(--text-secondary)]">
             Sin fotos. Toma una foto o importa una imagen.
         </p>
 

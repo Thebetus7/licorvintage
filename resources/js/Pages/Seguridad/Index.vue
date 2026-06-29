@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import ReportModal from '@/Components/ReportModal.vue';
 import MatrizAcceso from './Partials/MatrizAcceso.vue';
 import BitacoraActividad from './Partials/BitacoraActividad.vue';
 import EstadisticasRecursos from './Partials/EstadisticasRecursos.vue';
@@ -26,6 +27,10 @@ const props = defineProps({
         type: Object,
         required: true,
     },
+    users: {
+        type: Array,
+        required: true,
+    },
 });
 
 const activeTab = ref('matrix'); // matrix, log, stats
@@ -44,29 +49,32 @@ const activeTab = ref('matrix'); // matrix, log, stats
                     </p>
                 </div>
                 
-                <!-- Menú de Pestañas Visuales -->
-                <div class="inline-flex rounded-xl p-1 bg-stone-950/40 border border-[var(--border-color)]">
-                    <button
-                        @click="activeTab = 'matrix'"
-                        class="px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-200 cursor-pointer"
-                        :class="activeTab === 'matrix' ? 'bg-[var(--accent)] text-white shadow' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
-                    >
-                        Matriz Acceso
-                    </button>
-                    <button
-                        @click="activeTab = 'log'"
-                        class="px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-200 cursor-pointer"
-                        :class="activeTab === 'log' ? 'bg-[var(--accent)] text-white shadow' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
-                    >
-                        Bitácora Actividad
-                    </button>
-                    <button
-                        @click="activeTab = 'stats'"
-                        class="px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-200 cursor-pointer"
-                        :class="activeTab === 'stats' ? 'bg-[var(--accent)] text-white shadow' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
-                    >
-                        Estadísticas Recursos
-                    </button>
+                <!-- Menú de Pestañas Visuales con Botón de Reporte -->
+                <div class="flex flex-wrap items-center gap-3">
+                    <ReportModal v-if="activeTab !== 'matrix'" module="seguridad" :vendedores="users" />
+                    <div class="inline-flex rounded-xl p-1 bg-[var(--bg-secondary)] border border-[var(--border-color)]">
+                        <button
+                            @click="activeTab = 'matrix'"
+                            class="px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-200 cursor-pointer"
+                            :class="activeTab === 'matrix' ? 'bg-[var(--accent)] text-[var(--bg-primary)] shadow font-bold' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
+                        >
+                            Matriz Acceso
+                        </button>
+                        <button
+                            @click="activeTab = 'log'"
+                            class="px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-200 cursor-pointer"
+                            :class="activeTab === 'log' ? 'bg-[var(--accent)] text-[var(--bg-primary)] shadow font-bold' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
+                        >
+                            Bitácora
+                        </button>
+                        <button
+                            @click="activeTab = 'stats'"
+                            class="px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-200 cursor-pointer"
+                            :class="activeTab === 'stats' ? 'bg-[var(--accent)] text-[var(--bg-primary)] shadow font-bold' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
+                        >
+                            Recursos
+                        </button>
+                    </div>
                 </div>
             </div>
         </template>

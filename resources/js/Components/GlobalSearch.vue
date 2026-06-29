@@ -144,12 +144,12 @@ watch(search, () => {
                 v-model="search"
                 type="text"
                 placeholder="Buscar..."
-                class="w-full pl-8 pr-4 py-1.5 rounded-full border border-white/15 bg-white/5 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:bg-white/10 backdrop-blur-sm transition-all duration-300 shadow-sm text-xs cursor-text"
+                class="w-full pl-8 pr-4 py-1.5 rounded-full border border-[var(--border-color)] bg-[var(--bg-secondary)]/30 text-[var(--text-primary)] placeholder-[var(--text-secondary)]/60 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:bg-[var(--bg-secondary)]/80 backdrop-blur-sm transition-all duration-300 shadow-sm text-xs cursor-text"
                 aria-label="Buscar productos"
                 @focus="showDropdown = true"
             />
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="h-3.5 w-3.5 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="h-3.5 w-3.5 text-[var(--text-secondary)]/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
             </div>

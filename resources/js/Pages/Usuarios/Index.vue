@@ -5,6 +5,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import UsuarioList from './Partials/UsuarioList.vue';
 import UsuarioFormModal from './Partials/UsuarioFormModal.vue';
+import ReportModal from '@/Components/ReportModal.vue';
 
 defineProps({
     usuarios: Object,
@@ -51,9 +52,12 @@ const destroy = (user) => {
                         Crea y administra los perfiles de vendedores y clientes del negocio.
                     </p>
                 </div>
-                <PrimaryButton type="button" @click="openCreate">
-                    Crear Usuario
-                </PrimaryButton>
+                <div class="flex gap-2">
+                    <ReportModal module="usuarios" />
+                    <PrimaryButton type="button" @click="openCreate">
+                        Crear Usuario
+                    </PrimaryButton>
+                </div>
             </div>
         </template>
 

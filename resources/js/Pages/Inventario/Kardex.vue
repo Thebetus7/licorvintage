@@ -4,6 +4,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import InventarioNav from '@/Pages/Inventario/Partials/InventarioNav.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
+import ReportModal from '@/Components/ReportModal.vue';
 
 defineProps({
     movimientos: Array,
@@ -33,12 +34,12 @@ const esIngreso = (tipo) => tipo.startsWith('ingreso_');
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <InventarioNav />
 
-            <form class="mb-4 grid gap-3 rounded-lg border border-[var(--border-color)] bg-[var(--bg-tertiary)]/80 p-4 sm:grid-cols-4 text-[var(--text-primary)] transition-colors duration-300" @submit="applyFilters">
+            <form class="mb-4 grid gap-3 rounded-xl border border-[var(--border-color)] bg-[var(--bg-tertiary)]/80 p-4 sm:grid-cols-4 text-[var(--text-primary)] transition-colors duration-300" @submit="applyFilters">
                 <div>
                     <InputLabel value="Producto" />
-                    <select name="producto_id" class="mt-1 w-full rounded-md bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[var(--text-primary)] focus:ring-[var(--accent)] focus:border-[var(--accent)] py-2 px-3 focus:outline-none transition-colors duration-300" required>
-                        <option value="" class="bg-[#1c0e11] text-stone-200">Seleccionar...</option>
-                        <option v-for="p in productos" :key="p.id" :value="p.id" :selected="filters.producto_id == p.id" class="bg-[#1c0e11] text-stone-200">{{ p.nombre }}</option>
+                    <select name="producto_id" class="mt-1 w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[var(--text-primary)] focus:ring-[var(--accent)] focus:border-[var(--accent)] py-2 px-3 focus:outline-none transition-colors duration-300" required>
+                        <option value="" class="bg-[var(--bg-secondary)] text-[var(--text-primary)]">Seleccionar...</option>
+                        <option v-for="p in productos" :key="p.id" :value="p.id" :selected="filters.producto_id == p.id" class="bg-[var(--bg-secondary)] text-[var(--text-primary)]">{{ p.nombre }}</option>
                     </select>
                 </div>
                 <div>
@@ -49,10 +50,11 @@ const esIngreso = (tipo) => tipo.startsWith('ingreso_');
                     <InputLabel value="Hasta" />
                     <TextInput name="hasta" type="date" :value="filters.hasta || ''" class="mt-1 w-full" />
                 </div>
-                <div class="flex items-end">
-                    <button type="submit" class="w-full justify-center px-4 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[var(--accent)] hover:bg-[var(--accent)]/10 hover:text-[var(--text-primary)] rounded-md font-semibold text-sm transition cursor-pointer">
+                <div class="flex items-end gap-2">
+                    <button type="submit" class="flex-1 justify-center px-4 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[var(--accent)] hover:bg-[var(--accent)]/10 hover:text-[var(--text-primary)] rounded-xl font-semibold text-sm transition cursor-pointer">
                         Consultar
                     </button>
+                    <ReportModal module="inventario_kardex" :filters="filters" />
                 </div>
             </form>
 
