@@ -384,9 +384,9 @@ const diasChartSeries = computed(() => [{
                             v-model="filterYear"
                             @change="applyFilters"
                             :disabled="loading"
-                            class="bg-stone-900/90 border border-white/10 text-xs rounded-lg text-[var(--text-primary)] focus:ring-amber-500 focus:border-amber-500 block w-28 p-2 disabled:opacity-50"
+                            class="bg-[var(--bg-tertiary)] border border-[var(--border-color)] text-xs rounded-lg text-[var(--text-primary)] focus:ring-[var(--accent)] focus:border-[var(--accent)] block w-28 p-2 disabled:opacity-50"
                         >
-                            <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
+                            <option v-for="y in years" :key="y" :value="y" class="bg-[var(--bg-tertiary)] text-[var(--text-primary)]">{{ y }}</option>
                         </select>
                     </div>
 
@@ -396,9 +396,9 @@ const diasChartSeries = computed(() => [{
                             v-model="filterMonth"
                             @change="applyFilters"
                             :disabled="loading"
-                            class="bg-stone-900/90 border border-white/10 text-xs rounded-lg text-[var(--text-primary)] focus:ring-amber-500 focus:border-amber-500 block w-36 p-2 disabled:opacity-50"
+                            class="bg-[var(--bg-tertiary)] border border-[var(--border-color)] text-xs rounded-lg text-[var(--text-primary)] focus:ring-[var(--accent)] focus:border-[var(--accent)] block w-36 p-2 disabled:opacity-50"
                         >
-                            <option v-for="m in months" :key="m.value" :value="m.value">{{ m.label }}</option>
+                            <option v-for="m in months" :key="m.value" :value="m.value" class="bg-[var(--bg-tertiary)] text-[var(--text-primary)]">{{ m.label }}</option>
                         </select>
                     </div>
 
@@ -408,16 +408,16 @@ const diasChartSeries = computed(() => [{
                             v-model="filterVendedor"
                             @change="applyFilters"
                             :disabled="loading"
-                            class="bg-stone-900/90 border border-white/10 text-xs rounded-lg text-[var(--text-primary)] focus:ring-amber-500 focus:border-amber-500 block w-44 p-2 disabled:opacity-50"
+                            class="bg-[var(--bg-tertiary)] border border-[var(--border-color)] text-xs rounded-lg text-[var(--text-primary)] focus:ring-[var(--accent)] focus:border-[var(--accent)] block w-44 p-2 disabled:opacity-50"
                         >
-                            <option :value="null">Todos los Vendedores</option>
-                            <option v-for="v in vendedores" :key="v.id" :value="v.id">{{ v.name }}</option>
+                            <option :value="null" class="bg-[var(--bg-tertiary)] text-[var(--text-primary)]">Todos los Vendedores</option>
+                            <option v-for="v in vendedores" :key="v.id" :value="v.id" class="bg-[var(--bg-tertiary)] text-[var(--text-primary)]">{{ v.name }}</option>
                         </select>
                     </div>
 
                     <!-- Indicador de Carga -->
-                    <div v-if="loading" class="absolute right-4 flex items-center gap-2 text-xs text-amber-500 font-semibold animate-pulse">
-                        <svg class="animate-spin h-4 w-4 text-amber-500" fill="none" viewBox="0 0 24 24">
+                    <div v-if="loading" class="absolute right-4 flex items-center gap-2 text-xs text-[var(--accent)] font-semibold animate-pulse">
+                        <svg class="animate-spin h-4 w-4 text-[var(--accent)]" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
