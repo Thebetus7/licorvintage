@@ -17,6 +17,12 @@ const form = useForm({
     phone: '',
 });
 
+const onlyNumbers = (event) => {
+    if (!/^[0-9]$/.test(event.key)) {
+        event.preventDefault();
+    }
+};
+
 const submit = () => {
     form.post(route('profile.complete.store'));
 };
@@ -76,6 +82,8 @@ const submit = () => {
                     id="phone"
                     v-model="form.phone"
                     type="text"
+                    maxlength="8"
+                    @keypress="onlyNumbers"
                     class="mt-1 block w-full bg-stone-900 border-stone-700 text-stone-200 focus:border-amber-500 focus:ring-amber-500"
                     required
                     placeholder="Ej. 70000000"

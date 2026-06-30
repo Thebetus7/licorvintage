@@ -101,11 +101,15 @@ Route::middleware([
                 'name' => 'required|string|max:255',
                 'email' => 'required|string|email|max:255|unique:users,email',
                 'password' => 'required|string|min:8',
+                'ci' => 'required|string|max:20|unique:users,ci',
+                'phone' => 'required|digits:8',
             ]);
             $user = User::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
+                'ci' => $validated['ci'],
+                'phone' => $validated['phone'],
             ]);
             $user->assignRole('cliente');
 

@@ -123,7 +123,7 @@ class FirebaseController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'ci' => ['required', 'string', 'max:20', 'unique:users,ci,'.$user->id],
-            'phone' => ['required', 'string', 'max:20'],
+            'phone' => ['required', 'digits:8'],
         ]);
 
         $user->update([

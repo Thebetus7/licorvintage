@@ -144,7 +144,7 @@ watch(search, () => {
                 v-model="search"
                 type="text"
                 placeholder="Buscar..."
-                class="w-full pl-8 pr-4 py-1.5 rounded-full border border-[var(--border-color)] bg-[var(--bg-secondary)]/30 text-[var(--text-primary)] placeholder-[var(--text-secondary)]/60 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:bg-[var(--bg-secondary)]/80 backdrop-blur-sm transition-all duration-300 shadow-sm text-xs cursor-text"
+                class="w-full pl-8 pr-4 py-1.5 rounded-full border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-primary)] placeholder-[var(--text-secondary)]/60 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:bg-[var(--bg-primary)] backdrop-blur-sm transition-all duration-300 shadow-sm text-xs cursor-text"
                 aria-label="Buscar productos"
                 @focus="showDropdown = true"
             />
@@ -172,7 +172,7 @@ watch(search, () => {
         >
             <div
                 v-if="showDropdown && (hasResults || (search.trim() && !loading))"
-                class="absolute left-0 mt-2 rounded-xl border border-[var(--border-color)] bg-[var(--bg-tertiary)]/95 backdrop-blur-xl shadow-2xl overflow-hidden max-h-96 overflow-y-auto z-50 w-64 md:w-80 text-[var(--text-primary)]"
+                class="absolute left-0 mt-2 rounded-xl border border-[var(--border-color)] bg-[var(--bg-tertiary)] backdrop-blur-xl shadow-2xl overflow-hidden max-h-96 overflow-y-auto z-50 w-64 md:w-80 text-[var(--text-primary)]"
                 :class="isSidebar ? 'left-0 right-0 w-full' : 'right-auto md:right-0 md:left-auto'"
             >
                 <div v-if="hasResults" class="p-2 space-y-3">
@@ -183,7 +183,7 @@ watch(search, () => {
                         <button
                             v-for="item in filteredMenus"
                             :key="item.routeName"
-                            class="w-full text-left px-2.5 py-1.5 flex items-center gap-2 hover:bg-[var(--bg-secondary)]/80 rounded-lg transition text-xs text-[var(--text-primary)] cursor-pointer"
+                            class="w-full text-left px-2.5 py-1.5 flex items-center gap-2 hover:bg-[var(--bg-primary)] rounded-lg transition text-xs text-[var(--text-primary)] cursor-pointer"
                             @click="navigateToMenu(item.routeName)"
                         >
                             <svg class="w-3.5 h-3.5 text-[var(--accent)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -199,7 +199,7 @@ watch(search, () => {
                         <button
                             v-for="product in results.productos"
                             :key="product.id"
-                            class="w-full text-left px-2.5 py-2 flex items-center gap-3 hover:bg-[var(--bg-secondary)]/80 rounded-lg transition border-b border-[var(--border-color)]/30 last:border-0 cursor-pointer"
+                            class="w-full text-left px-2.5 py-2 flex items-center gap-3 hover:bg-[var(--bg-primary)] rounded-lg transition border-b border-[var(--border-color)]/30 last:border-0 cursor-pointer"
                             @click="selectProduct(product)"
                         >
                             <img
@@ -223,7 +223,7 @@ watch(search, () => {
                         <button
                             v-for="u in results.usuarios"
                             :key="u.id"
-                            class="w-full text-left px-2.5 py-2 flex items-center gap-2.5 hover:bg-[var(--bg-secondary)]/80 rounded-lg transition border-b border-[var(--border-color)]/30 last:border-0 cursor-pointer text-xs text-[var(--text-primary)]"
+                            class="w-full text-left px-2.5 py-2 flex items-center gap-2.5 hover:bg-[var(--bg-primary)] rounded-lg transition border-b border-[var(--border-color)]/30 last:border-0 cursor-pointer text-xs text-[var(--text-primary)]"
                             @click="navigateToMenu('usuarios.index')"
                         >
                             <div class="w-7 h-7 rounded-full bg-indigo-600/20 border border-indigo-500/20 flex items-center justify-center font-bold text-indigo-400 text-[10px] shrink-0">
@@ -242,7 +242,7 @@ watch(search, () => {
                         <button
                             v-for="p in results.proveedores"
                             :key="p.id"
-                            class="w-full text-left px-2.5 py-2 flex items-center gap-2.5 hover:bg-[var(--bg-secondary)]/80 rounded-lg transition border-b border-[var(--border-color)]/30 last:border-0 cursor-pointer text-xs text-[var(--text-primary)]"
+                            class="w-full text-left px-2.5 py-2 flex items-center gap-2.5 hover:bg-[var(--bg-primary)] rounded-lg transition border-b border-[var(--border-color)]/30 last:border-0 cursor-pointer text-xs text-[var(--text-primary)]"
                             @click="navigateToMenu('proveedores.index')"
                         >
                             <div class="w-7 h-7 rounded-full bg-emerald-600/20 border border-emerald-500/20 flex items-center justify-center font-bold text-emerald-400 text-[10px] shrink-0">
@@ -261,7 +261,7 @@ watch(search, () => {
                         <button
                             v-for="promo in results.promociones"
                             :key="promo.id"
-                            class="w-full text-left px-2.5 py-2 flex items-center gap-2.5 hover:bg-[var(--bg-secondary)]/80 rounded-lg transition border-b border-[var(--border-color)]/30 last:border-0 cursor-pointer text-xs text-[var(--text-primary)]"
+                            class="w-full text-left px-2.5 py-2 flex items-center gap-2.5 hover:bg-[var(--bg-primary)] rounded-lg transition border-b border-[var(--border-color)]/30 last:border-0 cursor-pointer text-xs text-[var(--text-primary)]"
                             @click="navigateToMenu('promociones.index')"
                         >
                             <div class="w-7 h-7 rounded-lg bg-rose-600/20 border border-rose-500/20 flex items-center justify-center font-bold text-rose-400 text-[10px] shrink-0">
@@ -310,7 +310,7 @@ watch(search, () => {
                         <div>
                             <div class="flex justify-between items-start mb-2">
                                 <h3 class="text-xl font-bold text-[var(--text-primary)] tracking-wide">{{ selectedProduct.nombre }}</h3>
-                                <button @click="showModal = false" class="text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-secondary)]/50 hover:bg-[var(--bg-secondary)] p-1.5 rounded-full border border-[var(--border-color)] transition-all duration-200 cursor-pointer">
+                                <button @click="showModal = false" class="text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-primary)] p-1.5 rounded-full border border-[var(--border-color)] transition-all duration-200 cursor-pointer">
                                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                     </svg>
@@ -321,11 +321,11 @@ watch(search, () => {
                             </p>
 
                             <div class="grid grid-cols-2 gap-4 mb-4">
-                                <div class="bg-[var(--bg-secondary)]/40 p-3 rounded-2xl border border-[var(--border-color)]">
+                                <div class="bg-[var(--bg-secondary)] p-3 rounded-2xl border border-[var(--border-color)]">
                                     <span class="text-[var(--text-secondary)]/50 text-[10px] uppercase font-bold tracking-wider block">Precio de Venta</span>
                                     <span class="text-lg font-extrabold text-[var(--accent)]">{{ selectedProduct.precio_venta }} Bs</span>
                                 </div>
-                                <div class="bg-[var(--bg-secondary)]/40 p-3 rounded-2xl border border-[var(--border-color)]">
+                                <div class="bg-[var(--bg-secondary)] p-3 rounded-2xl border border-[var(--border-color)]">
                                     <span class="text-[var(--text-secondary)]/50 text-[10px] uppercase font-bold tracking-wider block">Stock Disponible</span>
                                     <span :class="['text-lg font-extrabold', selectedProduct.stock > 0 ? 'text-emerald-400' : 'text-rose-400']">
                                         {{ selectedProduct.stock }} uds
@@ -333,7 +333,7 @@ watch(search, () => {
                                 </div>
                             </div>
 
-                            <div class="bg-[var(--bg-secondary)]/40 p-3 rounded-2xl border border-[var(--border-color)] mb-4 flex items-center justify-between">
+                            <div class="bg-[var(--bg-secondary)] p-3 rounded-2xl border border-[var(--border-color)] mb-4 flex items-center justify-between">
                                 <div>
                                     <span class="text-[var(--text-secondary)]/50 text-[10px] uppercase font-bold tracking-wider block">Código de Barras</span>
                                     <span class="font-mono text-xs text-[var(--text-primary)]">{{ selectedProduct.codigo_barra }}</span>

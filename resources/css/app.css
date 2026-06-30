@@ -115,6 +115,11 @@ html {
     --border-radius: 0px !important; /* Sin bordes redondeados para alto contraste */
 }
 
+/* Ajuste de color de texto para elementos con fondo de acento en alto contraste (ej: botones, pestañas activas, enlaces activos) */
+.contrast-high .bg-\[var\(--accent\)\] {
+    color: #000000 !important;
+}
+
 /* Ajustes dinámicos de redondeado a través de variables CSS */
 .rounded-lg, .rounded-xl, .rounded-2xl {
     border-radius: var(--border-radius) !important;

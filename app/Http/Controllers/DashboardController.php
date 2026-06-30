@@ -17,7 +17,7 @@ use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function __invoke(Request $request): Response|RedirectResponse
+    public function __invoke(Request $request): Response|\Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
     {
         $user = $request->user();
 
@@ -153,6 +153,7 @@ class DashboardController extends Controller
         $paginasMasVisitadas = [];
         $recursosMasAccedidos = [];
         $vendedores = [];
+        $vendedoresStats = [];
 
         if ($isPropietario) {
             $paginasMasVisitadas = PageView::orderByDesc('views_count')->limit(5)->get();
@@ -165,6 +166,35 @@ class DashboardController extends Controller
                 ->get();
 
             $vendedores = User::whereHas('roles', fn ($q) => $q->where('name', 'vendedor'))->get(['id', 'name']);
+
+            // Cálculo detallado de rendimiento de empleados
+            $vendedoresStats = User::whereHas('roles', fn ($q) => $q->where('name', 'vendedor'))
+                ->get()
+                ->map(function ($vendedor) use ($year, $month) {
+                    $q = Venta::where('user_id', $vendedor->id);
+                    if ($year) {
+                        $q->whereYear('created_at', $year);
+                    }
+                    if ($month && $month !== 'all') {
+                        $q->whereMonth('created_at', $month);
+                    }
+                    
+                    $total = (float) $q->sum('monto_final');
+                    $count = $q->count();
+                    
+                    return [
+                        'id' => $vendedor->id,
+                        'name' => $vendedor->name,
+                        'email' => $vendedor->email,
+                        'phone' => $vendedor->phone ?? '—',
+                        'total_ventas' => $total,
+                        'transacciones' => $count,
+                        'ticket_promedio' => $count > 0 ? round($total / $count, 2) : 0.0,
+                    ];
+                })
+                ->sortByDesc('total_ventas')
+                ->values()
+                ->toArray();
         }
 
         if ($request->wantsJson() || $request->has('json')) {
@@ -185,6 +215,7 @@ class DashboardController extends Controller
                     'labels' => $dayOfWeekLabels,
                     'values' => $dayOfWeekValues,
                 ],
+                'vendedores_stats' => $vendedoresStats,
             ]);
         }
 
@@ -214,6 +245,7 @@ class DashboardController extends Controller
             ],
             'paginas_visitadas' => $paginasMasVisitadas,
             'recursos_accedidos' => $recursosMasAccedidos,
+            'vendedores_stats' => $vendedoresStats,
         ]);
     }
 }

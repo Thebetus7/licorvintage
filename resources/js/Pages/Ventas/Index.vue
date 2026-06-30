@@ -631,6 +631,12 @@ function saveNewClient() {
     });
 }
 
+function onlyNumbers(event) {
+    if (!/^[0-9]$/.test(event.key)) {
+        event.preventDefault();
+    }
+}
+
 function focusClienteInput(el) {
     el?.focus();
 }
@@ -1022,31 +1028,31 @@ function focusClienteInput(el) {
             </div>
 
             <div v-if="activeVentaTab === 'comprobantes'" class="space-y-4">
-                <div class="flex items-end gap-4 flex-wrap rounded-lg border border-stone-700/60 bg-stone-800/50 p-4">
+                <div class="flex items-end gap-4 flex-wrap rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)] p-4 transition-colors duration-300">
                     <div>
-                        <label class="mb-1 block text-xs font-semibold text-stone-400">Desde</label>
-                        <input v-model="comprobantesFrom" type="date" class="rounded-lg border-stone-700 bg-stone-800 text-sm text-stone-200 px-3 py-2">
+                        <label class="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">Desde</label>
+                        <input v-model="comprobantesFrom" type="date" class="rounded-xl border-[var(--border-color)] bg-[var(--bg-primary)] text-sm text-[var(--text-primary)] px-3 py-2 focus:border-[var(--accent)] focus:ring-[var(--accent)] focus:outline-none transition">
                     </div>
                     <div>
-                        <label class="mb-1 block text-xs font-semibold text-stone-400">Hasta</label>
-                        <input v-model="comprobantesTo" type="date" class="rounded-lg border-stone-700 bg-stone-800 text-sm text-stone-200 px-3 py-2">
+                        <label class="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">Hasta</label>
+                        <input v-model="comprobantesTo" type="date" class="rounded-xl border-[var(--border-color)] bg-[var(--bg-primary)] text-sm text-[var(--text-primary)] px-3 py-2 focus:border-[var(--accent)] focus:ring-[var(--accent)] focus:outline-none transition">
                     </div>
-                    <button class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition cursor-pointer" :disabled="comprobantesLoading" @click="cargarComprobantes">
+                    <button class="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-bold px-4 py-2.5 rounded-xl transition cursor-pointer shadow-sm" :disabled="comprobantesLoading" @click="cargarComprobantes">
                         {{ comprobantesLoading ? 'Cargando...' : 'Filtrar' }}
                     </button>
                     <div class="ml-auto">
                         <ReportModal module="ventas" :filters="{ fecha_inicio: comprobantesFrom, fecha_fin: comprobantesTo }" />
                     </div>
                 </div>
-                <div v-if="comprobantesLoading" class="flex items-center justify-center py-16 text-stone-400">
-                    <svg class="animate-spin h-8 w-8 mr-2 text-amber-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                <div v-if="comprobantesLoading" class="flex items-center justify-center py-16 text-[var(--text-secondary)]">
+                    <svg class="animate-spin h-8 w-8 mr-2 text-[var(--accent)]" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
                     Cargando comprobantes...
                 </div>
-                <div v-else-if="comprobantes.length === 0" class="text-center py-16 text-stone-500">No hay ventas en este rango.</div>
-                <div v-else class="overflow-x-auto rounded-lg border border-stone-700/60">
+                <div v-else-if="comprobantes.length === 0" class="text-center py-16 text-[var(--text-secondary)]/70">No hay ventas en este rango.</div>
+                <div v-else class="overflow-x-auto rounded-xl border border-[var(--border-color)] bg-[var(--bg-tertiary)]/30">
                     <table class="w-full text-sm">
                         <thead>
-                            <tr class="bg-stone-800/60 text-stone-400">
+                            <tr class="bg-[var(--bg-secondary)] text-[var(--text-secondary)]">
                                 <th class="text-left py-3 px-4 font-semibold">#</th>
                                 <th class="text-left py-3 px-4 font-semibold">Fecha</th>
                                 <th class="text-left py-3 px-4 font-semibold">Cliente</th>
@@ -1057,17 +1063,17 @@ function focusClienteInput(el) {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="v in comprobantes" :key="v.id" class="border-t border-stone-700/60 hover:bg-stone-800/30">
-                                <td class="py-3 px-4 font-mono text-stone-200">{{ v.id }}</td>
-                                <td class="py-3 px-4 text-stone-400">{{ new Date(v.created_at).toLocaleString() }}</td>
-                                <td class="py-3 px-4 text-stone-200">{{ v.cliente?.name || 'Consumidor Final' }}</td>
-                                <td class="py-3 px-4 text-stone-200">{{ v.user?.name || '—' }}</td>
-                                <td class="py-3 px-4 text-right font-mono font-bold text-amber-200">Bs {{ Number(v.monto_final).toFixed(2) }}</td>
+                            <tr v-for="v in comprobantes" :key="v.id" class="border-t border-[var(--border-color)] hover:bg-[var(--bg-secondary)]/50 transition">
+                                <td class="py-3 px-4 font-mono text-[var(--text-primary)]">{{ v.id }}</td>
+                                <td class="py-3 px-4 text-[var(--text-secondary)]">{{ new Date(v.created_at).toLocaleString() }}</td>
+                                <td class="py-3 px-4 text-[var(--text-primary)]">{{ v.cliente?.name || 'Consumidor Final' }}</td>
+                                <td class="py-3 px-4 text-[var(--text-primary)]">{{ v.user?.name || '—' }}</td>
+                                <td class="py-3 px-4 text-right font-mono font-bold text-[var(--accent)]">Bs {{ Number(v.monto_final).toFixed(2) }}</td>
                                 <td class="py-3 px-4 text-center">
                                     <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold" :class="v.tipo_pago === 'credito' ? 'bg-amber-500/10 text-amber-400' : 'bg-emerald-500/10 text-emerald-400'">{{ formatTipoPago(v.tipo_pago) }}</span>
                                 </td>
                                 <td class="py-3 px-4 text-center">
-                                    <button class="text-xs bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer" @click="selectedVenta = v; showDetalleVentaModal = true">Ver</button>
+                                    <button class="text-xs bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer" @click="selectedVenta = v; showDetalleVentaModal = true">Ver</button>
                                 </td>
                             </tr>
                         </tbody>
@@ -1075,35 +1081,35 @@ function focusClienteInput(el) {
                 </div>
                 <div v-if="comprobantesPagination && comprobantesPagination.lastPage > 1" class="flex justify-center gap-2">
                     <template v-for="(link, i) in comprobantesPagination.links" :key="i">
-                        <button v-if="link.url" :disabled="link.active" class="px-3 py-1.5 rounded-lg text-sm font-medium transition" :class="link.active ? 'bg-amber-600 text-white' : 'text-stone-400 hover:bg-stone-800/50'" @click="irPaginaComprobantes(link.url)" v-html="link.label" />
-                        <span v-else class="px-3 py-1.5 text-sm text-stone-600" v-html="link.label" />
+                        <button v-if="link.url" :disabled="link.active" class="px-3 py-1.5 rounded-lg text-sm font-medium transition" :class="link.active ? 'bg-[var(--accent)] text-white' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'" @click="irPaginaComprobantes(link.url)" v-html="link.label" />
+                        <span v-else class="px-3 py-1.5 text-sm text-[var(--text-secondary)]/40" v-html="link.label" />
                     </template>
                 </div>
             </div>
 
             <div v-if="activeVentaTab === 'pedidos'" class="space-y-4">
-                <div class="flex items-end gap-4 flex-wrap rounded-lg border border-stone-700/60 bg-stone-800/50 p-4">
+                <div class="flex items-end gap-4 flex-wrap rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)] p-4 transition-colors duration-300">
                     <div>
-                        <label class="mb-1 block text-xs font-semibold text-stone-400">Desde</label>
-                        <input v-model="pedidosFrom" type="date" class="rounded-lg border-stone-700 bg-stone-800 text-sm text-stone-200 px-3 py-2">
+                        <label class="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">Desde</label>
+                        <input v-model="pedidosFrom" type="date" class="rounded-xl border-[var(--border-color)] bg-[var(--bg-primary)] text-sm text-[var(--text-primary)] px-3 py-2 focus:border-[var(--accent)] focus:ring-[var(--accent)] focus:outline-none transition">
                     </div>
                     <div>
-                        <label class="mb-1 block text-xs font-semibold text-stone-400">Hasta</label>
-                        <input v-model="pedidosTo" type="date" class="rounded-lg border-stone-700 bg-stone-800 text-sm text-stone-200 px-3 py-2">
+                        <label class="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">Hasta</label>
+                        <input v-model="pedidosTo" type="date" class="rounded-xl border-[var(--border-color)] bg-[var(--bg-primary)] text-sm text-[var(--text-primary)] px-3 py-2 focus:border-[var(--accent)] focus:ring-[var(--accent)] focus:outline-none transition">
                     </div>
-                    <button class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition cursor-pointer" :disabled="pedidosLoading" @click="cargarPedidos">
+                    <button class="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-bold px-4 py-2.5 rounded-xl transition cursor-pointer shadow-sm" :disabled="pedidosLoading" @click="cargarPedidos">
                         {{ pedidosLoading ? 'Cargando...' : 'Filtrar' }}
                     </button>
                 </div>
-                <div v-if="pedidosLoading" class="flex items-center justify-center py-16 text-stone-400">
-                    <svg class="animate-spin h-8 w-8 mr-2 text-amber-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                <div v-if="pedidosLoading" class="flex items-center justify-center py-16 text-[var(--text-secondary)]">
+                    <svg class="animate-spin h-8 w-8 mr-2 text-[var(--accent)]" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
                     Cargando pedidos...
                 </div>
-                <div v-else-if="pedidos.length === 0" class="text-center py-16 text-stone-500">No hay pedidos en este rango.</div>
-                <div v-else class="overflow-x-auto rounded-lg border border-stone-700/60">
+                <div v-else-if="pedidos.length === 0" class="text-center py-16 text-[var(--text-secondary)]/70">No hay pedidos en este rango.</div>
+                <div v-else class="overflow-x-auto rounded-xl border border-[var(--border-color)] bg-[var(--bg-tertiary)]/30">
                     <table class="w-full text-sm">
                         <thead>
-                            <tr class="bg-stone-800/60 text-stone-400">
+                            <tr class="bg-[var(--bg-secondary)] text-[var(--text-secondary)]">
                                 <th class="text-left py-3 px-4 font-semibold">#</th>
                                 <th class="text-left py-3 px-4 font-semibold">Cliente</th>
                                 <th class="text-right py-3 px-4 font-semibold">Total</th>
@@ -1113,10 +1119,10 @@ function focusClienteInput(el) {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="p in pedidos" :key="p.id" class="border-t border-stone-700/60 hover:bg-stone-800/30">
-                                <td class="py-3 px-4 font-mono text-stone-200">{{ p.id }}</td>
-                                <td class="py-3 px-4 text-stone-200">{{ p.cliente?.name || '—' }}</td>
-                                <td class="py-3 px-4 text-right font-mono font-bold text-amber-200">Bs {{ Number(p.monto_final).toFixed(2) }}</td>
+                            <tr v-for="p in pedidos" :key="p.id" class="border-t border-[var(--border-color)] hover:bg-[var(--bg-secondary)]/50 transition">
+                                <td class="py-3 px-4 font-mono text-[var(--text-primary)]">{{ p.id }}</td>
+                                <td class="py-3 px-4 text-[var(--text-primary)]">{{ p.cliente?.name || '—' }}</td>
+                                <td class="py-3 px-4 text-right font-mono font-bold text-[var(--accent)]">Bs {{ Number(p.monto_final).toFixed(2) }}</td>
                                 <td class="py-3 px-4 text-center">
                                     <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold" :class="p.tipo_pago === 'credito' ? 'bg-amber-500/10 text-amber-400' : 'bg-emerald-500/10 text-emerald-400'">{{ formatTipoPago(p.tipo_pago) }}</span>
                                 </td>
@@ -1125,8 +1131,8 @@ function focusClienteInput(el) {
                                 </td>
                                 <td class="py-3 px-4 text-center">
                                     <div class="flex items-center justify-center gap-2">
-                                        <button class="text-xs bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer" @click="selectedPedido = p; showDetallePedidoModal = true">Ver</button>
-                                        <button v-if="p.estado_pedido === 'pagado'" class="text-xs bg-sky-500 hover:bg-sky-600 text-white px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer" @click="marcarEnviado(p.id)">Enviar</button>
+                                        <button class="text-xs bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer" @click="selectedPedido = p; showDetallePedidoModal = true">Ver</button>
+                                        <button v-if="p.estado_pedido === 'pagado'" class="text-xs bg-sky-600 hover:bg-sky-700 text-white px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer" @click="marcarEnviado(p.id)">Enviar</button>
                                     </div>
                                 </td>
                             </tr>
@@ -1135,8 +1141,8 @@ function focusClienteInput(el) {
                 </div>
                 <div v-if="pedidosPagination && pedidosPagination.lastPage > 1" class="flex justify-center gap-2">
                     <template v-for="(link, i) in pedidosPagination.links" :key="i">
-                        <button v-if="link.url" :disabled="link.active" class="px-3 py-1.5 rounded-lg text-sm font-medium transition" :class="link.active ? 'bg-amber-600 text-white' : 'text-stone-400 hover:bg-stone-800/50'" @click="irPaginaPedidos(link.url)" v-html="link.label" />
-                        <span v-else class="px-3 py-1.5 text-sm text-stone-600" v-html="link.label" />
+                        <button v-if="link.url" :disabled="link.active" class="px-3 py-1.5 rounded-lg text-sm font-medium transition" :class="link.active ? 'bg-[var(--accent)] text-white' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'" @click="irPaginaPedidos(link.url)" v-html="link.label" />
+                        <span v-else class="px-3 py-1.5 text-sm text-[var(--text-secondary)]/40" v-html="link.label" />
                     </template>
                 </div>
             </div>
@@ -1309,7 +1315,7 @@ function focusClienteInput(el) {
                     </div>
                     <div>
                         <InputLabel for="nc-phone" value="Telefono" />
-                        <TextInput id="nc-phone" v-model="quickClientForm.phone" type="text" class="mt-1 w-full" />
+                        <TextInput id="nc-phone" v-model="quickClientForm.phone" type="text" maxlength="8" @keypress="onlyNumbers" class="mt-1 w-full" />
                         <InputError :message="quickClientForm.errors.phone" />
                     </div>
                 </div>
@@ -1354,24 +1360,24 @@ function focusClienteInput(el) {
         <!-- Comprobantes Modal -->
         <DialogModal :show="showDetalleVentaModal" max-width="lg" @close="showDetalleVentaModal = false">
             <template #title>
-                <div class="flex items-center gap-2 text-stone-200">
+                <div class="flex items-center gap-2 text-[var(--text-primary)]">
                     <span>Factura #{{ selectedVenta?.id }}</span>
-                    <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold" :class="selectedVenta?.tipo_pago === 'credito' ? 'bg-amber-500/10 text-amber-400' : 'bg-emerald-500/10 text-emerald-400'">{{ formatTipoPago(selectedVenta?.tipo_pago) }}</span>
+                    <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold" :class="selectedVenta?.tipo_pago === 'credito' ? 'bg-amber-500/10 text-amber-500' : 'bg-emerald-500/10 text-emerald-500'">{{ formatTipoPago(selectedVenta?.tipo_pago) }}</span>
                 </div>
             </template>
             <template #content>
                 <div v-if="selectedVenta" class="space-y-4">
                     <div class="grid grid-cols-2 gap-4 text-sm">
-                        <div><span class="text-stone-400">Fecha:</span><p class="font-medium text-stone-200">{{ new Date(selectedVenta.created_at).toLocaleString() }}</p></div>
-                        <div><span class="text-stone-400">Vendedor:</span><p class="font-medium text-stone-200">{{ selectedVenta.user?.name || '—' }}</p></div>
-                        <div><span class="text-stone-400">Cliente:</span><p class="font-medium text-stone-200">{{ selectedVenta.cliente?.name || 'Consumidor Final' }}</p></div>
-                        <div v-if="selectedVenta.cliente?.ci"><span class="text-stone-400">CI:</span><p class="font-medium text-stone-200">{{ selectedVenta.cliente.ci }}</p></div>
+                        <div><span class="text-[var(--text-secondary)]">Fecha:</span><p class="font-medium text-[var(--text-primary)]">{{ new Date(selectedVenta.created_at).toLocaleString() }}</p></div>
+                        <div><span class="text-[var(--text-secondary)]">Vendedor:</span><p class="font-medium text-[var(--text-primary)]">{{ selectedVenta.user?.name || '—' }}</p></div>
+                        <div><span class="text-[var(--text-secondary)]">Cliente:</span><p class="font-medium text-[var(--text-primary)]">{{ selectedVenta.cliente?.name || 'Consumidor Final' }}</p></div>
+                        <div v-if="selectedVenta.cliente?.ci"><span class="text-[var(--text-secondary)]">CI:</span><p class="font-medium text-[var(--text-primary)]">{{ selectedVenta.cliente.ci }}</p></div>
                     </div>
                     <div>
-                        <h4 class="text-xs font-semibold uppercase text-stone-400 mb-2">Productos</h4>
+                        <h4 class="text-xs font-semibold uppercase text-[var(--text-secondary)] mb-2">Productos</h4>
                         <table class="w-full text-sm">
                             <thead>
-                                <tr class="border-b border-stone-700 text-stone-400">
+                                <tr class="border-b border-[var(--border-color)] text-[var(--text-secondary)]">
                                     <th class="text-left py-2 font-semibold">Producto</th>
                                     <th class="text-center py-2 font-semibold">Cant</th>
                                     <th class="text-right py-2 font-semibold">P.U.</th>
@@ -1379,31 +1385,31 @@ function focusClienteInput(el) {
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="d in selectedVenta.detalle_ventas" :key="d.id" class="border-b border-stone-700/50">
-                                    <td class="py-2 text-stone-200">{{ d.producto?.nombre || '—' }}</td>
-                                    <td class="py-2 text-center text-stone-400">{{ d.cantidad }}</td>
-                                    <td class="py-2 text-right font-mono text-stone-400">Bs {{ Number(d.precio_u_final).toFixed(2) }}</td>
-                                    <td class="py-2 text-right font-mono text-stone-200">Bs {{ Number(d.subtotal).toFixed(2) }}</td>
+                                <tr v-for="d in selectedVenta.detalle_ventas" :key="d.id" class="border-b border-[var(--border-color)]">
+                                    <td class="py-2 text-[var(--text-primary)]">{{ d.producto?.nombre || '—' }}</td>
+                                    <td class="py-2 text-center text-[var(--text-secondary)]">{{ d.cantidad }}</td>
+                                    <td class="py-2 text-right font-mono text-[var(--text-secondary)]">Bs {{ Number(d.precio_u_final).toFixed(2) }}</td>
+                                    <td class="py-2 text-right font-mono text-[var(--text-primary)]">Bs {{ Number(d.subtotal).toFixed(2) }}</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
-                    <div class="rounded-lg bg-stone-800/50 p-3 space-y-1 text-sm">
-                        <div class="flex justify-between"><span class="text-stone-400">Subtotal</span><span class="font-mono text-stone-200">Bs {{ Number(selectedVenta.monto_original).toFixed(2) }}</span></div>
-                        <div v-if="selectedVenta.cod_descuento" class="flex justify-between"><span class="text-stone-400">Descuento ({{ selectedVenta.cod_descuento }})</span><span class="font-mono text-emerald-400">−Bs {{ (Number(selectedVenta.monto_original) - Number(selectedVenta.monto_final)).toFixed(2) }}</span></div>
-                        <div class="flex justify-between border-t border-stone-700 pt-1 text-base font-bold"><span class="text-stone-200">Total</span><span class="font-mono text-amber-200">Bs {{ Number(selectedVenta.monto_final).toFixed(2) }}</span></div>
+                    <div class="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-color)] p-4 space-y-1.5 text-sm">
+                        <div class="flex justify-between"><span class="text-[var(--text-secondary)]">Subtotal</span><span class="font-mono text-[var(--text-primary)]">Bs {{ Number(selectedVenta.monto_original).toFixed(2) }}</span></div>
+                        <div v-if="selectedVenta.cod_descuento" class="flex justify-between"><span class="text-[var(--text-secondary)]">Descuento ({{ selectedVenta.cod_descuento }})</span><span class="font-mono text-emerald-500">−Bs {{ (Number(selectedVenta.monto_original) - Number(selectedVenta.monto_final)).toFixed(2) }}</span></div>
+                        <div class="flex justify-between border-t border-[var(--border-color)] pt-1.5 text-base font-bold"><span class="text-[var(--text-primary)]">Total</span><span class="font-mono text-[var(--accent)]">Bs {{ Number(selectedVenta.monto_final).toFixed(2) }}</span></div>
                     </div>
                     <div>
-                        <h4 class="text-xs font-semibold uppercase text-stone-400 mb-2">Metodos de pago</h4>
+                        <h4 class="text-xs font-semibold uppercase text-[var(--text-secondary)] mb-2">Metodos de pago</h4>
                         <div class="space-y-1">
-                            <div v-for="mp in selectedVenta.metodo_pagos" :key="mp.id" class="flex justify-between text-sm"><span class="text-stone-200">{{ formatTipoPago(mp.tipo_pago) }}</span><span class="font-mono text-stone-200">Bs {{ Number(mp.monto || 0).toFixed(2) }}</span></div>
-                            <div v-if="!selectedVenta.metodo_pagos?.length" class="flex justify-between text-sm"><span class="text-stone-200">{{ formatTipoPago(selectedVenta.tipo_pago) }}</span><span class="font-mono text-stone-200">Bs {{ Number(selectedVenta.monto_final).toFixed(2) }}</span></div>
+                            <div v-for="mp in selectedVenta.metodo_pagos" :key="mp.id" class="flex justify-between text-sm"><span class="text-[var(--text-primary)]">{{ formatTipoPago(mp.tipo_pago) }}</span><span class="font-mono text-[var(--text-primary)]">Bs {{ Number(mp.monto || 0).toFixed(2) }}</span></div>
+                            <div v-if="!selectedVenta.metodo_pagos?.length" class="flex justify-between text-sm"><span class="text-[var(--text-primary)]">{{ formatTipoPago(selectedVenta.tipo_pago) }}</span><span class="font-mono text-[var(--text-primary)]">Bs {{ Number(selectedVenta.monto_final).toFixed(2) }}</span></div>
                         </div>
                     </div>
                     <div v-if="selectedVenta.tipo_pago === 'credito' && selectedVenta.venta_cuotas?.length">
-                        <h4 class="text-xs font-semibold uppercase text-stone-400 mb-2">Cuotas</h4>
+                        <h4 class="text-xs font-semibold uppercase text-[var(--text-secondary)] mb-2">Cuotas</h4>
                         <div class="space-y-1">
-                            <div v-for="cu in selectedVenta.venta_cuotas" :key="cu.id" class="flex justify-between text-sm"><span class="text-stone-200">Cuota #{{ cu.nro_cuota }}</span><span class="font-mono text-stone-200">Bs {{ Number(cu.sub_monto).toFixed(2) }}</span><span :class="cu.estado === 'pagado' ? 'text-emerald-400' : 'text-amber-400'">{{ cu.estado === 'pagado' ? 'Pagado' : 'Pendiente' }}</span></div>
+                            <div v-for="cu in selectedVenta.venta_cuotas" :key="cu.id" class="flex justify-between text-sm"><span class="text-[var(--text-primary)]">Cuota #{{ cu.nro_cuota }}</span><span class="font-mono text-[var(--text-primary)]">Bs {{ Number(cu.sub_monto).toFixed(2) }}</span><span :class="cu.estado === 'pagado' ? 'text-emerald-500' : 'text-amber-500'">{{ cu.estado === 'pagado' ? 'Pagado' : 'Pendiente' }}</span></div>
                         </div>
                     </div>
                 </div>

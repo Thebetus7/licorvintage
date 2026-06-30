@@ -89,6 +89,28 @@ const totalCompra = computed(() => {
     return form.detalles.reduce((acc, d) => acc + lineSubtotal(d), 0);
 });
 
+const onlyPositiveInteger = (event) => {
+    if (!/^[0-9]$/.test(event.key)) {
+        event.preventDefault();
+    }
+};
+
+const onlyPositiveDecimal = (event) => {
+    if (event.key === '-' || event.key === 'e') {
+        event.preventDefault();
+    }
+};
+
+const fillForm = (compra) => {
+    form.proveedor_id = compra.proveedor_id || '';
+    form.detalles = compra.detalle_compras.map(d => ({
+        producto_id: d.producto_id,
+        cantidad: d.cantidad,
+        precio_unitario: Number(d.sub_costo) / d.cantidad,
+        fecha_expiracion: d.lote?.fecha_expiracion || '',
+    }));
+};
+
 const resetForm = () => {
     form.reset();
     search.value = '';
@@ -99,14 +121,41 @@ watch(() => props.show, (visible) => {
         return;
     }
 
-    resetForm();
+    if (props.compra) {
+        fillForm(props.compra);
+    } else {
+        resetForm();
+    }
 });
 
 const submit = () => {
-    form.post(route('compras.store'), {
-        preserveScroll: true,
-        onSuccess: () => emit('close'),
-    });
+    const action = props.compra
+        ? () => form.transform((data) => ({
+            ...data,
+            detalles: data.detalles.map(d => ({
+                producto_id: d.producto_id,
+                cantidad: d.cantidad,
+                sub_costo: Number(d.cantidad) * Number(d.precio_unitario),
+                fecha_expiracion: d.fecha_expiracion,
+            })),
+          })).put(route('compras.update', props.compra.id), {
+              preserveScroll: true,
+              onSuccess: () => emit('close'),
+          })
+        : () => form.transform((data) => ({
+            ...data,
+            detalles: data.detalles.map(d => ({
+                producto_id: d.producto_id,
+                cantidad: d.cantidad,
+                sub_costo: Number(d.cantidad) * Number(d.precio_unitario),
+                fecha_expiracion: d.fecha_expiracion,
+            })),
+          })).post(route('compras.store'), {
+              preserveScroll: true,
+              onSuccess: () => emit('close'),
+          });
+
+    action();
 };
 
 const close = () => emit('close');
@@ -204,6 +253,7 @@ const close = () => emit('close');
                                         v-model="detalle.cantidad"
                                         type="number"
                                         min="1"
+                                        @keypress="onlyPositiveInteger"
                                         class="mt-1 block w-full rounded-xl border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-primary)] focus:border-[var(--accent)] focus:ring-[var(--accent)] text-sm px-3 py-2 focus:outline-none transition"
                                     />
                                     <InputError :message="form.errors[`detalles.${index}.cantidad`]" class="mt-1" />
@@ -215,6 +265,7 @@ const close = () => emit('close');
                                         type="number"
                                         min="0"
                                         step="0.01"
+                                        @keypress="onlyPositiveDecimal"
                                         class="mt-1 block w-full rounded-xl border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-primary)] focus:border-[var(--accent)] focus:ring-[var(--accent)] text-sm px-3 py-2 focus:outline-none transition"
                                     />
                                     <InputError :message="form.errors[`detalles.${index}.precio_unitario`]" class="mt-1" />

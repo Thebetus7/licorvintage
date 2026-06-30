@@ -15,7 +15,7 @@ class UpdateProveedorRequest extends FormRequest
     {
         return [
             'nombre' => ['required', 'string', 'max:255'],
-            'telefono' => ['required', 'string', 'max:50'],
+            'telefono' => ['required', 'digits:8'],
             'descripcion' => ['nullable', 'string'],
         ];
     }

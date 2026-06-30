@@ -30,6 +30,12 @@ const resetForm = () => {
     form.reset();
 };
 
+const onlyNumbers = (event) => {
+    if (!/^[0-9]$/.test(event.key)) {
+        event.preventDefault();
+    }
+};
+
 const fillForm = (proveedor) => {
     form.nombre = proveedor.nombre;
     form.telefono = proveedor.telefono;
@@ -83,7 +89,7 @@ const close = () => emit('close');
                         </div>
                         <div>
                             <InputLabel value="Telefono" />
-                            <TextInput v-model="form.telefono" class="mt-1 block w-full max-w-md" />
+                            <TextInput v-model="form.telefono" type="text" maxlength="8" @keypress="onlyNumbers" class="mt-1 block w-full max-w-md" />
                             <InputError :message="form.errors.telefono" class="mt-1" />
                         </div>
                         <div>

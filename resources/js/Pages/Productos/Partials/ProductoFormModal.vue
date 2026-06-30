@@ -85,6 +85,18 @@ const onScanned = (code) => {
     form.codigo_barra = code;
 };
 
+const onlyPositiveInteger = (event) => {
+    if (!/^[0-9]$/.test(event.key)) {
+        event.preventDefault();
+    }
+};
+
+const onlyPositiveDecimal = (event) => {
+    if (event.key === '-' || event.key === 'e') {
+        event.preventDefault();
+    }
+};
+
 const submit = () => {
     form.imagen = form.fotos[0] || '';
 
@@ -139,7 +151,8 @@ const close = () => emit('close');
                         </div>
                         <div>
                             <InputLabel value="Mililitros" />
-                            <TextInput v-model="form.mililitros" type="number" class="mt-1 block w-28" />
+                            <TextInput v-model="form.mililitros" type="number" min="1" @keypress="onlyPositiveInteger" class="mt-1 block w-28" />
+                            <InputError :message="form.errors.mililitros" class="mt-1" />
                         </div>
                     </div>
                 </section>
@@ -149,11 +162,13 @@ const close = () => emit('close');
                     <div class="grid gap-3 sm:grid-cols-2">
                         <div>
                             <InputLabel value="Costo" />
-                            <TextInput v-model="form.costo" type="number" step="0.01" class="mt-1 block w-full max-w-[9rem]" />
+                            <TextInput v-model="form.costo" type="number" step="0.01" min="0" @keypress="onlyPositiveDecimal" class="mt-1 block w-full max-w-[9rem]" />
+                            <InputError :message="form.errors.costo" class="mt-1" />
                         </div>
                         <div>
                             <InputLabel value="Precio venta" />
-                            <TextInput v-model="form.precio_venta" type="number" step="0.01" class="mt-1 block w-full max-w-[9rem]" />
+                            <TextInput v-model="form.precio_venta" type="number" step="0.01" min="0" @keypress="onlyPositiveDecimal" class="mt-1 block w-full max-w-[9rem]" />
+                            <InputError :message="form.errors.precio_venta" class="mt-1" />
                         </div>
                     </div>
                 </section>
@@ -173,15 +188,18 @@ const close = () => emit('close');
                     <div v-if="!isEditing" class="grid gap-3 sm:grid-cols-3">
                         <div>
                             <InputLabel value="Stock inicial" />
-                            <TextInput v-model="form.stock.stock" type="number" class="mt-1 block w-full max-w-[7rem]" />
+                            <TextInput v-model="form.stock.stock" type="number" min="0" @keypress="onlyPositiveInteger" class="mt-1 block w-full max-w-[7rem]" />
+                            <InputError :message="form.errors['stock.stock']" class="mt-1" />
                         </div>
                         <div>
                             <InputLabel value="Minimo" />
-                            <TextInput v-model="form.stock.min" type="number" class="mt-1 block w-full max-w-[7rem]" />
+                            <TextInput v-model="form.stock.min" type="number" min="0" @keypress="onlyPositiveInteger" class="mt-1 block w-full max-w-[7rem]" />
+                            <InputError :message="form.errors['stock.min']" class="mt-1" />
                         </div>
                         <div>
                             <InputLabel value="Maximo" />
-                            <TextInput v-model="form.stock.max" type="number" class="mt-1 block w-full max-w-[7rem]" />
+                            <TextInput v-model="form.stock.max" type="number" min="0" @keypress="onlyPositiveInteger" class="mt-1 block w-full max-w-[7rem]" />
+                            <InputError :message="form.errors['stock.max']" class="mt-1" />
                         </div>
                     </div>
                     <div v-else class="space-y-3 text-sm text-[var(--text-secondary)]">
@@ -193,11 +211,13 @@ const close = () => emit('close');
                         <div class="grid gap-3 sm:grid-cols-2">
                             <div>
                                 <InputLabel value="Minimo" />
-                                <TextInput v-model="form.stock.min" type="number" class="mt-1 block w-full max-w-[7rem]" />
+                                <TextInput v-model="form.stock.min" type="number" min="0" @keypress="onlyPositiveInteger" class="mt-1 block w-full max-w-[7rem]" />
+                                <InputError :message="form.errors['stock.min']" class="mt-1" />
                             </div>
                             <div>
                                 <InputLabel value="Maximo" />
-                                <TextInput v-model="form.stock.max" type="number" class="mt-1 block w-full max-w-[7rem]" />
+                                <TextInput v-model="form.stock.max" type="number" min="0" @keypress="onlyPositiveInteger" class="mt-1 block w-full max-w-[7rem]" />
+                                <InputError :message="form.errors['stock.max']" class="mt-1" />
                             </div>
                         </div>
                     </div>

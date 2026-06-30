@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import axios from 'axios';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
@@ -43,11 +43,15 @@ const props = defineProps({
     recursos_accedidos: {
         type: Array,
         default: () => [],
+    },
+    vendedores_stats: {
+        type: Array,
+        default: () => [],
     }
 });
 
 // --- PESTAÑAS (Submódulos) ---
-const activeTab = ref('estadisticas'); // 'estadisticas' | 'trafico'
+const activeTab = ref('estadisticas'); // 'estadisticas' | 'trafico' | 'empleados'
 
 // --- FILTROS REACTIVOS ---
 const filterYear = ref(props.filters.year);
@@ -78,8 +82,10 @@ const localChartTendencia = ref(props.chart_tendencia);
 const localChartProductos = ref(props.chart_productos);
 const localChartVendedores = ref(props.chart_vendedores);
 const localChartDias = ref(props.chart_dias);
+const localVendedoresStats = ref(props.vendedores_stats);
 
 const loading = ref(false);
+const chartKey = ref(0);
 
 const applyFilters = async () => {
     loading.value = true;
@@ -98,6 +104,10 @@ const applyFilters = async () => {
         localChartProductos.value = response.data.chart_productos;
         localChartVendedores.value = response.data.chart_vendedores;
         localChartDias.value = response.data.chart_dias;
+        localVendedoresStats.value = response.data.vendedores_stats;
+        
+        // Incrementar key para forzar el redibujado de los gráficos
+        chartKey.value++;
     } catch (error) {
         console.error('Error al filtrar las estadísticas:', error);
     } finally {
@@ -105,7 +115,31 @@ const applyFilters = async () => {
     }
 };
 
-// --- CONFIGURACIÓN DE APEXCHARTS (ESTILO POWER BI / DARK THEME) ---
+// --- SOPORTE MULTI-TEMA DILIGENTE PARA LOS GRÁFICOS ---
+const isLightMode = ref(false);
+
+onMounted(() => {
+    isLightMode.value = document.documentElement.classList.contains('theme-light');
+    
+    const observer = new MutationObserver(() => {
+        isLightMode.value = document.documentElement.classList.contains('theme-light');
+    });
+    
+    observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class']
+    });
+    
+    onUnmounted(() => {
+        observer.disconnect();
+    });
+});
+
+const textColor = computed(() => isLightMode.value ? '#374151' : '#a3a3a3'); // gris oscuro en claro, gris claro en oscuro
+const gridBorderColor = computed(() => isLightMode.value ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.05)');
+const tooltipTheme = computed(() => isLightMode.value ? 'light' : 'dark');
+
+// --- CONFIGURACIÓN DE APEXCHARTS (ESTILO POWER BI / ADAPTATIVO) ---
 
 // 1. Gráfico de Tendencia de Ventas (Área)
 const tendenciaChartOptions = computed(() => ({
@@ -113,7 +147,7 @@ const tendenciaChartOptions = computed(() => ({
         id: 'tendencia-ventas',
         type: 'area',
         background: 'transparent',
-        foreColor: '#a3a3a3',
+        foreColor: textColor.value,
         toolbar: { show: false },
         zoom: { enabled: false }
     },
@@ -132,26 +166,26 @@ const tendenciaChartOptions = computed(() => ({
         width: 3
     },
     grid: {
-        borderColor: 'rgba(255, 255, 255, 0.05)',
+        borderColor: gridBorderColor.value,
         strokeDashArray: 4,
         padding: { left: 15, right: 15 }
     },
     xaxis: {
         categories: localChartTendencia.value.labels,
         labels: {
-            style: { fontSize: '10px', fontWeight: 500 }
+            style: { fontSize: '10px', fontWeight: 500, colors: textColor.value }
         },
         axisBorder: { show: false },
         axisTicks: { show: false }
     },
     yaxis: {
         labels: {
-            style: { fontSize: '10px', fontWeight: 500 },
+            style: { fontSize: '10px', fontWeight: 500, colors: textColor.value },
             formatter: (val) => `${val.toLocaleString('es-BO')} Bs`
         }
     },
     tooltip: {
-        theme: 'dark',
+        theme: tooltipTheme.value,
         x: { show: true },
         y: {
             formatter: (val) => `<strong>${val.toFixed(2)} Bs</strong>`
@@ -170,7 +204,7 @@ const productosChartOptions = computed(() => ({
         id: 'top-productos',
         type: 'bar',
         background: 'transparent',
-        foreColor: '#a3a3a3',
+        foreColor: textColor.value,
         toolbar: { show: false }
     },
     plotOptions: {
@@ -183,25 +217,25 @@ const productosChartOptions = computed(() => ({
     },
     colors: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'], // Paleta Power BI
     grid: {
-        borderColor: 'rgba(255, 255, 255, 0.05)',
+        borderColor: gridBorderColor.value,
         strokeDashArray: 4
     },
     xaxis: {
         categories: localChartProductos.value.map(p => p.name),
         labels: {
-            style: { fontSize: '10px', fontWeight: 500 }
+            style: { fontSize: '10px', fontWeight: 500, colors: textColor.value }
         },
         axisBorder: { show: false },
         axisTicks: { show: false }
     },
     yaxis: {
         labels: {
-            style: { fontSize: '10px', fontWeight: 600, colors: ['#f3f4f6'] }
+            style: { fontSize: '10px', fontWeight: 600, colors: textColor.value }
         }
     },
     legend: { show: false },
     tooltip: {
-        theme: 'dark',
+        theme: tooltipTheme.value,
         y: {
             formatter: (val) => `<strong>${val} unidades</strong>`
         }
@@ -219,7 +253,7 @@ const vendedoresChartOptions = computed(() => ({
         id: 'ventas-vendedor',
         type: 'donut',
         background: 'transparent',
-        foreColor: '#a3a3a3'
+        foreColor: textColor.value
     },
     labels: localChartVendedores.value.map(v => v.name),
     colors: ['#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'],
@@ -227,7 +261,7 @@ const vendedoresChartOptions = computed(() => ({
     legend: {
         position: 'bottom',
         fontSize: '11px',
-        labels: { colors: '#d1d5db' },
+        labels: { colors: textColor.value },
         markers: { radius: 12 }
     },
     dataLabels: {
@@ -241,18 +275,18 @@ const vendedoresChartOptions = computed(() => ({
                 size: '65%',
                 labels: {
                     show: true,
-                    name: { show: true, fontSize: '12px', color: '#a3a3a3' },
+                    name: { show: true, fontSize: '12px', color: textColor.value },
                     value: {
                         show: true,
                         fontSize: '16px',
                         fontWeight: 'bold',
-                        color: '#ffffff',
+                        color: isLightMode.value ? '#111827' : '#ffffff',
                         formatter: (val) => `${parseFloat(val).toFixed(2)} Bs`
                     },
                     total: {
                         show: true,
                         label: 'Total Ventas',
-                        color: '#a3a3a3',
+                        color: textColor.value,
                         formatter: (w) => {
                             const total = w.globals.seriesTotals.reduce((a, b) => a + b, 0);
                             return `${total.toFixed(2)} Bs`;
@@ -263,7 +297,7 @@ const vendedoresChartOptions = computed(() => ({
         }
     },
     tooltip: {
-        theme: 'dark',
+        theme: tooltipTheme.value,
         y: {
             formatter: (val) => `<strong>${val.toFixed(2)} Bs</strong>`
         }
@@ -278,7 +312,7 @@ const diasChartOptions = computed(() => ({
         id: 'ventas-dias',
         type: 'bar',
         background: 'transparent',
-        foreColor: '#a3a3a3',
+        foreColor: textColor.value,
         toolbar: { show: false }
     },
     plotOptions: {
@@ -290,20 +324,20 @@ const diasChartOptions = computed(() => ({
     },
     colors: ['#6366f1'], // Indigo
     grid: {
-        borderColor: 'rgba(255, 255, 255, 0.05)',
+        borderColor: gridBorderColor.value,
         strokeDashArray: 4
     },
     xaxis: {
         categories: localChartDias.value.labels,
         labels: {
-            style: { fontSize: '10px', fontWeight: 500 }
+            style: { fontSize: '10px', fontWeight: 500, colors: textColor.value }
         },
         axisBorder: { show: false },
         axisTicks: { show: false }
     },
     yaxis: {
         labels: {
-            style: { fontSize: '10px', fontWeight: 500 },
+            style: { fontSize: '10px', fontWeight: 500, colors: textColor.value },
             formatter: (val) => `${val.toLocaleString('es-BO')} Bs`
         }
     },
@@ -311,10 +345,10 @@ const diasChartOptions = computed(() => ({
         enabled: true,
         formatter: (val) => val > 0 ? `${val.toFixed(0)}` : '',
         offsetY: -20,
-        style: { fontSize: '10px', colors: ['#ffffff'], fontWeight: 'bold' }
+        style: { fontSize: '10px', colors: [isLightMode.value ? '#374151' : '#ffffff'], fontWeight: 'bold' }
     },
     tooltip: {
-        theme: 'dark',
+        theme: tooltipTheme.value,
         y: {
             formatter: (val) => `<strong>${val.toFixed(2)} Bs</strong>`
         }
@@ -348,7 +382,7 @@ const diasChartSeries = computed(() => [{
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-6 pb-12">
             
             <!-- Barra de Pestañas / Submódulos (Solo visible para Propietario) -->
-            <div v-if="is_propietario" class="flex border-b border-white/5 gap-6">
+            <div v-if="is_propietario" class="flex border-b border-[var(--border-color)] gap-6">
                 <button
                     type="button"
                     @click="activeTab = 'estadisticas'"
@@ -357,6 +391,15 @@ const diasChartSeries = computed(() => [{
                 >
                     Estadísticas Comerciales
                     <span v-if="activeTab === 'estadisticas'" class="absolute bottom-0 left-0 w-full h-0.5 bg-[var(--accent)] rounded-full" />
+                </button>
+                <button
+                    type="button"
+                    @click="activeTab = 'empleados'"
+                    class="pb-4 text-sm font-semibold transition-all duration-200 relative cursor-pointer"
+                    :class="activeTab === 'empleados' ? 'text-[var(--accent)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
+                >
+                    Rendimiento de Empleados
+                    <span v-if="activeTab === 'empleados'" class="absolute bottom-0 left-0 w-full h-0.5 bg-[var(--accent)] rounded-full" />
                 </button>
                 <button
                     type="button"
@@ -509,7 +552,6 @@ const diasChartSeries = computed(() => [{
 
                 <!-- Gráficos Principales -->
                 <div class="grid gap-6 md:grid-cols-2">
-                    
                     <!-- Gráfico 1: Tendencia de Ventas (Línea / Área) -->
                     <div class="rounded-2xl border border-white/5 bg-[var(--bg-secondary)]/40 p-6 shadow-xl backdrop-blur-md">
                         <div class="mb-4">
@@ -520,6 +562,7 @@ const diasChartSeries = computed(() => [{
                         </div>
                         <div class="h-80">
                             <apexchart
+                                :key="`tendencia-${chartKey}-${isLightMode}`"
                                 type="area"
                                 height="100%"
                                 :options="tendenciaChartOptions"
@@ -527,7 +570,7 @@ const diasChartSeries = computed(() => [{
                             />
                         </div>
                     </div>
-
+ 
                     <!-- Gráfico 2: Top 5 Productos Más Vendidos -->
                     <div class="rounded-2xl border border-white/5 bg-[var(--bg-secondary)]/40 p-6 shadow-xl backdrop-blur-md">
                         <div class="mb-4">
@@ -539,6 +582,7 @@ const diasChartSeries = computed(() => [{
                         </div>
                         <div v-else class="h-80">
                             <apexchart
+                                :key="`productos-${chartKey}-${isLightMode}`"
                                 type="bar"
                                 height="100%"
                                 :options="productosChartOptions"
@@ -546,7 +590,7 @@ const diasChartSeries = computed(() => [{
                             />
                         </div>
                     </div>
-
+ 
                     <!-- Gráfico 3: Ventas por Vendedor (Solo visible para Propietario) -->
                     <div v-if="is_propietario" class="rounded-2xl border border-white/5 bg-[var(--bg-secondary)]/40 p-6 shadow-xl backdrop-blur-md">
                         <div class="mb-4">
@@ -558,6 +602,7 @@ const diasChartSeries = computed(() => [{
                         </div>
                         <div v-else class="h-80 flex flex-col justify-center">
                             <apexchart
+                                :key="`vendedores-${chartKey}-${isLightMode}`"
                                 type="donut"
                                 height="270"
                                 :options="vendedoresChartOptions"
@@ -565,7 +610,7 @@ const diasChartSeries = computed(() => [{
                             />
                         </div>
                     </div>
-
+ 
                     <!-- Gráfico 4: Ventas por Día de la Semana -->
                     <div class="rounded-2xl border border-white/5 bg-[var(--bg-secondary)]/40 p-6 shadow-xl backdrop-blur-md" :class="{ 'md:col-span-2': !is_propietario }">
                         <div class="mb-4">
@@ -574,6 +619,7 @@ const diasChartSeries = computed(() => [{
                         </div>
                         <div class="h-80">
                             <apexchart
+                                :key="`dias-${chartKey}-${isLightMode}`"
                                 type="bar"
                                 height="100%"
                                 :options="diasChartOptions"
@@ -581,7 +627,67 @@ const diasChartSeries = computed(() => [{
                             />
                         </div>
                     </div>
+                </div>
+            </div>
 
+            <!-- SECCIÓN 3: RENDIMIENTO DE EMPLEADOS (Tab 3 - Solo Propietario) -->
+            <div v-if="activeTab === 'empleados' && is_propietario" class="space-y-6">
+                <div class="rounded-2xl border border-white/5 bg-[var(--bg-secondary)]/40 p-6 shadow-xl backdrop-blur-md">
+                    <div class="mb-6">
+                        <h3 class="text-lg font-bold text-[var(--text-primary)]">Rendimiento de Empleados / Vendedores</h3>
+                        <p class="text-xs text-[var(--text-secondary)]">Métricas clave de desempeño de ventas por cada miembro del equipo en el período seleccionado.</p>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-[var(--text-primary)]">
+                            <thead>
+                                <tr class="border-b border-[var(--border-color)] text-[var(--text-secondary)] text-left">
+                                    <th class="py-3 font-semibold">Vendedor</th>
+                                    <th class="py-3 font-semibold">Contacto</th>
+                                    <th class="py-3 font-semibold text-right">Ventas Totales</th>
+                                    <th class="py-3 font-semibold text-center">Transacciones</th>
+                                    <th class="py-3 font-semibold text-right">Ticket Promedio</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr
+                                    v-for="v in localVendedoresStats"
+                                    :key="v.id"
+                                    class="border-b border-[var(--border-color)]/50 hover:bg-white/5 transition-colors duration-150"
+                                >
+                                    <td class="py-3 font-medium flex items-center gap-3">
+                                        <div class="h-8 w-8 rounded-full bg-[var(--accent)]/10 text-[var(--accent)] flex items-center justify-center font-bold text-xs uppercase">
+                                            {{ v.name.substring(0, 2) }}
+                                        </div>
+                                        <div>
+                                            <p class="font-bold">{{ v.name }}</p>
+                                            <p class="text-[10px] text-[var(--text-secondary)]">ID: #{{ v.id }}</p>
+                                        </div>
+                                    </td>
+                                    <td class="py-3 text-[var(--text-secondary)] text-xs">
+                                        <p>{{ v.email }}</p>
+                                        <p>Telf: {{ v.phone }}</p>
+                                    </td>
+                                    <td class="py-3 text-right font-semibold font-mono text-[var(--accent)]">
+                                        Bs {{ v.total_ventas.toLocaleString('es-BO', { minimumFractionDigits: 2 }) }}
+                                    </td>
+                                    <td class="py-3 text-center font-medium">
+                                        <span class="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full text-xs">
+                                            {{ v.transacciones }} ventas
+                                        </span>
+                                    </td>
+                                    <td class="py-3 text-right font-mono text-[var(--text-secondary)]">
+                                        Bs {{ v.ticket_promedio.toLocaleString('es-BO', { minimumFractionDigits: 2 }) }}
+                                    </td>
+                                </tr>
+                                <tr v-if="localVendedoresStats.length === 0">
+                                    <td colspan="5" class="py-8 text-center text-[var(--text-secondary)]">
+                                        No hay ventas registradas para ningún vendedor en este período.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
