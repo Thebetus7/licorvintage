@@ -21,18 +21,18 @@ const form = useForm({
 });
 
 const fillAdmin = () => {
-    form.email = 'admin@gmail.com';
-    form.password = '123456789';
+    form.email = 'admin@licorvintage.com';
+    form.password = 'password';
 };
 
 const fillCliente = () => {
-    form.email = 'cliente@gmail.com';
-    form.password = '123456789';
+    form.email = 'cliente1@gmail.com';
+    form.password = 'password';
 };
 
 const fillVendedor = () => {
-    form.email = 'vendedor@gmail.com';
-    form.password = '123456789';
+    form.email = 'javier@licorvintage.com';
+    form.password = 'password';
 };
 
 const submit = () => {
