@@ -11,6 +11,7 @@ import DangerButton from '@/Components/DangerButton.vue';
 import DialogModal from '@/Components/DialogModal.vue';
 import BarcodeScannerModal from '@/Pages/Productos/Partials/BarcodeScannerModal.vue';
 import CreditCardForm from '@/Components/CreditCardForm.vue';
+import ReportModal from '@/Components/ReportModal.vue';
 
 const props = defineProps({
     cajaActiva: Object,
@@ -330,6 +331,16 @@ function updateQty(productoId, delta) {
     item.subtotal = newQty * item.precio;
 }
 
+function setQty(productoId, value, event) {
+    const item = cart.value.find(i => i.producto_id === productoId);
+    if (!item) return;
+    const qty = parseInt(value) || 1;
+    const clamped = Math.max(1, Math.min(qty, item.stock));
+    item.cantidad = clamped;
+    item.subtotal = clamped * item.precio;
+    if (event) event.target.value = clamped;
+}
+
 function removeFromCart(productoId) {
     cart.value = cart.value.filter(i => i.producto_id !== productoId);
     promoApplied.value = null;
@@ -510,6 +521,7 @@ function submitSale() {
             onSuccess: () => {
                 showConfirmModal.value = false;
                 lastSale.value = {
+                    venta_id: usePage().props.flash?.venta_id,
                     cliente: selectedClient.value,
                     detalles: [...cart.value],
                     total: totalFinal.value,
@@ -556,6 +568,7 @@ function submitSale() {
         onSuccess: () => {
             showConfirmModal.value = false;
             lastSale.value = {
+                venta_id: usePage().props.flash?.venta_id,
                 cliente: selectedClient.value,
                 detalles: [...cart.value],
                 total: totalFinal.value,
@@ -790,7 +803,14 @@ function focusClienteInput(el) {
                                             class="flex h-6 w-6 items-center justify-center rounded bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:bg-[var(--accent)] hover:text-white cursor-pointer"
                                             @click="updateQty(item.producto_id, -1)"
                                         >−</button>
-                                        <span class="mx-1 min-w-[20px] font-mono text-[var(--accent)]">{{ item.cantidad }}</span>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            :max="item.stock"
+                                            :value="item.cantidad"
+                                            class="w-14 text-center bg-stone-700 border border-stone-600 rounded px-1 py-0.5 font-mono text-[var(--accent)] text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                            @input="setQty(item.producto_id, $event.target.value, $event)"
+                                        />
                                         <button
                                             type="button"
                                             class="flex h-6 w-6 items-center justify-center rounded bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:bg-[var(--accent)] hover:text-white cursor-pointer"
@@ -1014,6 +1034,9 @@ function focusClienteInput(el) {
                     <button class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition cursor-pointer" :disabled="comprobantesLoading" @click="cargarComprobantes">
                         {{ comprobantesLoading ? 'Cargando...' : 'Filtrar' }}
                     </button>
+                    <div class="ml-auto">
+                        <ReportModal module="ventas" :filters="{ fecha_inicio: comprobantesFrom, fecha_fin: comprobantesTo }" />
+                    </div>
                 </div>
                 <div v-if="comprobantesLoading" class="flex items-center justify-center py-16 text-stone-400">
                     <svg class="animate-spin h-8 w-8 mr-2 text-amber-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
@@ -1250,7 +1273,17 @@ function focusClienteInput(el) {
                 </div>
             </template>
             <template #footer>
-                <PrimaryButton type="button" @click="closeSuccessModal">Nueva venta</PrimaryButton>
+                <div class="flex justify-between w-full gap-2">
+                    <PrimaryButton type="button" @click="closeSuccessModal">Nueva venta</PrimaryButton>
+                    <a v-if="lastSale?.venta_id"
+                        :href="route('descargas.venta.pdf', { venta: lastSale.venta_id })"
+                        target="_blank"
+                        class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-stone-700 hover:bg-stone-600 border border-transparent rounded-xl font-semibold text-xs text-white uppercase tracking-widest active:opacity-80 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-stone-900 transition ease-in-out duration-150 shadow-md cursor-pointer"
+                    >
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+                        Descargar Factura
+                    </a>
+                </div>
             </template>
         </DialogModal>
 
@@ -1376,7 +1409,17 @@ function focusClienteInput(el) {
                 </div>
             </template>
             <template #footer>
-                <SecondaryButton @click="showDetalleVentaModal = false">Cerrar</SecondaryButton>
+                <div class="flex justify-between w-full gap-2">
+                    <SecondaryButton @click="showDetalleVentaModal = false">Cerrar</SecondaryButton>
+                    <a v-if="selectedVenta?.id"
+                        :href="route('descargas.venta.pdf', { venta: selectedVenta.id })"
+                        target="_blank"
+                        class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 border border-transparent rounded-xl font-semibold text-xs text-white uppercase tracking-widest active:opacity-80 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-stone-900 transition ease-in-out duration-150 shadow-md cursor-pointer"
+                    >
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+                        Imprimir PDF
+                    </a>
+                </div>
             </template>
         </DialogModal>
 
@@ -1421,9 +1464,19 @@ function focusClienteInput(el) {
                 </div>
             </template>
             <template #footer>
-                <div class="flex justify-end gap-2">
+                <div class="flex justify-between w-full gap-2">
                     <SecondaryButton @click="showDetallePedidoModal = false">Cerrar</SecondaryButton>
-                    <PrimaryButton v-if="selectedPedido?.estado_pedido === 'pagado'" @click="marcarEnviado(selectedPedido.id); showDetallePedidoModal = false">Marcar como Enviado</PrimaryButton>
+                    <div class="flex gap-2">
+                        <a v-if="selectedPedido?.id"
+                            :href="route('descargas.venta.pdf', { venta: selectedPedido.id })"
+                            target="_blank"
+                            class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-stone-700 hover:bg-stone-600 border border-transparent rounded-xl font-semibold text-xs text-white uppercase tracking-widest active:opacity-80 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-stone-900 transition ease-in-out duration-150 shadow-md cursor-pointer"
+                        >
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+                            Imprimir PDF
+                        </a>
+                        <PrimaryButton v-if="selectedPedido?.estado_pedido === 'pagado'" @click="marcarEnviado(selectedPedido.id); showDetallePedidoModal = false">Marcar como Enviado</PrimaryButton>
+                    </div>
                 </div>
             </template>
         </DialogModal>

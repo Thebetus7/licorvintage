@@ -10,6 +10,7 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
 import DialogModal from '@/Components/DialogModal.vue';
 import CreditCardForm from '@/Components/CreditCardForm.vue';
+import ReportModal from '@/Components/ReportModal.vue';
 
 const props = defineProps({
     productos: Array,
@@ -28,6 +29,9 @@ const showPaymentModal = ref(false);
 const showSuccessModal = ref(false);
 
 // Estado QR
+const stockError = ref('');
+const stockLoading = ref(false);
+
 const qrData = ref(null);
 const qrLoading = ref(false);
 const qrError = ref('');
@@ -103,6 +107,13 @@ const updateQty = (item, amt) => {
     }
 };
 
+const setQty = (item, value, event) => {
+    const qty = parseInt(value) || 1;
+    const clamped = Math.max(1, Math.min(qty, item.stock));
+    item.cantidad = clamped;
+    if (event) event.target.value = clamped;
+};
+
 const removeProduct = (productId) => {
     cart.value = cart.value.filter(i => i.producto_id !== productId);
 };
@@ -172,6 +183,7 @@ const handleCheckout = () => {
         cantidad: item.cantidad
     }));
     saleForm.cliente_id = clienteId.value;
+    stockError.value = '';
 
     showPaymentMethodModal.value = true;
 };
@@ -189,9 +201,32 @@ const selectPaymentMethod = (method) => {
     }
 };
 
-const continuarPago = () => {
+const continuarPago = async () => {
     if (!saleForm.tipo_pago) return;
     if (saleForm.tipo_pago === 'credito' && saleForm.nro_cuotas < 2) return;
+
+    stockError.value = '';
+    stockLoading.value = true;
+
+    try {
+        const resp = await window.axios.post(route('cliente.validar.stock'), {
+            productos: cart.value.map(item => ({
+                producto_id: item.producto_id,
+                cantidad: item.cantidad,
+            })),
+        });
+
+        if (!resp.data.success) {
+            stockError.value = resp.data.message;
+            return;
+        }
+    } catch (err) {
+        stockError.value = err.response?.data?.message || 'Error al validar stock. Intente de nuevo.';
+        return;
+    } finally {
+        stockLoading.value = false;
+    }
+
     selectPaymentMethod(saleForm.tipo_pago);
 };
 
@@ -668,6 +703,9 @@ const submitPagoCuota = () => {
                     >
                         {{ comprobantesLoading ? 'Cargando...' : 'Filtrar' }}
                     </button>
+                    <div class="ml-auto">
+                        <ReportModal module="cliente_comprobantes" :filters="{ fecha_inicio: comprobantesFrom, fecha_fin: comprobantesTo }" />
+                    </div>
                 </div>
 
                 <div v-if="comprobantesLoading" class="text-center py-12 text-white/60">
@@ -873,7 +911,14 @@ const submitPagoCuota = () => {
                                     >
                                         -
                                     </button>
-                                    <span class="text-xs font-semibold px-1 min-w-[20px] text-center">{{ item.cantidad }}</span>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        :max="item.stock"
+                                        :value="item.cantidad"
+                                        class="w-12 text-center bg-white/5 border border-white/10 rounded px-1 py-0.5 text-xs font-semibold text-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                        @input="setQty(item, $event.target.value, $event)"
+                                    />
                                     <button
                                         class="w-6 h-6 rounded-lg bg-white/5 hover:bg-white/15 text-xs flex items-center justify-center font-bold"
                                         @click="updateQty(item, 1)"
@@ -942,7 +987,7 @@ const submitPagoCuota = () => {
         </transition>
 
         <!-- MODAL: SELECCIÓN DE MÉTODO DE PAGO -->
-        <DialogModal :show="showPaymentMethodModal" @close="showPaymentMethodModal = false">
+        <DialogModal :show="showPaymentMethodModal" @close="showPaymentMethodModal = false; stockError = ''">
             <template #title>
                 <h3 class="text-lg font-bold text-[var(--text-primary)]">Selecciona método de pago</h3>
             </template>
@@ -1011,14 +1056,19 @@ const submitPagoCuota = () => {
             </template>
 
             <template #footer>
-                <div class="flex justify-end gap-2">
-                    <SecondaryButton @click="showPaymentMethodModal = false">Cancelar</SecondaryButton>
-                    <PrimaryButton
-                        :disabled="!saleForm.tipo_pago || (saleForm.tipo_pago === 'credito' && saleForm.nro_cuotas < 2)"
-                        @click="continuarPago"
-                    >
-                        Continuar
-                    </PrimaryButton>
+                <div class="space-y-2">
+                    <div v-if="stockError" class="text-xs text-rose-400 text-center bg-rose-500/10 rounded-xl px-3 py-2">
+                        {{ stockError }}
+                    </div>
+                    <div class="flex justify-end gap-2">
+                        <SecondaryButton @click="showPaymentMethodModal = false; stockError = ''">Cancelar</SecondaryButton>
+                        <PrimaryButton
+                            :disabled="!saleForm.tipo_pago || (saleForm.tipo_pago === 'credito' && saleForm.nro_cuotas < 2) || stockLoading"
+                            @click="continuarPago"
+                        >
+                            {{ stockLoading ? 'Validando...' : 'Continuar' }}
+                        </PrimaryButton>
+                    </div>
                 </div>
             </template>
         </DialogModal>
@@ -1309,8 +1359,16 @@ const submitPagoCuota = () => {
                 </div>
             </template>
             <template #footer>
-                <div class="flex justify-end">
+                <div class="flex justify-between w-full gap-2">
                     <SecondaryButton @click="showDetalleComprobanteModal = false">Cerrar</SecondaryButton>
+                    <a v-if="selectedComprobante?.id"
+                        :href="route('descargas.venta.pdf', { venta: selectedComprobante.id })"
+                        target="_blank"
+                        class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 border border-transparent rounded-xl font-semibold text-xs text-white uppercase tracking-widest active:opacity-80 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-900 transition ease-in-out duration-150 shadow-md cursor-pointer"
+                    >
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+                        Imprimir PDF
+                    </a>
                 </div>
             </template>
         </DialogModal>

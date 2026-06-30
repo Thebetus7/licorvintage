@@ -55,6 +55,7 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
+                'venta_id' => fn () => $request->session()->get('venta_id'),
             ],
             'menu' => fn () => $this->getMenuForUser($request->user()),
             'pagofacil_token' => fn () => $request->cookie('pagofacil_token'),

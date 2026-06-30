@@ -28,7 +28,9 @@ const getModuleTitle = () => {
         inventario_conteos: 'Reporte de Conteos',
         usuarios: 'Reporte de Usuarios',
         seguridad_bitacora: 'Bitácora de Auditoría',
-        seguridad_recursos: 'Estadísticas de Recursos'
+        seguridad_recursos: 'Estadísticas de Recursos',
+        ventas: 'Reporte de Ventas / Comprobantes',
+        cliente_comprobantes: 'Mis Comprobantes de Compra'
     };
     return titles[props.module] || 'Reporte del Sistema';
 };

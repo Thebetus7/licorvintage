@@ -189,7 +189,10 @@ class VentaService
                     ]);
                 }
             } else {
-                $venta->metodoPagos()->create(['tipo_pago' => $tipoPago]);
+                $venta->metodoPagos()->create([
+                    'tipo_pago' => $tipoPago,
+                    'monto' => $totalFinal,
+                ]);
             }
 
             if ($isCredito) {

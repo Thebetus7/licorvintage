@@ -517,10 +517,13 @@ const filterHistorial = () => {
             <!-- TAB: HISTORIAL (aperturas y cierres) -->
             <div v-if="activeTab === 'historial'">
                 <div class="rounded-3xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/40 p-6 shadow-xl backdrop-blur-md">
-                    <h3 class="font-bold text-[var(--text-primary)] mb-1">Historial de Aperturas y Cierres</h3>
+                    <div class="flex items-center justify-between gap-4">
+                        <h3 class="font-bold text-[var(--text-primary)]">Historial de Aperturas y Cierres</h3>
+                        <ReportModal module="cajas" :filters="{ fecha_inicio: historialFrom, fecha_fin: historialTo }" />
+                    </div>
 
                     <!-- Date filter -->
-                    <div class="flex items-center gap-3 mb-4">
+                    <div class="flex items-center gap-3 mt-4 mb-4">
                         <div>
                             <label class="block text-[10px] uppercase font-bold text-[var(--text-secondary)] mb-1">Desde</label>
                             <input
@@ -855,7 +858,17 @@ const filterHistorial = () => {
                 </div>
             </template>
             <template #footer>
-                <SecondaryButton @click="showAperturaModal = false">Cerrar</SecondaryButton>
+                <div class="flex justify-between w-full gap-2">
+                    <SecondaryButton @click="showAperturaModal = false">Cerrar</SecondaryButton>
+                    <a v-if="selectedApertura?.id"
+                        :href="route('descargas.apertura.pdf', { aperturaCaja: selectedApertura.id })"
+                        target="_blank"
+                        class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 border border-transparent rounded-xl font-semibold text-xs text-white uppercase tracking-widest active:opacity-80 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-[var(--bg-primary)] transition ease-in-out duration-150 shadow-md cursor-pointer"
+                    >
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+                        Imprimir PDF
+                    </a>
+                </div>
             </template>
         </DialogModal>
 

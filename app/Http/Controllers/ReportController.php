@@ -674,6 +674,107 @@ class ReportController extends Controller
                     ],
                     'applied_filters' => $appliedFilters,
                 ];
+
+            case 'ventas':
+                $query = Venta::query()->with([
+                    'cliente',
+                    'user',
+                    'detalleVentas.producto',
+                    'metodoPagos',
+                ]);
+
+                if ($request->filled('fecha_inicio')) {
+                    $query->whereDate('created_at', '>=', $request->input('fecha_inicio'));
+                    $appliedFilters['Desde'] = date('d/m/Y', strtotime($request->input('fecha_inicio')));
+                }
+                if ($request->filled('fecha_fin')) {
+                    $query->whereDate('created_at', '<=', $request->input('fecha_fin'));
+                    $appliedFilters['Hasta'] = date('d/m/Y', strtotime($request->input('fecha_fin')));
+                }
+                if ($request->filled('user_id')) {
+                    $query->where('user_id', $request->input('user_id'));
+                    $usr = User::find($request->input('user_id'));
+                    $appliedFilters['Vendedor'] = $usr ? $usr->name : 'ID: '.$request->input('user_id');
+                }
+                if ($request->filled('tipo_pago')) {
+                    $query->where('tipo_pago', $request->input('tipo_pago'));
+                    $appliedFilters['Tipo de Pago'] = ucfirst($request->input('tipo_pago'));
+                }
+
+                return [
+                    'title' => 'Reporte de Ventas / Comprobantes',
+                    'query' => $query->latest(),
+                    'columns' => [
+                        'id' => 'ID Venta',
+                        'fecha' => 'Fecha',
+                        'cliente' => 'Cliente',
+                        'vendedor' => 'Vendedor',
+                        'productos' => 'Productos',
+                        'tipo_pago' => 'Tipo Pago',
+                        'metodos' => 'Métodos',
+                        'monto_final' => 'Total (Bs)',
+                    ],
+                    'map' => fn ($item) => [
+                        'id' => $item->id,
+                        'fecha' => $item->created_at->format('d/m/Y H:i'),
+                        'cliente' => $item->cliente?->name ?? 'Cliente General',
+                        'vendedor' => $item->user?->name ?? 'N/A',
+                        'productos' => $item->detalleVentas->map(fn ($d) => $d->producto?->nombre.' x'.$d->cantidad)->implode(', '),
+                        'tipo_pago' => ucfirst($item->tipo_pago),
+                        'metodos' => $item->metodoPagos->map(fn ($m) => ucfirst($m->tipo_pago))->implode(', '),
+                        'monto_final' => number_format($item->monto_final, 2),
+                    ],
+                    'totals' => fn ($data, $rows) => [
+                        'Total Ventas' => count($rows),
+                        'Ingreso Total' => number_format($data->sum('monto_final'), 2).' Bs',
+                    ],
+                    'applied_filters' => $appliedFilters,
+                ];
+
+            case 'cliente_comprobantes':
+                $user = auth()->user();
+                $query = Venta::query()->with([
+                    'detalleVentas.producto',
+                    'metodoPagos',
+                    'ventaCuotas',
+                ])->where('cliente_id', $user->id);
+
+                if ($request->filled('fecha_inicio')) {
+                    $query->whereDate('created_at', '>=', $request->input('fecha_inicio'));
+                    $appliedFilters['Desde'] = date('d/m/Y', strtotime($request->input('fecha_inicio')));
+                }
+                if ($request->filled('fecha_fin')) {
+                    $query->whereDate('created_at', '<=', $request->input('fecha_fin'));
+                    $appliedFilters['Hasta'] = date('d/m/Y', strtotime($request->input('fecha_fin')));
+                }
+
+                return [
+                    'title' => 'Mis Comprobantes de Compra',
+                    'query' => $query->latest(),
+                    'columns' => [
+                        'id' => 'ID Venta',
+                        'fecha' => 'Fecha',
+                        'productos' => 'Productos',
+                        'tipo_pago' => 'Tipo Pago',
+                        'metodos' => 'Método',
+                        'monto_final' => 'Total (Bs)',
+                        'estado_pedido' => 'Estado Pedido',
+                    ],
+                    'map' => fn ($item) => [
+                        'id' => $item->id,
+                        'fecha' => $item->created_at->format('d/m/Y H:i'),
+                        'productos' => $item->detalleVentas->map(fn ($d) => $d->producto?->nombre.' x'.$d->cantidad)->implode(', '),
+                        'tipo_pago' => ucfirst($item->tipo_pago),
+                        'metodos' => $item->metodoPagos->map(fn ($m) => ucfirst($m->tipo_pago))->implode(', '),
+                        'monto_final' => number_format($item->monto_final, 2).' Bs',
+                        'estado_pedido' => $item->estado_pedido ? ucfirst($item->estado_pedido) : 'N/A',
+                    ],
+                    'totals' => fn ($data, $rows) => [
+                        'Total Compras' => count($rows),
+                        'Monto Total Gastado' => number_format($data->sum('monto_final'), 2).' Bs',
+                    ],
+                    'applied_filters' => $appliedFilters,
+                ];
         }
 
         return null;

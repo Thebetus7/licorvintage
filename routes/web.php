@@ -6,6 +6,7 @@ use App\Http\Controllers\ClienteCuotaController;
 use App\Http\Controllers\ClienteProductoController;
 use App\Http\Controllers\ComprobanteController;
 use App\Http\Controllers\CompraController;
+use App\Http\Controllers\DescargaController;
 use App\Http\Controllers\InventarioController;
 use App\Http\Controllers\PagoController;
 use App\Http\Controllers\ProductoController;
@@ -116,6 +117,7 @@ Route::middleware([
         Route::get('/cliente/pedidos', [ClienteProductoController::class, 'pedidos'])->name('cliente.pedidos');
         Route::put('/cliente/pedidos/{venta}/completar', [ClienteProductoController::class, 'completarPedido'])->name('cliente.pedidos.completar');
         Route::post('/cliente/cuotas/{cuota}/pagar', [ClienteCuotaController::class, 'pay'])->name('cliente.cuotas.pagar');
+        Route::post('/cliente/validar-stock', [ClienteProductoController::class, 'validarStock'])->name('cliente.validar.stock');
     });
 
     // Ruta de ventas disponible para todos los roles autenticados (clientes incluidos)
@@ -127,4 +129,8 @@ Route::middleware([
     // Reportes Generales del Sistema
     Route::get('/reports/{module}', [App\Http\Controllers\ReportController::class, 'export'])->name('reports.export');
     Route::post('/pago/qr/check-status', [PagoController::class, 'checkStatus'])->name('pago.qr.checkStatus');
+
+    // Descargas PDF individuales
+    Route::get('/descargas/venta/{venta}/pdf', [DescargaController::class, 'ventaPdf'])->name('descargas.venta.pdf');
+    Route::get('/descargas/apertura/{aperturaCaja}/pdf', [DescargaController::class, 'aperturaPdf'])->name('descargas.apertura.pdf');
 });

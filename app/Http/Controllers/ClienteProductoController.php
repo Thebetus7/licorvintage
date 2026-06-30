@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Stock;
 use App\Models\Producto;
 use App\Models\Promocion;
 use App\Models\Venta;
@@ -83,5 +84,41 @@ class ClienteProductoController extends Controller
         $venta->update(['estado_pedido' => 'completado']);
 
         return response()->json(['success' => true, 'message' => 'Pedido completado.']);
+    }
+
+    public function validarStock(Request $request): JsonResponse
+    {
+        $productos = $request->validate([
+            'productos' => 'required|array|min:1',
+            'productos.*.producto_id' => 'required|integer|exists:productos,id',
+            'productos.*.cantidad' => 'required|integer|min:1',
+        ])['productos'];
+
+        $insufficient = [];
+
+        foreach ($productos as $item) {
+            $stock = Stock::where('producto_id', $item['producto_id'])->first();
+            $disponible = $stock ? (int) $stock->stock : 0;
+
+            if ($disponible < (int) $item['cantidad']) {
+                $producto = Producto::find($item['producto_id']);
+                $insufficient[] = [
+                    'producto_id' => $item['producto_id'],
+                    'nombre' => $producto?->nombre ?? "ID {$item['producto_id']}",
+                    'solicitado' => (int) $item['cantidad'],
+                    'disponible' => $disponible,
+                ];
+            }
+        }
+
+        if (! empty($insufficient)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Stock insuficiente para algunos productos.',
+                'insufficient' => $insufficient,
+            ]);
+        }
+
+        return response()->json(['success' => true]);
     }
 }

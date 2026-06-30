@@ -74,9 +74,12 @@ class VentaController extends Controller
             $validated['estado_pedido'] = 'pagado';
         }
 
-        $ventaService->create($validated, $user, $caja);
+        $venta = $ventaService->create($validated, $user, $caja);
 
-        return back()->with('success', 'Venta registrada correctamente.');
+        return back()->with([
+            'success' => 'Venta registrada correctamente.',
+            'venta_id' => $venta->id,
+        ]);
     }
 
     public function pedidos(Request $request): JsonResponse
