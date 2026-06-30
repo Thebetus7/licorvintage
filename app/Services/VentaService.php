@@ -6,6 +6,7 @@ use App\Models\ActivityLog;
 use App\Models\AperturaCaja;
 use App\Models\Producto;
 use App\Models\Promocion;
+use App\Models\Stock;
 use App\Models\User;
 use App\Models\Venta;
 use Illuminate\Support\Facades\DB;
@@ -22,8 +23,11 @@ class VentaService
     {
         return DB::transaction(function () use ($data, $user, $caja): Venta {
             $detalles = collect($data['detalles'])->map(function (array $detalle) use ($user): array {
-                $producto = Producto::query()->with('stockActual')->findOrFail($detalle['producto_id']);
-                $stock = $producto->stockActual;
+                $producto = Producto::query()->findOrFail($detalle['producto_id']);
+                $stock = Stock::query()
+                    ->where('producto_id', $producto->id)
+                    ->lockForUpdate()
+                    ->first();
 
                 if (! $stock || $stock->stock < $detalle['cantidad']) {
                     $disponibles = $stock ? $stock->stock : 0;
