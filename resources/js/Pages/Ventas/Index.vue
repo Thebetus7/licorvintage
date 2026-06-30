@@ -627,7 +627,7 @@ function focusClienteInput(el) {
     <AppLayout title="Ventas">
         <template #header>
             <div class="flex items-center justify-between">
-                <h1 class="text-xl font-bold text-amber-200">Ventas</h1>
+                <h1 class="text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">Ventas</h1>
                 <div v-if="cajaActiva" class="text-sm text-emerald-400">
                     Caja #{{ cajaActiva.id }} — {{ cajaActiva.user?.name }}
                 </div>
@@ -639,7 +639,7 @@ function focusClienteInput(el) {
 
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-6 pb-12">
             <!-- Tabs -->
-            <div class="flex gap-2 border-b border-stone-700/60 pb-3 mb-6">
+            <div class="flex gap-2 border-b border-[var(--border-color)] pb-3 mb-6">
                 <button
                     v-for="t in [
                         { key: 'detalle', label: 'Detalle de Venta' },
@@ -647,10 +647,10 @@ function focusClienteInput(el) {
                         { key: 'pedidos', label: 'Pedidos' },
                     ]"
                     :key="t.key"
-                    class="px-5 py-2.5 text-sm font-bold rounded-xl transition"
+                    class="px-5 py-2.5 text-sm font-bold rounded-xl transition cursor-pointer"
                     :class="activeVentaTab === t.key
-                        ? 'bg-amber-600 text-white shadow-lg'
-                        : 'text-stone-400 hover:bg-stone-800/50'"
+                        ? 'bg-[var(--accent)] text-white shadow-lg'
+                        : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]/50'"
                     @click="activeVentaTab = t.key"
                 >
                     {{ t.label }}
@@ -659,14 +659,14 @@ function focusClienteInput(el) {
 
             <div v-if="activeVentaTab === 'detalle'">
                 <div v-if="!cajaActiva" class="flex items-center justify-center py-20">
-                    <p class="text-stone-400">Debe abrir una caja antes de realizar ventas.</p>
+                    <p class="text-[var(--text-secondary)]">Debe abrir una caja antes de realizar ventas.</p>
                 </div>
 
                 <div v-else class="space-y-6">
 
             <!-- Cliente section -->
-            <div class="rounded-lg border border-stone-700/60 bg-stone-800/50 p-4">
-                <label class="mb-2 block text-xs font-semibold uppercase tracking-wide text-stone-400">Cliente</label>
+            <div class="rounded-2xl border border-[var(--border-color)] bg-[var(--bg-tertiary)]/80 p-6 shadow-xl">
+                <label class="mb-2 block text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">Cliente</label>
                 <div class="flex gap-2">
                     <div class="relative flex-1">
                         <TextInput
@@ -681,23 +681,23 @@ function focusClienteInput(el) {
                         />
                         <div
                             v-if="showClientDropdown && filteredClientes.length > 0"
-                            class="absolute z-50 mt-1 max-h-48 w-full overflow-y-auto rounded-lg border border-stone-600 bg-stone-800 shadow-lg"
+                            class="absolute z-50 mt-1 max-h-48 w-full overflow-y-auto rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-lg"
                         >
                             <button
                                 v-for="c in filteredClientes"
                                 :key="c.id"
                                 type="button"
-                                class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-stone-200 hover:bg-stone-700"
+                                class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-primary)] cursor-pointer"
                                 @mousedown.prevent="selectClient(c)"
                             >
                                 <span class="font-medium">{{ c.name }}</span>
-                                <span v-if="c.ci" class="text-xs text-stone-400">CI: {{ c.ci }}</span>
-                                <span class="ml-auto text-xs text-stone-500">{{ c.email }}</span>
+                                <span v-if="c.ci" class="text-xs text-[var(--text-secondary)]">CI: {{ c.ci }}</span>
+                                <span class="ml-auto text-xs text-[var(--text-secondary)]/70">{{ c.email }}</span>
                             </button>
                         </div>
                         <div
                             v-if="showClientDropdown && clienteSearch && filteredClientes.length === 0"
-                            class="absolute z-50 mt-1 w-full rounded-lg border border-stone-600 bg-stone-800 px-3 py-2 text-sm text-stone-400 shadow-lg"
+                            class="absolute z-50 mt-1 w-full rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)] px-3 py-2 text-sm text-[var(--text-secondary)] shadow-lg"
                         >
                             Sin resultados. Cree un cliente nuevo.
                         </div>
@@ -711,16 +711,16 @@ function focusClienteInput(el) {
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                     </svg>
                     {{ selectedClient.name }}
-                    <span v-if="selectedClient.ci" class="text-stone-400">CI: {{ selectedClient.ci }}</span>
-                    <button type="button" class="ml-2 text-stone-500 hover:text-red-400" @click="clearClient">Quitar</button>
+                    <span v-if="selectedClient.ci" class="text-[var(--text-secondary)]">CI: {{ selectedClient.ci }}</span>
+                    <button type="button" class="ml-2 text-[var(--text-secondary)]/70 hover:text-rose-400 cursor-pointer" @click="clearClient">Quitar</button>
                 </div>
             </div>
 
             <!-- Product search + cart -->
-            <div class="rounded-lg border border-stone-700/60 bg-stone-800/50 p-4">
+            <div class="rounded-2xl border border-[var(--border-color)] bg-[var(--bg-tertiary)]/80 p-6 shadow-xl">
                 <div class="mb-4 flex gap-2">
                     <div class="relative flex-1">
-                        <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-stone-400">Producto</label>
+                        <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">Producto</label>
                         <TextInput
                             v-model="productSearch"
                             type="text"
@@ -731,27 +731,27 @@ function focusClienteInput(el) {
                         />
                         <div
                             v-if="showProductDropdown && filteredProductos.length > 0"
-                            class="absolute z-50 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-stone-600 bg-stone-800 shadow-lg"
+                            class="absolute z-50 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-lg"
                         >
                             <button
                                 v-for="p in filteredProductos"
                                 :key="p.id"
                                 type="button"
                                 :disabled="cartProductIds.has(p.id)"
-                                class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-stone-200 hover:bg-stone-700 disabled:opacity-40"
+                                class="flex w-full items-center gap-3 px-3 py-2 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-primary)] disabled:opacity-40 cursor-pointer"
                                 @mousedown.prevent="addProduct(p)"
                             >
-                                <div class="h-8 w-8 flex-shrink-0 overflow-hidden rounded bg-stone-700">
+                                <div class="h-8 w-8 flex-shrink-0 overflow-hidden rounded bg-[var(--bg-secondary)]">
                                     <img v-if="p.imagen" :src="p.imagen" :alt="p.nombre" class="h-full w-full object-cover">
                                 </div>
                                 <div class="min-w-0 flex-1">
                                     <div class="truncate font-medium">{{ p.nombre }}</div>
-                                    <div class="text-xs text-stone-400">
+                                    <div class="text-xs text-[var(--text-secondary)]">
                                         {{ p.mililitros }}ml
                                         <span v-if="p.stock_actual" class="ml-2">Stock: {{ p.stock_actual.stock }}</span>
                                     </div>
                                 </div>
-                                <span class="text-sm font-bold text-amber-300">Bs {{ parseFloat(p.precio_venta).toFixed(2) }}</span>
+                                <span class="text-sm font-bold text-[var(--accent)]">Bs {{ parseFloat(p.precio_venta).toFixed(2) }}</span>
                             </button>
                         </div>
                     </div>
@@ -768,7 +768,7 @@ function focusClienteInput(el) {
                 <div v-if="cart.length > 0" class="overflow-x-auto">
                     <table class="w-full text-sm">
                         <thead>
-                            <tr class="border-b border-stone-700 text-left text-xs uppercase text-stone-500">
+                            <tr class="border-b border-[var(--border-color)] text-left text-xs uppercase text-[var(--text-secondary)]/60">
                                 <th class="py-2 pr-2">#</th>
                                 <th class="py-2 px-2">Producto</th>
                                 <th class="py-2 px-2 text-center">Cantidad</th>
@@ -778,33 +778,33 @@ function focusClienteInput(el) {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="(item, idx) in cart" :key="item.producto_id" class="border-b border-stone-700/50">
-                                <td class="py-2 pr-2 text-stone-400">{{ idx + 1 }}</td>
-                                <td class="max-w-[200px] truncate py-2 px-2 font-medium text-stone-200">
+                            <tr v-for="(item, idx) in cart" :key="item.producto_id" class="border-b border-[var(--border-color)]/30">
+                                <td class="py-2 pr-2 text-[var(--text-secondary)]">{{ idx + 1 }}</td>
+                                <td class="max-w-[200px] truncate py-2 px-2 font-medium text-[var(--text-primary)]">
                                     {{ item.nombre }}
                                 </td>
                                 <td class="py-2 px-2 text-center">
                                     <div class="inline-flex items-center gap-1">
                                         <button
                                             type="button"
-                                            class="flex h-6 w-6 items-center justify-center rounded bg-stone-700 text-stone-300 hover:bg-stone-600"
+                                            class="flex h-6 w-6 items-center justify-center rounded bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:bg-[var(--accent)] hover:text-white cursor-pointer"
                                             @click="updateQty(item.producto_id, -1)"
                                         >−</button>
-                                        <span class="mx-1 min-w-[20px] font-mono text-amber-200">{{ item.cantidad }}</span>
+                                        <span class="mx-1 min-w-[20px] font-mono text-[var(--accent)]">{{ item.cantidad }}</span>
                                         <button
                                             type="button"
-                                            class="flex h-6 w-6 items-center justify-center rounded bg-stone-700 text-stone-300 hover:bg-stone-600"
+                                            class="flex h-6 w-6 items-center justify-center rounded bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:bg-[var(--accent)] hover:text-white cursor-pointer"
                                             :disabled="item.cantidad >= item.stock"
                                             @click="updateQty(item.producto_id, 1)"
                                         >+</button>
                                     </div>
                                 </td>
                                 <td class="py-2 px-2 text-right font-mono">Bs {{ item.precio.toFixed(2) }}</td>
-                                <td class="py-2 px-2 text-right font-mono font-bold text-amber-200">Bs {{ item.subtotal.toFixed(2) }}</td>
+                                <td class="py-2 px-2 text-right font-mono font-bold text-[var(--accent)]">Bs {{ item.subtotal.toFixed(2) }}</td>
                                 <td class="py-2 pl-2 text-right">
                                     <button
                                         type="button"
-                                        class="text-stone-500 hover:text-red-400"
+                                        class="text-[var(--text-secondary)]/50 hover:text-rose-400 cursor-pointer"
                                         @click="removeFromCart(item.producto_id)"
                                     >
                                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -831,7 +831,7 @@ function focusClienteInput(el) {
                             <div v-if="promoApplied" class="text-sm text-emerald-400 mb-1">
                                 Descuento: −Bs {{ descuentoMonto.toFixed(2) }}
                             </div>
-                            <div class="text-lg font-bold text-amber-200">
+                            <div class="text-lg font-bold text-[var(--text-primary)]">
                                 Total: Bs {{ totalFinal.toFixed(2) }}
                             </div>
                         </div>
@@ -839,14 +839,14 @@ function focusClienteInput(el) {
                     <p v-if="promoError" class="mt-1 text-sm text-red-400">{{ promoError }}</p>
                 </div>
 
-                <div v-else class="py-8 text-center text-stone-500">
+                <div v-else class="py-8 text-center text-[var(--text-secondary)]/60">
                     Agregue productos al carrito para iniciar una venta.
                 </div>
             </div>
 
             <!-- Payment methods -->
-            <div v-if="cart.length > 0" class="rounded-lg border border-stone-700/60 bg-stone-800/50 p-4">
-                <label class="mb-3 block text-xs font-semibold uppercase tracking-wide text-stone-400">Forma de pago</label>
+            <div v-if="cart.length > 0" class="rounded-2xl border border-[var(--border-color)] bg-[var(--bg-tertiary)]/80 p-6 shadow-xl">
+                <label class="mb-3 block text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">Forma de pago</label>
 
                 <div class="flex flex-wrap gap-2 mb-4">
                     <button
@@ -857,9 +857,9 @@ function focusClienteInput(el) {
                         class="rounded-lg px-4 py-2 text-sm font-medium transition"
                         :class="getMethodEnabled(m.tipo)
                             ? getMethodPagado(m.tipo)
-                                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 ring-2 ring-emerald-400'
-                                : 'bg-amber-600 text-white shadow-lg shadow-amber-600/30'
-                            : 'bg-stone-700 text-stone-300 hover:bg-stone-600'"
+                                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 ring-2 ring-emerald-400 cursor-pointer'
+                                : 'bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/30 cursor-pointer'
+                            : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]/80 border border-[var(--border-color)] cursor-pointer'"
                     >
                         <span v-if="getMethodPagado(m.tipo)" class="mr-1.5">✓</span>
                         {{ m.label }}

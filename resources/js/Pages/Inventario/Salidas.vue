@@ -119,19 +119,19 @@ const submit = () => {
                                 </td>
                             </tr>
                             <!-- Fila de Detalle Expandido -->
-                            <tr v-if="expandedNotaId === nota.id" class="bg-black/20">
+                            <tr v-if="expandedNotaId === nota.id" class="bg-[var(--bg-secondary)]/30">
                                 <td colspan="5" class="px-8 py-4">
-                                    <div class="rounded-md border border-stone-800 p-4 bg-stone-900/40">
-                                        <h4 class="text-xs font-bold uppercase text-amber-500 mb-3">Productos dados de baja:</h4>
+                                    <div class="rounded-md border border-[var(--border-color)] p-4 bg-[var(--bg-secondary)]/20">
+                                        <h4 class="text-xs font-bold uppercase text-[var(--accent)] mb-3">Productos dados de baja:</h4>
                                         <div class="grid gap-2 text-xs">
-                                            <div v-for="det in nota.detalle_salidas" :key="det.id" class="flex items-center justify-between border-b border-stone-800/60 pb-2 last:border-b-0 last:pb-0 text-stone-200">
+                                            <div v-for="det in nota.detalle_salidas" :key="det.id" class="flex items-center justify-between border-b border-[var(--border-color)]/30 pb-2 last:border-b-0 last:pb-0 text-[var(--text-primary)]">
                                                 <span>
                                                     <span class="font-bold text-[var(--text-primary)]">{{ det.producto?.nombre }}</span>
-                                                    <span v-if="det.lote" class="ms-2 text-[10px] font-mono text-stone-400 bg-stone-800 px-1.5 py-0.5 rounded">
+                                                    <span v-if="det.lote" class="ms-2 text-[10px] font-mono text-[var(--text-secondary)] bg-[var(--bg-secondary)] px-1.5 py-0.5 rounded">
                                                         Lote: {{ det.lote?.codigo_lote }}
                                                     </span>
                                                 </span>
-                                                <span class="font-semibold text-amber-400">{{ det.cantidad }} unidades</span>
+                                                <span class="font-semibold text-[var(--accent)]">{{ det.cantidad }} unidades</span>
                                             </div>
                                         </div>
                                     </div>
@@ -165,21 +165,21 @@ const submit = () => {
         <!-- Modal Nueva Nota de Salida -->
         <DialogModal :show="showForm" max-width="lg" scrollable @close="showForm = false">
             <template #title>
-                <span class="text-stone-100 font-bold">Nueva Nota de Salida</span>
+                <span class="text-[var(--text-primary)] font-bold">Nueva Nota de Salida</span>
             </template>
 
             <template #content>
                 <div class="space-y-5">
                     <!-- Tipo de Salida -->
                     <section class="space-y-3">
-                        <h3 class="text-xs font-bold uppercase tracking-wide text-amber-500">Motivo de Salida</h3>
+                        <h3 class="text-xs font-bold uppercase tracking-wide text-[var(--accent)]">Motivo de Salida</h3>
                         <div class="grid gap-4 sm:grid-cols-2">
                             <div>
-                                <label for="tipo_salida" class="block text-xs font-semibold text-stone-300">Tipo de Salida</label>
+                                <label for="tipo_salida" class="block text-xs font-semibold text-[var(--text-secondary)]">Tipo de Salida</label>
                                 <select
                                     id="tipo_salida"
                                     v-model="form.tipo_salida_id"
-                                    class="mt-1 block w-full rounded-md border-stone-700 bg-stone-900 text-stone-100 shadow-sm focus:border-amber-500 focus:ring-amber-500 text-sm px-3 py-2"
+                                    class="mt-1 block w-full rounded-md border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm focus:border-[var(--accent)] focus:ring-[var(--accent)] text-sm px-3 py-2"
                                 >
                                     <option value="" disabled>Seleccione el tipo...</option>
                                     <option v-for="tipo in tiposSalida" :key="tipo.id" :value="tipo.id">
@@ -189,11 +189,11 @@ const submit = () => {
                                 <InputError :message="form.errors.tipo_salida_id" class="mt-1" />
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-stone-300">Fecha</label>
+                                <label class="block text-xs font-semibold text-[var(--text-secondary)]">Fecha</label>
                                 <input
                                     v-model="form.fecha"
                                     type="date"
-                                    class="mt-1 block w-full rounded-md border-stone-700 bg-stone-900 text-stone-100 shadow-sm focus:border-amber-500 focus:ring-amber-500 text-sm px-3 py-2"
+                                    class="mt-1 block w-full rounded-md border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm focus:border-[var(--accent)] focus:ring-[var(--accent)] text-sm px-3 py-2"
                                 />
                                 <InputError :message="form.errors.fecha" class="mt-1" />
                             </div>
@@ -202,39 +202,39 @@ const submit = () => {
 
                     <!-- Buscador de Productos -->
                     <section class="space-y-3">
-                        <h3 class="text-xs font-bold uppercase tracking-wide text-amber-500">Buscar Producto</h3>
+                        <h3 class="text-xs font-bold uppercase tracking-wide text-[var(--accent)]">Buscar Producto</h3>
                         <div>
-                            <label for="product_search" class="block text-xs font-semibold text-stone-300">Nombre o código de barra</label>
+                            <label for="product_search" class="block text-xs font-semibold text-[var(--text-secondary)]">Nombre o código de barra</label>
                             <input
                                 id="product_search"
                                 v-model="search"
                                 type="text"
-                                class="mt-1 block w-full rounded-md border-stone-700 bg-stone-900 text-stone-100 placeholder-stone-500 shadow-sm focus:border-amber-500 focus:ring-amber-500 text-sm px-3 py-2"
+                                class="mt-1 block w-full rounded-md border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-primary)] placeholder-[var(--text-secondary)]/50 shadow-sm focus:border-[var(--accent)] focus:ring-[var(--accent)] text-sm px-3 py-2"
                                 placeholder="Escribe para buscar..."
                             />
                         </div>
                         <div
                             v-if="filteredProducts.length > 0"
-                            class="max-h-44 overflow-y-auto rounded-md border border-stone-700 bg-stone-900"
+                            class="max-h-44 overflow-y-auto rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)]"
                         >
                             <button
                                 v-for="producto in filteredProducts"
                                 :key="producto.id"
                                 type="button"
-                                class="flex w-full justify-between border-b border-stone-800 px-3 py-2 text-left text-sm last:border-b-0 hover:bg-stone-800 text-stone-200"
+                                class="flex w-full justify-between border-b border-[var(--border-color)]/30 px-3 py-2 text-left text-sm last:border-b-0 hover:bg-[var(--bg-primary)] text-[var(--text-primary)] cursor-pointer"
                                 @click="addProducto(producto)"
                             >
                                 <span>{{ producto.nombre }}</span>
-                                <span class="text-stone-400">ID: {{ producto.id }}</span>
+                                <span class="text-[var(--text-secondary)]/60">ID: {{ producto.id }}</span>
                             </button>
                         </div>
                     </section>
 
                     <!-- Lista de Salida -->
                     <section class="space-y-3">
-                        <h3 class="text-xs font-bold uppercase tracking-wide text-amber-500">Productos Seleccionados</h3>
+                        <h3 class="text-xs font-bold uppercase tracking-wide text-[var(--accent)]">Productos Seleccionados</h3>
 
-                        <p v-if="!form.detalles.length" class="rounded-md border border-dashed border-stone-700 px-4 py-6 text-center text-sm text-stone-400 bg-stone-900/40">
+                        <p v-if="!form.detalles.length" class="rounded-md border border-dashed border-[var(--border-color)] px-4 py-6 text-center text-sm text-[var(--text-secondary)] bg-[var(--bg-secondary)]/20">
                             Agrega productos utilizando el buscador de arriba.
                         </p>
 
@@ -242,27 +242,27 @@ const submit = () => {
                             <div
                                 v-for="(detalle, index) in form.detalles"
                                 :key="index"
-                                class="rounded-md border border-stone-700 bg-stone-900/40 p-4"
+                                class="rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)]/20 p-4"
                             >
                                 <div class="flex items-center justify-between gap-2">
-                                    <div class="min-w-0 font-bold text-stone-100 text-sm">
+                                    <div class="min-w-0 font-bold text-[var(--text-primary)] text-sm">
                                         {{ detalle.nombre }}
                                     </div>
                                     <button
                                         type="button"
-                                        class="shrink-0 text-xs text-rose-400 hover:text-rose-300 font-semibold"
+                                        class="shrink-0 text-xs text-rose-400 hover:text-rose-300 font-semibold cursor-pointer"
                                         @click="removeDetalle(index)"
                                     >
                                         Quitar
                                     </button>
                                 </div>
                                 <div class="mt-3 w-32">
-                                    <label class="block text-xs font-semibold text-stone-300">Cantidad a descargar</label>
+                                    <label class="block text-xs font-semibold text-[var(--text-secondary)]">Cantidad a descargar</label>
                                     <input
                                         v-model="detalle.cantidad"
                                         type="number"
                                         min="1"
-                                        class="mt-1 block w-full rounded-md border-stone-700 bg-stone-900 text-stone-100 shadow-sm focus:border-amber-500 focus:ring-amber-500 text-sm px-3 py-2"
+                                        class="mt-1 block w-full rounded-md border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm focus:border-[var(--accent)] focus:ring-[var(--accent)] text-sm px-3 py-2"
                                     />
                                     <InputError :message="form.errors[`detalles.${index}.cantidad`]" class="mt-1" />
                                 </div>

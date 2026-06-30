@@ -129,7 +129,7 @@ const loginWithGoogle = async () => {
             <div class="block mt-4">
                 <label class="flex items-center">
                     <Checkbox v-model:checked="form.remember" name="remember" />
-                    <span class="ms-2 text-sm text-stone-400">Remember me</span>
+                    <span class="ms-2 text-sm text-[var(--text-secondary)]">Remember me</span>
                 </label>
             </div>
 
@@ -146,7 +146,7 @@ const loginWithGoogle = async () => {
                     </SecondaryButton>
                 </div>
 
-                <Link v-if="canResetPassword" :href="route('password.request')" class="underline text-sm text-stone-400 hover:text-stone-200 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500">
+                <Link v-if="canResetPassword" :href="route('password.request')" class="underline text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent)]">
                     Forgot your password?
                 </Link>
 
@@ -157,15 +157,15 @@ const loginWithGoogle = async () => {
 
             <div class="mt-6 flex flex-col items-center justify-center gap-4">
                 <div class="relative w-full flex items-center justify-center">
-                    <div class="border-t border-stone-850 w-full absolute"></div>
-                    <span class="bg-stone-900 px-3 text-stone-400 text-xs uppercase tracking-wider relative z-10">O inicia con</span>
+                    <div class="border-t border-[var(--border-color)] w-full absolute"></div>
+                    <span class="bg-[var(--bg-tertiary)] px-3 text-[var(--text-secondary)] text-xs uppercase tracking-wider relative z-10">O inicia con</span>
                 </div>
 
                 <div v-if="firebaseError" class="text-red-500 text-sm font-medium w-full text-center">
                     {{ firebaseError }}
                 </div>
 
-                <button type="button" @click="loginWithGoogle" :disabled="processingFirebase" class="w-full flex items-center justify-center gap-3 px-4 py-2.5 border border-stone-750 rounded-md text-sm font-medium text-stone-200 bg-stone-900/50 hover:bg-stone-800 hover:text-white transition duration-150 focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:opacity-50">
+                <button type="button" @click="loginWithGoogle" :disabled="processingFirebase" class="w-full flex items-center justify-center gap-3 px-4 py-2.5 border border-[var(--border-color)] rounded-xl text-sm font-medium text-[var(--text-primary)] bg-[var(--bg-secondary)]/50 hover:bg-[var(--bg-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition duration-150 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] disabled:opacity-50 cursor-pointer">
                     <svg class="h-5 w-5" viewBox="0 0 24 24">
                         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
                         <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>

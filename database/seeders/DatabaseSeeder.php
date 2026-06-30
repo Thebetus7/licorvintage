@@ -125,7 +125,7 @@ class DatabaseSeeder extends Seeder
         }
 
         $menus = [
-            ['label' => 'Dashboard', 'route_name' => 'dashboard', 'roles' => ['propietario', 'vendedor', 'cliente']],
+            ['label' => 'Dashboard', 'route_name' => 'dashboard', 'roles' => ['propietario', 'vendedor']],
             ['label' => 'Productos', 'route_name' => 'productos.index', 'roles' => ['propietario', 'vendedor']],
             ['label' => 'Compras', 'route_name' => 'compras.index', 'roles' => ['propietario', 'vendedor']],
             ['label' => 'Ventas', 'route_name' => 'ventas.index', 'roles' => ['propietario', 'vendedor']],
