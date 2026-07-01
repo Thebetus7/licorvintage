@@ -109,5 +109,27 @@ class DatabaseSeeder extends Seeder
             VentaSeeder::class,
             TipoSalidaSeeder::class,
         ]);
+
+        // 6. CREAR MENUS PARA LA BARRA DE NAVEGACIÓN
+        $menus = [
+            ['label' => 'Dashboard', 'route_name' => 'dashboard', 'roles' => ['propietario', 'vendedor']],
+            ['label' => 'Productos', 'route_name' => 'productos.index', 'roles' => ['propietario', 'vendedor']],
+            ['label' => 'Compras', 'route_name' => 'compras.index', 'roles' => ['propietario', 'vendedor']],
+            ['label' => 'Ventas', 'route_name' => 'ventas.index', 'roles' => ['propietario', 'vendedor']],
+            ['label' => 'Caja', 'route_name' => 'caja.index', 'roles' => ['propietario', 'vendedor']],
+            ['label' => 'Promociones', 'route_name' => 'promociones.index', 'roles' => ['propietario', 'vendedor']],
+            ['label' => 'Inventario', 'route_name' => 'inventario.index', 'roles' => ['propietario']],
+            ['label' => 'Usuarios', 'route_name' => 'usuarios.index', 'roles' => ['propietario']],
+            ['label' => 'Seguridad', 'route_name' => 'security.index', 'roles' => ['propietario']],
+            ['label' => 'Catalogo', 'route_name' => 'cliente.productos', 'roles' => ['cliente']],
+        ];
+
+        foreach ($menus as $menu) {
+            \App\Models\MenuItem::updateOrCreate(
+                ['route_name' => $menu['route_name']],
+                ['label' => $menu['label'], 'roles' => $menu['roles']]
+            );
+        }
     }
 }
+
